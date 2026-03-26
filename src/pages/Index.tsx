@@ -40,6 +40,17 @@ const Index = () => {
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
       window.history.replaceState({}, '', window.location.pathname);
+      // Start fresh after reset
+      setPhase('idle');
+      setAlreadyFinished(false);
+      setTotalAttemptsUsed(0);
+      setSavedRounds([]);
+      setRoundIndex(0);
+      setAttemptInRound(1);
+      const { solution: sol, activeColors: ac } = generateSolution(0);
+      setSolution(sol);
+      setActiveColors(ac);
+      return;
     }
     const info = getCurrentRoundInfo();
     setTotalAttemptsUsed(info.totalAttemptsUsed);
@@ -47,7 +58,6 @@ const Index = () => {
 
     if (info.finished) {
       setAlreadyFinished(true);
-      // Show last round's last attempt
       const lastRound = info.rounds[info.rounds.length - 1];
       if (lastRound) {
         const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
