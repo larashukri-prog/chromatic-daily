@@ -33,6 +33,8 @@ const Index = () => {
   const [resultMessage, setResultMessage] = useState('');
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
+  const [cheatDetected, setCheatDetected] = useState(false);
+  const [cheatMessage, setCheatMessage] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
@@ -90,6 +92,39 @@ const Index = () => {
     }
   }, []);
 
+  const CHEAT_MESSAGES = [
+    'Nice try, Sherlock! 🕵️‍♂️ No screenshots allowed.',
+    'Your memory is better than your camera roll. Trust it! 🧠',
+    'Caught in 4K! 📸 Eyes on the screen, not the buttons.',
+    'Cheaters never prosper (and they miss the best colors). 🌈',
+  ];
+
+  const triggerCheatOverlay = useCallback(() => {
+    setCheatDetected(true);
+    setCheatMessage(CHEAT_MESSAGES[Math.floor(Math.random() * CHEAT_MESSAGES.length)]);
+  }, []);
+
+  // Anti-cheat listener during observation phase
+  useEffect(() => {
+    if (phase !== 'observation') {
+      setCheatDetected(false);
+      return;
+    }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) triggerCheatOverlay();
+    };
+    const onBlur = () => triggerCheatOverlay();
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [phase, triggerCheatOverlay]);
+
   const startObservation = useCallback(() => {
     setPhase('observation');
     setTimerProgress(100);
@@ -97,6 +132,7 @@ const Index = () => {
     setResult(null);
     setSelectedColor(null);
     setVerifying(false);
+    setCheatDetected(false);
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -295,26 +331,46 @@ const Index = () => {
         )}
 
         {/* Grid with animated transitions */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={verifying ? 'verifying' : phase}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="p-6 sm:p-8"
-          >
-            <GameGrid
-              phase={phase}
-              solution={solution}
-              playerGrid={playerGrid}
-              result={result}
-              selectedColor={selectedColor}
-              verifying={verifying}
-              onCircleClick={handleCircleClick}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <div className="relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={verifying ? 'verifying' : phase}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="p-6 sm:p-8"
+            >
+              <GameGrid
+                phase={phase}
+                solution={solution}
+                playerGrid={playerGrid}
+                result={result}
+                selectedColor={selectedColor}
+                verifying={verifying}
+                onCircleClick={handleCircleClick}
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Anti-cheat overlay */}
+          <AnimatePresence>
+            {cheatDetected && phase === 'observation' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-md rounded-xl"
+              >
+                <p className="text-3xl mb-3">🚫</p>
+                <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
+                  {cheatMessage}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Color Picker */}
         {phase === 'recall' && (
