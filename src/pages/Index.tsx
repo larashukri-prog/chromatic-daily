@@ -116,12 +116,30 @@ const Index = () => {
     };
     const onBlur = () => triggerCheatOverlay();
 
+    // Mobile screenshot detection: iOS/Android often briefly resize or fire
+    // focus-related events when the screenshot animation plays
+    const initialWidth = window.innerWidth;
+    const initialHeight = window.innerHeight;
+    const onResize = () => {
+      const dw = Math.abs(window.innerWidth - initialWidth);
+      const dh = Math.abs(window.innerHeight - initialHeight);
+      // Screenshot overlays on mobile can cause a tiny transient resize
+      if (dw === 0 && dh === 0) return;
+      // Ignore large resizes (keyboard, rotation) — only catch small ones
+      if (dw <= 2 && dh <= 120) triggerCheatOverlay();
+    };
+    const onTouchCancel = () => triggerCheatOverlay();
+
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('blur', onBlur);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('touchcancel', onTouchCancel);
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('touchcancel', onTouchCancel);
     };
   }, [phase, triggerCheatOverlay]);
 
