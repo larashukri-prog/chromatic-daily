@@ -258,24 +258,48 @@ export function getResultMessage(roundIndex: number, attemptInRound: number, isC
 }
 
 export function generateShareText(rounds: RoundData[]): string {
-  const { dayName } = getDayInfo();
+  const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
   const streaks = getStreaks();
-  const solvedCount = rounds.filter(r => r.solved).length;
+  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
+  const anySolved = rounds.some(r => r.solved);
 
-  const lines: string[] = [`Chromatic Daily #${dayNum}`, dayName];
+  const getDifficultyName = (count: number): string => {
+    if (count <= 2) return 'Minimalist';
+    if (count <= 4) return 'Standard';
+    if (count <= 6) return 'Complex';
+    return 'Master';
+  };
 
-  rounds.forEach((round, idx) => {
-    const lastAttempt = round.attempts[round.attempts.length - 1];
-    if (!lastAttempt) return;
-    const emojis = round.solution.map((color, i) => {
-      if (color === null) return '⚪';
-      return lastAttempt.grid[i] === color ? '🟢' : '⚫';
-    });
-    lines.push(`R${idx + 1}: ${emojis.slice(0, 3).join('')} ${emojis.slice(3, 6).join('')} ${emojis.slice(6, 9).join('')} ${round.solved ? '✅' : '❌'}`);
-  });
+  const lines: string[] = [
+    `Chromatic #${dayNum}`,
+    `${dayName} | Level: ${getDifficultyName(colorCount)}`,
+    '',
+  ];
 
-  lines.push(`Solved: ${solvedCount}/${rounds.length}`);
-  lines.push(`Streak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`);
+  if (anySolved) {
+    // Show the final solved round's grid (only 🟢 and ⚪)
+    const solvedRound = [...rounds].reverse().find(r => r.solved);
+    if (solvedRound) {
+      const grid = solvedRound.solution.map(c => c !== null ? '🟢' : '⚪');
+      lines.push(grid.slice(0, 3).join(''));
+      lines.push(grid.slice(3, 6).join(''));
+      lines.push(grid.slice(6, 9).join(''));
+    }
+    lines.push(`Solved in ${totalAttempts}/${MAX_ROUNDS} attempts`);
+  } else {
+    // Failed all — grayscale grid
+    const lastRound = rounds[rounds.length - 1];
+    const lastAttempt = lastRound?.attempts[lastRound.attempts.length - 1];
+    if (lastAttempt) {
+      const grid = lastRound.solution.map(c => c !== null ? '⬜' : '⬛');
+      lines.push(grid.slice(0, 3).join(''));
+      lines.push(grid.slice(3, 6).join(''));
+      lines.push(grid.slice(6, 9).join(''));
+    }
+    lines.push('Better luck tomorrow!');
+  }
+
+  lines.push(`⚡ Streak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`);
   return lines.join('\n');
 }
