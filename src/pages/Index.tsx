@@ -135,9 +135,8 @@ const Index = () => {
     setSelectedColor(null);
   };
 
-  const filledColoredPositions = solution.filter((c, i) => c !== null && playerGrid[i] !== null).length;
-  const totalColoredPositions = solution.filter((c) => c !== null).length;
-  const canVerify = phase === 'recall' && filledColoredPositions === totalColoredPositions;
+  const selectedCount = playerGrid.filter((c) => c !== null).length;
+  const canVerify = phase === 'recall' && selectedCount === colorCount;
 
   const verify = () => {
     if (!canVerify) return;
