@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
-  hasPlayedToday, saveResult, loadData, getStreaks, generateShareText,
-  getAttemptsUsed, MAX_ATTEMPTS
+  hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
+  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData,
 } from '@/lib/game';
 
 const OBSERVATION_TIME = 5000;
@@ -22,9 +22,13 @@ const Index = () => {
   const [showHowTo, setShowHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [shake, setShake] = useState(false);
-  const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+  const [alreadyFinished, setAlreadyFinished] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [attemptNum, setAttemptNum] = useState(1);
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [totalAttemptsUsed, setTotalAttemptsUsed] = useState(0);
+  const [attemptInRound, setAttemptInRound] = useState(1);
+  const [resultMessage, setResultMessage] = useState('');
+  const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { dayName, colorCount } = getDayInfo();
@@ -32,28 +36,34 @@ const Index = () => {
   const streaks = getStreaks();
 
   useEffect(() => {
-    const { solution: sol, activeColors: ac } = generateSolution();
-    setSolution(sol);
-    setActiveColors(ac);
+    const info = getCurrentRoundInfo();
+    setTotalAttemptsUsed(info.totalAttemptsUsed);
+    setSavedRounds(info.rounds);
 
-    const used = getAttemptsUsed();
-    setAttemptNum(used + 1);
-
-    if (hasPlayedToday()) {
-      setAlreadyPlayed(true);
-      const data = loadData();
-      if (data && (data.attempts ?? []).length > 0 && data.lastSolution) {
-        const lastAttempt = (data.attempts ?? [])[data.attempts.length - 1];
-        setPlayerGrid(lastAttempt.grid);
-        setResult(data.lastSolution.map((c, i) => lastAttempt.grid[i] === c));
-        setIsCorrect(data.lastResult);
+    if (info.finished) {
+      setAlreadyFinished(true);
+      // Show last round's last attempt
+      const lastRound = info.rounds[info.rounds.length - 1];
+      if (lastRound) {
+        const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
+        setSolution(lastRound.solution);
+        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
+        setIsCorrect(lastRound.solved);
+        setRoundIndex(lastRound.roundIndex);
         setPhase('result');
       }
+    } else {
+      setRoundIndex(info.roundIndex);
+      const currentRoundData = info.rounds.find(r => r.roundIndex === info.roundIndex);
+      setAttemptInRound((currentRoundData?.attempts.length ?? 0) + 1);
+      const { solution: sol, activeColors: ac } = generateSolution(info.roundIndex);
+      setSolution(sol);
+      setActiveColors(ac);
     }
   }, []);
 
-  const startGame = useCallback(() => {
-    if (alreadyPlayed) return;
+  const startObservation = useCallback(() => {
     setPhase('observation');
     setTimerProgress(100);
     setPlayerGrid(Array(9).fill(null));
@@ -71,7 +81,12 @@ const Index = () => {
         setSelectedColor(null);
       }
     }, 30);
-  }, [alreadyPlayed]);
+  }, []);
+
+  const startGame = useCallback(() => {
+    if (alreadyFinished) return;
+    startObservation();
+  }, [alreadyFinished, startObservation]);
 
   useEffect(() => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -105,12 +120,19 @@ const Index = () => {
     setResult(res);
     setIsCorrect(correct);
     setPhase('result');
-    const savedData = saveResult(correct, playerGrid, solution);
 
-    const currentAttempt = attemptNum;
-    const done = correct || currentAttempt >= MAX_ATTEMPTS;
-    if (done) {
-      setAlreadyPlayed(true);
+    const newTotalUsed = totalAttemptsUsed + 1;
+    setTotalAttemptsUsed(newTotalUsed);
+
+    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
+    setSavedRounds(savedData.rounds);
+
+    const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
+    setResultMessage(msg);
+
+    const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+    if (done || savedData.finished) {
+      setAlreadyFinished(true);
     }
 
     if (!correct) {
@@ -122,39 +144,36 @@ const Index = () => {
     }
   };
 
+  const canContinue = phase === 'result' && totalAttemptsUsed < MAX_ROUNDS && !alreadyFinished;
+
   const nextAttempt = () => {
     setShowResult(false);
-    setAttemptNum(prev => prev + 1);
-    setPhase('observation');
-    setTimerProgress(100);
-    setPlayerGrid(Array(9).fill(null));
-    setResult(null);
-    setSelectedColor(null);
 
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / OBSERVATION_TIME) * 100);
-      setTimerProgress(remaining);
-      if (elapsed >= OBSERVATION_TIME) {
-        clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
-      }
-    }, 30);
+    if (isCorrect) {
+      // Solved! Generate new puzzle for next round
+      const newRound = roundIndex + 1;
+      setRoundIndex(newRound);
+      setAttemptInRound(1);
+      const { solution: sol, activeColors: ac } = generateSolution(newRound);
+      setSolution(sol);
+      setActiveColors(ac);
+    } else {
+      // Failed, retry same puzzle
+      setAttemptInRound(prev => prev + 1);
+    }
+
+    startObservation();
   };
 
-  const canRetry = phase === 'result' && !isCorrect && attemptNum < MAX_ATTEMPTS;
-
   const share = async () => {
-    const text = generateShareText(playerGrid, solution, attemptNum);
+    const data = getTodayData();
+    const rounds = data?.rounds ?? savedRounds;
+    const text = generateShareText(rounds);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-    }
+    } catch { /* fallback */ }
   };
 
   const getCircleColor = (index: number): string => {
@@ -174,16 +193,51 @@ const Index = () => {
     return '2px solid transparent';
   };
 
+  // Status bar info
+  const solvedRounds = savedRounds.filter(r => r.solved).length;
+  const statusText = phase === 'idle' && !alreadyFinished
+    ? 'Ready to play'
+    : alreadyFinished
+    ? `Game complete · Solved ${solvedRounds}/${savedRounds.length}`
+    : phase === 'observation'
+    ? 'Memorize the pattern...'
+    : phase === 'recall'
+    ? 'Recreate from memory'
+    : '';
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center px-4 py-8" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-4">
         <h1 className="text-3xl sm:text-4xl tracking-tight mb-1" style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}>
           Chromatic Daily
         </h1>
         <p className="text-sm text-gray-500 tracking-wide uppercase">
-          {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''} · Attempt {Math.min(attemptNum, MAX_ATTEMPTS)}/{MAX_ATTEMPTS}
+          {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
         </p>
+      </div>
+
+      {/* Status Bar / Turn Tracker */}
+      <div className="w-full max-w-sm mb-4">
+        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-2.5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-800 uppercase tracking-wider">Round {Math.min(roundIndex + 1, MAX_ROUNDS)} of {MAX_ROUNDS}</span>
+          </div>
+          <div className="flex gap-1.5">
+            {Array.from({ length: MAX_ROUNDS }).map((_, i) => {
+              const round = savedRounds.find(r => r.roundIndex === i);
+              let bgColor = 'bg-gray-200'; // not played
+              if (round?.solved) bgColor = 'bg-emerald-400';
+              else if (round && !round.solved && round.attempts.length > 0 && (alreadyFinished || i < roundIndex)) bgColor = 'bg-red-400';
+              else if (i === roundIndex && phase !== 'idle') bgColor = 'bg-gray-800 animate-pulse';
+              return <div key={i} className={`w-2.5 h-2.5 rounded-full ${bgColor} transition-colors`} />;
+            })}
+          </div>
+          <span className="text-xs text-gray-400">{totalAttemptsUsed}/{MAX_ROUNDS} used</span>
+        </div>
+        {statusText && (
+          <p className="text-xs text-gray-400 text-center mt-1.5">{statusText}</p>
+        )}
       </div>
 
       {/* Main Card */}
@@ -217,7 +271,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Color Picker - All 9 colors */}
+        {/* Color Picker */}
         {phase === 'recall' && (
           <div className="px-6 pb-4 border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">
@@ -244,14 +298,14 @@ const Index = () => {
 
         {/* Actions */}
         <div className="px-6 pb-6 flex gap-3 justify-center">
-          {phase === 'idle' && !alreadyPlayed && (
+          {phase === 'idle' && !alreadyFinished && (
             <Button onClick={startGame} className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 text-sm tracking-wide">
               Start
             </Button>
           )}
-          {phase === 'idle' && alreadyPlayed && (
+          {phase === 'idle' && alreadyFinished && (
             <div className="text-center w-full">
-              <p className="text-sm text-gray-500 mb-2">You've used all attempts today</p>
+              <p className="text-sm text-gray-500 mb-2">You've completed all rounds today</p>
               <Button onClick={() => setShowResult(true)} variant="outline" className="rounded-xl">
                 View Result
               </Button>
@@ -308,12 +362,16 @@ const Index = () => {
               <p><strong>4.</strong> Hit <strong>Verify</strong> to check your answer.</p>
             </div>
             <div className="border-t border-gray-100 pt-4">
-              <p className="font-medium text-gray-800 mb-1">Daily Difficulty</p>
-              <p>Monday starts with 3 colors. Each day adds one more, reaching all 9 by Sunday.</p>
+              <p className="font-medium text-gray-800 mb-1">The 3-Round Rule</p>
+              <p>You have a total of <strong>{MAX_ROUNDS} attempts</strong> to play each day.</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li><strong>Success:</strong> If you solve a puzzle, the remaining attempts carry over to a brand-new color configuration.</li>
+                <li><strong>Persistence:</strong> If you miss, you can use your next attempt to try the same puzzle again.</li>
+              </ul>
             </div>
             <div className="border-t border-gray-100 pt-4">
-              <p className="font-medium text-gray-800 mb-1">Attempts</p>
-              <p>You get {MAX_ATTEMPTS} attempts per day. Get it right on any attempt to keep your streak!</p>
+              <p className="font-medium text-gray-800 mb-1">Daily Difficulty</p>
+              <p>Monday starts with 3 colors. Each day adds one more, reaching all 9 by Sunday.</p>
             </div>
             <div className="border-t border-gray-100 pt-4">
               <p className="text-gray-400 text-xs">Build your streak!</p>
@@ -327,7 +385,7 @@ const Index = () => {
         <DialogContent className="sm:max-w-sm rounded-2xl text-center">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }} className="text-2xl">
-              {isCorrect ? 'Perfect Recall' : canRetry ? `Attempt ${attemptNum}/${MAX_ATTEMPTS}` : 'Not Quite'}
+              {isCorrect ? 'Perfect Recall' : canContinue ? 'Not Quite' : 'Game Over'}
             </DialogTitle>
             <DialogDescription className="sr-only">Your game result</DialogDescription>
           </DialogHeader>
@@ -338,7 +396,12 @@ const Index = () => {
               <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             )}
 
-            {/* Emoji grid preview */}
+            {/* Contextual message */}
+            {resultMessage && (
+              <p className="text-sm text-gray-600 leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
+            )}
+
+            {/* Emoji grid preview for current round */}
             <div className="font-mono text-lg leading-relaxed mb-4">
               {[0, 3, 6].map((row) => (
                 <div key={row}>
@@ -363,19 +426,19 @@ const Index = () => {
 
             <div className="flex gap-6 justify-center mb-4">
               <div>
-                <p className="text-xl font-bold">{loadData()?.currentStreak ?? 0}</p>
+                <p className="text-xl font-bold">{streaks.current}</p>
                 <p className="text-xs text-gray-400">Streak</p>
               </div>
               <div>
-                <p className="text-xl font-bold">{loadData()?.maxStreak ?? 0}</p>
+                <p className="text-xl font-bold">{streaks.max}</p>
                 <p className="text-xs text-gray-400">Best</p>
               </div>
             </div>
 
             <div className="flex gap-3 justify-center">
-              {canRetry && (
+              {canContinue && (
                 <Button onClick={nextAttempt} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white gap-2">
-                  <RotateCcw className="w-4 h-4" /> Try Again
+                  <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                 </Button>
               )}
               <Button onClick={share} variant="outline" className="rounded-xl gap-2">
