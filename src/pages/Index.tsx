@@ -435,7 +435,15 @@ const Index = () => {
               </Button>
             </>
           )}
-          {phase === 'result' && !showResult && (
+          {phase === 'result' && !showResult && canContinue && (
+            <Button
+              onClick={nextAttempt}
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full gap-2"
+            >
+              <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
+            </Button>
+          )}
+          {phase === 'result' && !showResult && !canContinue && (
             <Button
               onClick={() => setShowResult(true)}
               className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
@@ -526,7 +534,12 @@ const Index = () => {
       </Dialog>
 
       {/* Result Modal */}
-      <Dialog open={showResult} onOpenChange={setShowResult}>
+      <Dialog open={showResult} onOpenChange={(open) => {
+        setShowResult(open);
+        if (!open && canContinue) {
+          nextAttempt();
+        }
+      }}>
         <DialogContent className="sm:max-w-sm rounded-2xl text-center">
           <DialogHeader>
             <DialogTitle
