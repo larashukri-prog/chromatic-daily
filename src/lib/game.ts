@@ -125,13 +125,14 @@ export function loadData(): StoredData | null {
 export function hasPlayedToday(): boolean {
   const data = loadData();
   if (!data || data.lastPlayed !== getTodayString()) return false;
-  return data.attempts.length >= MAX_ATTEMPTS || data.lastResult;
+  const attempts = data.attempts ?? [];
+  return attempts.length >= MAX_ATTEMPTS || data.lastResult;
 }
 
 export function getAttemptsUsed(): number {
   const data = loadData();
   if (!data || data.lastPlayed !== getTodayString()) return 0;
-  return data.attempts.length;
+  return (data.attempts ?? []).length;
 }
 
 export function saveResult(isCorrect: boolean, playerGrid: (string | null)[], solution: (string | null)[]) {
