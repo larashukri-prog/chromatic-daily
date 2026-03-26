@@ -202,8 +202,8 @@ export function generateShareText(playerGrid: (string | null)[], solution: (stri
   const streaks = getStreaks();
 
   const emojis = solution.map((color, i) => {
-    if (color === null) return '⬜';
-    return playerGrid[i] === color ? '🟩' : '⬛';
+    if (color === null) return '⚪';
+    return playerGrid[i] === color ? '🟢' : '⚫';
   });
 
   const rows = [

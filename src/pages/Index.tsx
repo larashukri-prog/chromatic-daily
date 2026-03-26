@@ -343,8 +343,8 @@ const Index = () => {
               {[0, 3, 6].map((row) => (
                 <div key={row}>
                   {solution.slice(row, row + 3).map((c, i) => {
-                    if (c === null) return '⬜';
-                    return playerGrid[row + i] === c ? '🟩' : '⬛';
+                    if (c === null) return '⚪';
+                    return playerGrid[row + i] === c ? '🟢' : '⚫';
                   }).join('')}
                 </div>
               ))}
