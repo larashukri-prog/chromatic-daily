@@ -364,7 +364,7 @@ const Index = () => {
         <button
           onClick={() => {
             localStorage.removeItem('chromatic_daily');
-            window.location.reload();
+            window.location.href = window.location.pathname + '?reset';
           }}
           className="text-gray-400 hover:text-gray-600 transition-colors"
           title="Reset game"
