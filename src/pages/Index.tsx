@@ -356,10 +356,22 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Info button */}
-      <button onClick={() => setShowHowTo(true)} className="mt-6 text-gray-400 hover:text-gray-600 transition-colors">
-        <Info className="w-5 h-5" />
-      </button>
+      {/* Info & Reset buttons */}
+      <div className="mt-6 flex items-center gap-4">
+        <button onClick={() => setShowHowTo(true)} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <Info className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => {
+            localStorage.removeItem('chromatic_daily');
+            window.location.reload();
+          }}
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+          title="Reset game"
+        >
+          <RotateCcw className="w-5 h-5" />
+        </button>
+      </div>
 
       {/* How to Play Modal */}
       <Dialog open={showHowTo} onOpenChange={setShowHowTo}>
