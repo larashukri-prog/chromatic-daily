@@ -36,6 +36,11 @@ const Index = () => {
   const streaks = getStreaks();
 
   useEffect(() => {
+    // Dev reset: add ?reset to URL to clear game data
+    if (window.location.search.includes('reset')) {
+      localStorage.removeItem('chromatic_daily');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     const info = getCurrentRoundInfo();
     setTotalAttemptsUsed(info.totalAttemptsUsed);
     setSavedRounds(info.rounds);
