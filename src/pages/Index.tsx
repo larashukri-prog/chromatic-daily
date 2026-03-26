@@ -378,7 +378,7 @@ const Index = () => {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>How to Play</DialogTitle>
-            <DialogDescription className="sr-only">Instructions for Chromatic Daily</DialogDescription>
+            <DialogDescription className="sr-only">Instructions for Hue Day</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
             <p>A new color memory puzzle every day.</p>
