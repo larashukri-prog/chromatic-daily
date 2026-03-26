@@ -16,18 +16,7 @@ const NEUTRAL = '#D1D5DB';
 
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
-export interface GameState {
-  phase: GamePhase;
-  solution: (string | null)[]; // 9 cells, hex or null
-  playerGrid: (string | null)[];
-  selectedColor: string | null;
-  dayOfWeek: number; // 0=Sun, 1=Mon...6=Sat
-  colorCount: number;
-  activeColors: { name: string; hex: string }[];
-  timer: number;
-  result: boolean[] | null;
-  isCorrect: boolean;
-}
+export const MAX_ROUNDS = 3;
 
 // Seeded random based on date for consistent daily puzzle
 function seededRandom(seed: number) {
@@ -45,8 +34,7 @@ function getDateSeed(): number {
 
 export function getDayInfo() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun
-  // Mon=3, Tue=4, Wed=5, Thu=6, Fri=7, Sat=8, Sun=9
+  const day = now.getDay();
   const countMap: Record<number, number> = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 0: 9 };
   const nameMap: Record<number, string> = { 0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday' };
   return {
@@ -56,16 +44,16 @@ export function getDayInfo() {
   };
 }
 
-export function generateSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   const { colorCount } = getDayInfo();
-  const seed = getDateSeed();
+  const baseSeed = getDateSeed();
+  // Each round gets a different seed so puzzles differ
+  const seed = baseSeed + roundIndex * 7919;
   const rand = seededRandom(seed);
 
-  // Shuffle colors
   const shuffled = [...COLORS].sort(() => rand() - 0.5);
   const chosen = shuffled.slice(0, colorCount);
 
-  // Shuffle positions
   const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
   const coloredPositions = positions.slice(0, colorCount);
 
@@ -88,20 +76,19 @@ export { NEUTRAL, COLORS };
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
 
-export const MAX_ATTEMPTS = 3;
-
-interface AttemptData {
-  grid: (string | null)[];
-  isCorrect: boolean;
+export interface RoundData {
+  roundIndex: number; // which puzzle (0, 1, 2)
+  attempts: { grid: (string | null)[]; isCorrect: boolean }[];
+  solution: (string | null)[];
+  solved: boolean;
 }
 
 interface StoredData {
   lastPlayed: string; // YYYY-MM-DD
   currentStreak: number;
   maxStreak: number;
-  lastResult: boolean; // was last game correct (any attempt)?
-  attempts: AttemptData[];
-  lastSolution: (string | null)[];
+  rounds: RoundData[];
+  finished: boolean; // all 3 rounds used
 }
 
 function getTodayString(): string {
@@ -118,59 +105,105 @@ function getYesterdayString(): string {
 export function loadData(): StoredData | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // Migration: old format without rounds
+    if (!data.rounds) {
+      return {
+        lastPlayed: data.lastPlayed ?? '',
+        currentStreak: data.currentStreak ?? 0,
+        maxStreak: data.maxStreak ?? 0,
+        rounds: [],
+        finished: true,
+      };
+    }
+    return data;
   } catch { return null; }
 }
 
-export function hasPlayedToday(): boolean {
-  const data = loadData();
-  if (!data || data.lastPlayed !== getTodayString()) return false;
-  const attempts = data.attempts ?? [];
-  return attempts.length >= MAX_ATTEMPTS || data.lastResult;
+function saveData(data: StoredData) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-export function getAttemptsUsed(): number {
+export function getTodayData(): StoredData | null {
   const data = loadData();
-  if (!data || data.lastPlayed !== getTodayString()) return 0;
-  return (data.attempts ?? []).length;
+  if (!data || data.lastPlayed !== getTodayString()) return null;
+  return data;
 }
 
-export function saveResult(isCorrect: boolean, playerGrid: (string | null)[], solution: (string | null)[]) {
+export function hasFinishedToday(): boolean {
+  const data = getTodayData();
+  return data?.finished ?? false;
+}
+
+/** Get current round index (0-based) and total attempts used */
+export function getCurrentRoundInfo(): { roundIndex: number; totalAttemptsUsed: number; finished: boolean; rounds: RoundData[] } {
+  const data = getTodayData();
+  if (!data) return { roundIndex: 0, totalAttemptsUsed: 0, finished: false, rounds: [] };
+
+  const totalUsed = data.rounds.reduce((sum, r) => sum + r.attempts.length, 0);
+  // Current round = number of solved rounds (each solve advances to next puzzle)
+  const solvedCount = data.rounds.filter(r => r.solved).length;
+  const currentRound = Math.min(solvedCount, MAX_ROUNDS - 1);
+  const finished = data.finished || totalUsed >= MAX_ROUNDS;
+
+  return { roundIndex: currentRound, totalAttemptsUsed: totalUsed, finished, rounds: data.rounds };
+}
+
+export function saveRoundAttempt(
+  roundIndex: number,
+  isCorrect: boolean,
+  playerGrid: (string | null)[],
+  solution: (string | null)[]
+): StoredData {
   const today = getTodayString();
   const existing = loadData();
-
   const isToday = existing?.lastPlayed === today;
-  const prevAttempts: AttemptData[] = isToday ? (existing?.attempts ?? []) : [];
-  const attempts = [...prevAttempts, { grid: playerGrid, isCorrect }];
 
-  // Only finalize streak when all attempts used or correct
-  const isFinished = isCorrect || attempts.length >= MAX_ATTEMPTS;
+  let rounds: RoundData[] = isToday ? [...(existing?.rounds ?? [])] : [];
+
+  // Find or create the round entry
+  let round = rounds.find(r => r.roundIndex === roundIndex);
+  if (!round) {
+    round = { roundIndex, attempts: [], solution, solved: false };
+    rounds.push(round);
+  }
+
+  round.attempts.push({ grid: playerGrid, isCorrect });
+  if (isCorrect) round.solved = true;
+
+  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
+  const allSolved = rounds.filter(r => r.solved).length >= MAX_ROUNDS;
+  const finished = totalAttempts >= MAX_ROUNDS || allSolved;
+
+  // Streak logic
   let currentStreak = existing?.currentStreak ?? 0;
   let maxStreak = existing?.maxStreak ?? 0;
 
-  if (isFinished && !isToday) {
-    // First time finishing today
-    if (isCorrect) {
-      if (existing && existing.lastPlayed === getYesterdayString() && existing.lastResult) {
-        currentStreak = existing.currentStreak + 1;
+  if (finished && !isToday) {
+    const anySolved = rounds.some(r => r.solved);
+    if (anySolved) {
+      if (existing && existing.lastPlayed === getYesterdayString() && existing.rounds?.some(r => r.solved)) {
+        currentStreak = (existing.currentStreak ?? 0) + 1;
       } else {
         currentStreak = 1;
       }
     } else {
       currentStreak = 0;
     }
-  } else if (isFinished && isToday && !existing?.lastResult) {
-    // Updating today's result (was failing, now maybe correct)
-    if (isCorrect) {
-      const prevData = loadData();
-      const wasYesterdayStreak = prevData && prevData.lastPlayed === today;
-      // Re-check from scratch
-      const beforeToday = localStorage.getItem(STORAGE_KEY);
-      // Keep simple: if correct now, set streak to 1 or increment
-      if (existing && existing.currentStreak === 0) {
+  } else if (finished && isToday) {
+    const anySolved = rounds.some(r => r.solved);
+    if (anySolved && (existing?.currentStreak ?? 0) === 0) {
+      if (existing && existing.lastPlayed === today) {
+        // Check yesterday for streak continuation
+        const prevRaw = localStorage.getItem(STORAGE_KEY + '-prev');
         currentStreak = 1;
       }
     }
+  }
+
+  if (!finished) {
+    currentStreak = existing?.currentStreak ?? 0;
   }
 
   maxStreak = Math.max(maxStreak, currentStreak);
@@ -179,12 +212,11 @@ export function saveResult(isCorrect: boolean, playerGrid: (string | null)[], so
     lastPlayed: today,
     currentStreak,
     maxStreak,
-    lastResult: isCorrect || (existing?.lastResult ?? false),
-    attempts,
-    lastSolution: solution,
+    rounds,
+    finished,
   };
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  saveData(data);
   return data;
 }
 
@@ -196,22 +228,54 @@ export function getStreaks() {
   };
 }
 
-export function generateShareText(playerGrid: (string | null)[], solution: (string | null)[], attemptNum?: number): string {
+export function getResultMessage(roundIndex: number, attemptInRound: number, isCorrect: boolean, totalAttemptsUsed: number): string {
+  const remaining = MAX_ROUNDS - totalAttemptsUsed;
+
+  if (isCorrect) {
+    if (roundIndex === 0 && attemptInRound === 1) {
+      return remaining > 0
+        ? `Perfect score! You've got ${remaining} round${remaining > 1 ? 's' : ''} left. Here is a completely new challenge for Round ${roundIndex + 2}.`
+        : "Perfect score on every round! Incredible memory!";
+    }
+    if (roundIndex === 1 && attemptInRound <= 2) {
+      return remaining > 0
+        ? `Spot on! You nailed the configuration on your second try.\n\nYou have one final round remaining. Since you solved that one, I've generated a brand-new color puzzle for your third and last attempt. Ready to finish strong?`
+        : "Got it! That's all 3 rounds done. Game complete!";
+    }
+    if (totalAttemptsUsed >= MAX_ROUNDS) {
+      return "Nice work! You cleared the puzzle on your final attempt. Game complete!";
+    }
+    return remaining > 0
+      ? `Got it! That's ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Let's move to your next round with a fresh configuration.`
+      : "Game complete! Great memory work today!";
+  }
+
+  // Failed
+  if (remaining > 0) {
+    return `Not quite—but you have ${remaining} attempt${remaining > 1 ? 's' : ''} remaining for this specific puzzle. Look closely at the hints!`;
+  }
+  return "That's all 3 attempts used. Better luck tomorrow!";
+}
+
+export function generateShareText(rounds: RoundData[]): string {
   const { dayName } = getDayInfo();
   const dayNum = getDayNumber();
   const streaks = getStreaks();
+  const solvedCount = rounds.filter(r => r.solved).length;
 
-  const emojis = solution.map((color, i) => {
-    if (color === null) return '⚪';
-    return playerGrid[i] === color ? '🟢' : '⚫';
+  const lines: string[] = [`Chromatic Daily #${dayNum}`, dayName];
+
+  rounds.forEach((round, idx) => {
+    const lastAttempt = round.attempts[round.attempts.length - 1];
+    if (!lastAttempt) return;
+    const emojis = round.solution.map((color, i) => {
+      if (color === null) return '⚪';
+      return lastAttempt.grid[i] === color ? '🟢' : '⚫';
+    });
+    lines.push(`R${idx + 1}: ${emojis.slice(0, 3).join('')} ${emojis.slice(3, 6).join('')} ${emojis.slice(6, 9).join('')} ${round.solved ? '✅' : '❌'}`);
   });
 
-  const rows = [
-    emojis.slice(0, 3).join(''),
-    emojis.slice(3, 6).join(''),
-    emojis.slice(6, 9).join(''),
-  ];
-
-  const attemptStr = attemptNum ? ` (${attemptNum}/${MAX_ATTEMPTS})` : '';
-  return `Chromatic Daily #${dayNum}${attemptStr}\n${dayName}\n${rows.join('\n')}\nStreak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`;
+  lines.push(`Solved: ${solvedCount}/${rounds.length}`);
+  lines.push(`Streak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`);
+  return lines.join('\n');
 }
