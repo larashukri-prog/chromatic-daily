@@ -35,7 +35,7 @@ function getDateSeed(): number {
 export function getDayInfo() {
   const now = new Date();
   const day = now.getDay();
-  const countMap: Record<number, number> = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 0: 9 };
+  const countMap: Record<number, number> = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 0: 9 };
   const nameMap: Record<number, string> = { 0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday' };
   return {
     dayOfWeek: day,

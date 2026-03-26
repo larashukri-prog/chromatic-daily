@@ -32,8 +32,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getGlowStyle = (index: number): React.CSSProperties => {
     if (!verifying || !result) return {};
     const isCorrect = result[index];
-    const isColored = solution[index] !== null;
-    if (!isColored) return {};
+    const hasColor = solution[index] !== null || playerGrid[index] !== null;
+    if (!hasColor) return {};
     return {
       boxShadow: isCorrect
         ? '0 0 20px 6px rgba(74, 222, 128, 0.5)'

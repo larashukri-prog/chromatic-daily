@@ -41,6 +41,14 @@ const Index = () => {
   const dayNum = getDayNumber();
   const streaks = getStreaks();
 
+  const getDifficultyName = (count: number): string => {
+    if (count <= 2) return 'Minimalist';
+    if (count <= 4) return 'Standard';
+    if (count <= 6) return 'Complex';
+    return 'Master';
+  };
+  const difficultyName = getDifficultyName(colorCount);
+
   useEffect(() => {
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
@@ -125,6 +133,9 @@ const Index = () => {
       return;
     }
     if (!selectedColor) return;
+    // Cap: prevent placing more than the daily target
+    const currentCount = newGrid.filter((c) => c !== null).length;
+    if (currentCount >= colorCount) return;
     newGrid[index] = selectedColor;
     setPlayerGrid(newGrid);
   };
@@ -239,7 +250,7 @@ const Index = () => {
           Hue Day
         </h1>
         <p className="text-sm text-muted-foreground tracking-wide uppercase">
-          {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
+          {dayName} · #{dayNum} · Level: {difficultyName}
         </p>
       </div>
 
@@ -315,7 +326,7 @@ const Index = () => {
               transition={{ duration: 0.2 }}
               className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
             >
-              {selectedCount}/{colorCount} colors selected
+              {selectedCount}/{colorCount} colors placed
             </motion.p>
             <div className="flex justify-center gap-2 flex-wrap">
               {COLORS.map((c) => (
@@ -449,7 +460,7 @@ const Index = () => {
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
-              <p>Monday starts with 3 colors. Each day adds one more, reaching all 9 by Sunday.</p>
+              <p>Monday starts with 2 colors (Minimalist). Each day adds more, reaching all 9 (Master) by Sunday.</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="text-muted-foreground text-xs">Build your streak!</p>
