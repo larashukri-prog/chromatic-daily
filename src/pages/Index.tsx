@@ -41,6 +41,14 @@ const Index = () => {
   const dayNum = getDayNumber();
   const streaks = getStreaks();
 
+  const getDifficultyName = (count: number): string => {
+    if (count <= 2) return 'Minimalist';
+    if (count <= 4) return 'Standard';
+    if (count <= 6) return 'Complex';
+    return 'Master';
+  };
+  const difficultyName = getDifficultyName(colorCount);
+
   useEffect(() => {
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
