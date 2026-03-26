@@ -85,7 +85,9 @@ const Index = () => {
     setSelectedColor(null);
   };
 
-  const canVerify = phase === 'recall' && solution.every((c, i) => c === null || playerGrid[i] !== null);
+  const filledColoredPositions = solution.filter((c, i) => c !== null && playerGrid[i] !== null).length;
+  const totalColoredPositions = solution.filter(c => c !== null).length;
+  const canVerify = phase === 'recall' && filledColoredPositions === totalColoredPositions;
 
   const verify = () => {
     if (!canVerify) return;
@@ -183,7 +185,9 @@ const Index = () => {
         {/* Color Picker */}
         {phase === 'recall' && (
           <div className="px-6 pb-4 border-t border-gray-100 pt-4">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">Select a color</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">
+              Select a color · {filledColoredPositions}/{totalColoredPositions} placed
+            </p>
             <div className="flex justify-center gap-2 flex-wrap">
               {activeColors.map((c) => (
                 <button
