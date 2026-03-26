@@ -308,8 +308,15 @@ const Index = () => {
         {/* Color Picker */}
         {phase === 'recall' && (
           <div className="px-6 pb-4 border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center">
-              Select a color · {filledColoredPositions}/{totalColoredPositions} placed
+            <motion.p
+              key={selectedCount}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
+            >
+              {selectedCount}/{colorCount} colors selected
+            </motion.p>
             </p>
             <div className="flex justify-center gap-2 flex-wrap">
               {COLORS.map((c) => (
