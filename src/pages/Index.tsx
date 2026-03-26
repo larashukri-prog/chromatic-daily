@@ -225,7 +225,7 @@ const Index = () => {
       {/* Header */}
       <div className="text-center mb-4">
         <h1 className="text-3xl sm:text-4xl tracking-tight mb-1" style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}>
-          Chromatic Daily
+          Hue Day
         </h1>
         <p className="text-sm text-gray-500 tracking-wide uppercase">
           {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
@@ -378,7 +378,7 @@ const Index = () => {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>How to Play</DialogTitle>
-            <DialogDescription className="sr-only">Instructions for Chromatic Daily</DialogDescription>
+            <DialogDescription className="sr-only">Instructions for Hue Day</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
             <p>A new color memory puzzle every day.</p>
