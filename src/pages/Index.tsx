@@ -225,7 +225,7 @@ const Index = () => {
       {/* Header */}
       <div className="text-center mb-4">
         <h1 className="text-3xl sm:text-4xl tracking-tight mb-1" style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}>
-          Chromatic Daily
+          Hue Day
         </h1>
         <p className="text-sm text-gray-500 tracking-wide uppercase">
           {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
