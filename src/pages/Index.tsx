@@ -33,6 +33,8 @@ const Index = () => {
   const [resultMessage, setResultMessage] = useState('');
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
+  const [cheatDetected, setCheatDetected] = useState(false);
+  const [cheatMessage, setCheatMessage] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
