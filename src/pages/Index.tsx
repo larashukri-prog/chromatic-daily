@@ -331,26 +331,46 @@ const Index = () => {
         )}
 
         {/* Grid with animated transitions */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={verifying ? 'verifying' : phase}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="p-6 sm:p-8"
-          >
-            <GameGrid
-              phase={phase}
-              solution={solution}
-              playerGrid={playerGrid}
-              result={result}
-              selectedColor={selectedColor}
-              verifying={verifying}
-              onCircleClick={handleCircleClick}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <div className="relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={verifying ? 'verifying' : phase}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="p-6 sm:p-8"
+            >
+              <GameGrid
+                phase={phase}
+                solution={solution}
+                playerGrid={playerGrid}
+                result={result}
+                selectedColor={selectedColor}
+                verifying={verifying}
+                onCircleClick={handleCircleClick}
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Anti-cheat overlay */}
+          <AnimatePresence>
+            {cheatDetected && phase === 'observation' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-md rounded-xl"
+              >
+                <p className="text-3xl mb-3">🚫</p>
+                <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
+                  {cheatMessage}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Color Picker */}
         {phase === 'recall' && (
