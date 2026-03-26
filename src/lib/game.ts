@@ -88,12 +88,19 @@ export { NEUTRAL, COLORS };
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
 
+export const MAX_ATTEMPTS = 3;
+
+interface AttemptData {
+  grid: (string | null)[];
+  isCorrect: boolean;
+}
+
 interface StoredData {
   lastPlayed: string; // YYYY-MM-DD
   currentStreak: number;
   maxStreak: number;
-  lastResult: boolean; // was last game correct?
-  lastGrid: (string | null)[];
+  lastResult: boolean; // was last game correct (any attempt)?
+  attempts: AttemptData[];
   lastSolution: (string | null)[];
 }
 
@@ -117,22 +124,52 @@ export function loadData(): StoredData | null {
 
 export function hasPlayedToday(): boolean {
   const data = loadData();
-  return data?.lastPlayed === getTodayString();
+  if (!data || data.lastPlayed !== getTodayString()) return false;
+  return data.attempts.length >= MAX_ATTEMPTS || data.lastResult;
+}
+
+export function getAttemptsUsed(): number {
+  const data = loadData();
+  if (!data || data.lastPlayed !== getTodayString()) return 0;
+  return data.attempts.length;
 }
 
 export function saveResult(isCorrect: boolean, playerGrid: (string | null)[], solution: (string | null)[]) {
   const today = getTodayString();
   const existing = loadData();
 
-  let currentStreak = 1;
+  const isToday = existing?.lastPlayed === today;
+  const prevAttempts: AttemptData[] = isToday ? (existing?.attempts ?? []) : [];
+  const attempts = [...prevAttempts, { grid: playerGrid, isCorrect }];
+
+  // Only finalize streak when all attempts used or correct
+  const isFinished = isCorrect || attempts.length >= MAX_ATTEMPTS;
+  let currentStreak = existing?.currentStreak ?? 0;
   let maxStreak = existing?.maxStreak ?? 0;
 
-  if (isCorrect) {
-    if (existing && (existing.lastPlayed === getYesterdayString()) && existing.lastResult) {
-      currentStreak = existing.currentStreak + 1;
+  if (isFinished && !isToday) {
+    // First time finishing today
+    if (isCorrect) {
+      if (existing && existing.lastPlayed === getYesterdayString() && existing.lastResult) {
+        currentStreak = existing.currentStreak + 1;
+      } else {
+        currentStreak = 1;
+      }
+    } else {
+      currentStreak = 0;
     }
-  } else {
-    currentStreak = 0;
+  } else if (isFinished && isToday && !existing?.lastResult) {
+    // Updating today's result (was failing, now maybe correct)
+    if (isCorrect) {
+      const prevData = loadData();
+      const wasYesterdayStreak = prevData && prevData.lastPlayed === today;
+      // Re-check from scratch
+      const beforeToday = localStorage.getItem(STORAGE_KEY);
+      // Keep simple: if correct now, set streak to 1 or increment
+      if (existing && existing.currentStreak === 0) {
+        currentStreak = 1;
+      }
+    }
   }
 
   maxStreak = Math.max(maxStreak, currentStreak);
@@ -141,8 +178,8 @@ export function saveResult(isCorrect: boolean, playerGrid: (string | null)[], so
     lastPlayed: today,
     currentStreak,
     maxStreak,
-    lastResult: isCorrect,
-    lastGrid: playerGrid,
+    lastResult: isCorrect || (existing?.lastResult ?? false),
+    attempts,
     lastSolution: solution,
   };
 
@@ -158,7 +195,7 @@ export function getStreaks() {
   };
 }
 
-export function generateShareText(playerGrid: (string | null)[], solution: (string | null)[]): string {
+export function generateShareText(playerGrid: (string | null)[], solution: (string | null)[], attemptNum?: number): string {
   const { dayName } = getDayInfo();
   const dayNum = getDayNumber();
   const streaks = getStreaks();
@@ -174,5 +211,6 @@ export function generateShareText(playerGrid: (string | null)[], solution: (stri
     emojis.slice(6, 9).join(''),
   ];
 
-  return `Chromatic Daily #${dayNum}\n${dayName}\n${rows.join('\n')}\nStreak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`;
+  const attemptStr = attemptNum ? ` (${attemptNum}/${MAX_ATTEMPTS})` : '';
+  return `Chromatic Daily #${dayNum}${attemptStr}\n${dayName}\n${rows.join('\n')}\nStreak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`;
 }
