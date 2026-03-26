@@ -5,15 +5,15 @@ import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-r
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData,
-} from '@/lib/game';
+  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData } from
+'@/lib/game';
 
 const OBSERVATION_TIME = 5000;
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
-  const [activeColors, setActiveColors] = useState<{ name: string; hex: string }[]>([]);
+  const [activeColors, setActiveColors] = useState<{name: string;hex: string;}[]>([]);
   const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
@@ -70,7 +70,7 @@ const Index = () => {
       }
     } else {
       setRoundIndex(info.roundIndex);
-      const currentRoundData = info.rounds.find(r => r.roundIndex === info.roundIndex);
+      const currentRoundData = info.rounds.find((r) => r.roundIndex === info.roundIndex);
       setAttemptInRound((currentRoundData?.attempts.length ?? 0) + 1);
       const { solution: sol, activeColors: ac } = generateSolution(info.roundIndex);
       setSolution(sol);
@@ -88,7 +88,7 @@ const Index = () => {
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / OBSERVATION_TIME) * 100);
+      const remaining = Math.max(0, 100 - elapsed / OBSERVATION_TIME * 100);
       setTimerProgress(remaining);
       if (elapsed >= OBSERVATION_TIME) {
         clearInterval(timerRef.current!);
@@ -104,7 +104,7 @@ const Index = () => {
   }, [alreadyFinished, startObservation]);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {if (timerRef.current) clearInterval(timerRef.current);};
   }, []);
 
   const handleCircleClick = (index: number) => {
@@ -122,7 +122,7 @@ const Index = () => {
   };
 
   const filledColoredPositions = solution.filter((c, i) => c !== null && playerGrid[i] !== null).length;
-  const totalColoredPositions = solution.filter(c => c !== null).length;
+  const totalColoredPositions = solution.filter((c) => c !== null).length;
   const canVerify = phase === 'recall' && filledColoredPositions === totalColoredPositions;
 
   const verify = () => {
@@ -145,7 +145,7 @@ const Index = () => {
     const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
     setResultMessage(msg);
 
-    const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+    const done = newTotalUsed >= MAX_ROUNDS || correct && roundIndex >= MAX_ROUNDS - 1;
     if (done || savedData.finished) {
       setAlreadyFinished(true);
     }
@@ -174,7 +174,7 @@ const Index = () => {
       setActiveColors(ac);
     } else {
       // Failed, retry same puzzle
-      setAttemptInRound(prev => prev + 1);
+      setAttemptInRound((prev) => prev + 1);
     }
 
     startObservation();
@@ -188,7 +188,7 @@ const Index = () => {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* fallback */ }
+    } catch {/* fallback */}
   };
 
   const getCircleColor = (index: number): string => {
@@ -209,23 +209,23 @@ const Index = () => {
   };
 
   // Status bar info
-  const solvedRounds = savedRounds.filter(r => r.solved).length;
-  const statusText = phase === 'idle' && !alreadyFinished
-    ? 'Ready to play'
-    : alreadyFinished
-    ? `Game complete · Solved ${solvedRounds}/${savedRounds.length}`
-    : phase === 'observation'
-    ? 'Memorize the pattern...'
-    : phase === 'recall'
-    ? 'Recreate from memory'
-    : '';
+  const solvedRounds = savedRounds.filter((r) => r.solved).length;
+  const statusText = phase === 'idle' && !alreadyFinished ?
+  'Ready to play' :
+  alreadyFinished ?
+  `Game complete · Solved ${solvedRounds}/${savedRounds.length}` :
+  phase === 'observation' ?
+  'Memorize the pattern...' :
+  phase === 'recall' ?
+  'Recreate from memory' :
+  '';
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center px-4 py-8" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Header */}
       <div className="text-center mb-4">
         <h1 className="text-3xl sm:text-4xl tracking-tight mb-1" style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}>
-          Hue Day
+          Chromatic Daily 
         </h1>
         <p className="text-sm text-gray-500 tracking-wide uppercase">
           {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
@@ -240,94 +240,94 @@ const Index = () => {
           </div>
           <div className="flex gap-1.5">
             {Array.from({ length: MAX_ROUNDS }).map((_, i) => {
-              const round = savedRounds.find(r => r.roundIndex === i);
+              const round = savedRounds.find((r) => r.roundIndex === i);
               let bgColor = 'bg-gray-200'; // not played
-              if (round?.solved) bgColor = 'bg-emerald-400';
-              else if (round && !round.solved && round.attempts.length > 0 && (alreadyFinished || i < roundIndex)) bgColor = 'bg-red-400';
-              else if (i === roundIndex && phase !== 'idle') bgColor = 'bg-gray-800 animate-pulse';
+              if (round?.solved) bgColor = 'bg-emerald-400';else
+              if (round && !round.solved && round.attempts.length > 0 && (alreadyFinished || i < roundIndex)) bgColor = 'bg-red-400';else
+              if (i === roundIndex && phase !== 'idle') bgColor = 'bg-gray-800 animate-pulse';
               return <div key={i} className={`w-2.5 h-2.5 rounded-full ${bgColor} transition-colors`} />;
             })}
           </div>
           <span className="text-xs text-gray-400">{totalAttemptsUsed}/{MAX_ROUNDS} used</span>
         </div>
-        {statusText && (
-          <p className="text-xs text-gray-400 text-center mt-1.5">{statusText}</p>
-        )}
+        {statusText &&
+        <p className="text-xs text-gray-400 text-center mt-1.5">{statusText}</p>
+        }
       </div>
 
       {/* Main Card */}
       <div className={`w-full max-w-sm bg-white rounded-2xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}>
         {/* Timer Bar */}
-        {phase === 'observation' && (
-          <div className="h-1 bg-gray-100">
+        {phase === 'observation' &&
+        <div className="h-1 bg-gray-100">
             <div
-              className="h-full bg-gray-800 transition-all duration-75 ease-linear"
-              style={{ width: `${timerProgress}%` }}
-            />
+            className="h-full bg-gray-800 transition-all duration-75 ease-linear"
+            style={{ width: `${timerProgress}%` }} />
+          
           </div>
-        )}
+        }
 
         {/* Grid */}
         <div className="p-6 sm:p-8">
           <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[280px] mx-auto">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => handleCircleClick(i)}
-                disabled={phase !== 'recall'}
-                className="aspect-square rounded-full transition-all duration-300 ease-in-out cursor-pointer disabled:cursor-default hover:scale-105 active:scale-95"
-                style={{
-                  backgroundColor: getCircleColor(i),
-                  border: getCircleBorder(i),
-                  boxShadow: playerGrid[i] && phase === 'recall' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-                }}
-              />
-            ))}
+            {Array.from({ length: 9 }).map((_, i) =>
+            <button
+              key={i}
+              onClick={() => handleCircleClick(i)}
+              disabled={phase !== 'recall'}
+              className="aspect-square rounded-full transition-all duration-300 ease-in-out cursor-pointer disabled:cursor-default hover:scale-105 active:scale-95"
+              style={{
+                backgroundColor: getCircleColor(i),
+                border: getCircleBorder(i),
+                boxShadow: playerGrid[i] && phase === 'recall' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none'
+              }} />
+
+            )}
           </div>
         </div>
 
         {/* Color Picker */}
-        {phase === 'recall' && (
-          <div className="px-6 pb-4 border-t border-gray-100 pt-4">
+        {phase === 'recall' &&
+        <div className="px-6 pb-4 border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">
               Select a color · {filledColoredPositions}/{totalColoredPositions} placed
             </p>
             <div className="flex justify-center gap-2 flex-wrap">
-              {COLORS.map((c) => (
-                <button
-                  key={c.hex}
-                  onClick={() => setSelectedColor(c.hex)}
-                  className="w-9 h-9 rounded-full transition-all duration-200"
-                  style={{
-                    backgroundColor: c.hex,
-                    outline: selectedColor === c.hex ? '3px solid #111' : '2px solid transparent',
-                    outlineOffset: '2px',
-                    transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
-                  }}
-                  title={c.name}
-                />
-              ))}
+              {COLORS.map((c) =>
+            <button
+              key={c.hex}
+              onClick={() => setSelectedColor(c.hex)}
+              className="w-9 h-9 rounded-full transition-all duration-200"
+              style={{
+                backgroundColor: c.hex,
+                outline: selectedColor === c.hex ? '3px solid #111' : '2px solid transparent',
+                outlineOffset: '2px',
+                transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)'
+              }}
+              title={c.name} />
+
+            )}
             </div>
           </div>
-        )}
+        }
 
         {/* Actions */}
         <div className="px-6 pb-6 flex gap-3 justify-center">
-          {phase === 'idle' && !alreadyFinished && (
-            <Button onClick={startGame} className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 text-sm tracking-wide">
+          {phase === 'idle' && !alreadyFinished &&
+          <Button onClick={startGame} className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 text-sm tracking-wide">
               Start
             </Button>
-          )}
-          {phase === 'idle' && alreadyFinished && (
-            <div className="text-center w-full">
+          }
+          {phase === 'idle' && alreadyFinished &&
+          <div className="text-center w-full">
               <p className="text-sm text-gray-500 mb-2">You've completed all rounds today</p>
               <Button onClick={() => setShowResult(true)} variant="outline" className="rounded-xl">
                 View Result
               </Button>
             </div>
-          )}
-          {phase === 'recall' && (
-            <>
+          }
+          {phase === 'recall' &&
+          <>
               <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
                 <RotateCcw className="w-4 h-4" /> Clear
               </Button>
@@ -335,12 +335,12 @@ const Index = () => {
                 <CheckCircle2 className="w-4 h-4" /> Verify
               </Button>
             </>
-          )}
-          {phase === 'result' && !showResult && (
-            <Button onClick={() => setShowResult(true)} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white w-full">
+          }
+          {phase === 'result' && !showResult &&
+          <Button onClick={() => setShowResult(true)} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white w-full">
               View Result
             </Button>
-          )}
+          }
         </div>
       </div>
 
@@ -367,8 +367,8 @@ const Index = () => {
             window.location.href = window.location.pathname + '?reset';
           }}
           className="text-gray-400 hover:text-gray-600 transition-colors"
-          title="Reset game"
-        >
+          title="Reset game">
+          
           <RotateCcw className="w-5 h-5" />
         </button>
       </div>
@@ -378,7 +378,7 @@ const Index = () => {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>How to Play</DialogTitle>
-            <DialogDescription className="sr-only">Instructions for Hue Day</DialogDescription>
+            <DialogDescription className="sr-only">Instructions for Chromatic Daily</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
             <p>A new color memory puzzle every day.</p>
@@ -417,39 +417,39 @@ const Index = () => {
             <DialogDescription className="sr-only">Your game result</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {isCorrect ? (
-              <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-            ) : (
-              <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            )}
+            {isCorrect ?
+            <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" /> :
+
+            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            }
 
             {/* Contextual message */}
-            {resultMessage && (
-              <p className="text-sm text-gray-600 leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
-            )}
+            {resultMessage &&
+            <p className="text-sm text-gray-600 leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
+            }
 
             {/* Emoji grid preview for current round */}
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 3, 6].map((row) => (
-                <div key={row}>
+              {[0, 3, 6].map((row) =>
+              <div key={row}>
                   {solution.slice(row, row + 3).map((c, i) => {
-                    if (c === null) return '⚪';
-                    return playerGrid[row + i] === c ? '🟢' : '⚫';
-                  }).join('')}
+                  if (c === null) return '⚪';
+                  return playerGrid[row + i] === c ? '🟢' : '⚫';
+                }).join('')}
                 </div>
-              ))}
+              )}
             </div>
 
-            {!isCorrect && (
-              <div className="mb-4">
+            {!isCorrect &&
+            <div className="mb-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Correct Pattern</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[120px] mx-auto">
-                  {solution.map((c, i) => (
-                    <div key={i} className="aspect-square rounded-full" style={{ backgroundColor: c || NEUTRAL, width: '100%' }} />
-                  ))}
+                  {solution.map((c, i) =>
+                <div key={i} className="aspect-square rounded-full" style={{ backgroundColor: c || NEUTRAL, width: '100%' }} />
+                )}
                 </div>
               </div>
-            )}
+            }
 
             <div className="flex gap-6 justify-center mb-4">
               <div>
@@ -463,11 +463,11 @@ const Index = () => {
             </div>
 
             <div className="flex gap-3 justify-center">
-              {canContinue && (
-                <Button onClick={nextAttempt} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white gap-2">
+              {canContinue &&
+              <Button onClick={nextAttempt} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white gap-2">
                   <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                 </Button>
-              )}
+              }
               <Button onClick={share} variant="outline" className="rounded-xl gap-2">
                 <Share2 className="w-4 h-4" />
                 {copied ? 'Copied!' : 'Share Result'}
@@ -490,8 +490,8 @@ const Index = () => {
         }
         .animate-shake { animation: shake 0.5s ease-in-out; }
       `}</style>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Index;
