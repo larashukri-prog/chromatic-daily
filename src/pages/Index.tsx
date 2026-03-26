@@ -317,7 +317,6 @@ const Index = () => {
             >
               {selectedCount}/{colorCount} colors selected
             </motion.p>
-            </p>
             <div className="flex justify-center gap-2 flex-wrap">
               {COLORS.map((c) => (
                 <button
