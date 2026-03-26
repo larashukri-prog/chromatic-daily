@@ -92,6 +92,39 @@ const Index = () => {
     }
   }, []);
 
+  const CHEAT_MESSAGES = [
+    'Nice try, Sherlock! 🕵️‍♂️ No screenshots allowed.',
+    'Your memory is better than your camera roll. Trust it! 🧠',
+    'Caught in 4K! 📸 Eyes on the screen, not the buttons.',
+    'Cheaters never prosper (and they miss the best colors). 🌈',
+  ];
+
+  const triggerCheatOverlay = useCallback(() => {
+    setCheatDetected(true);
+    setCheatMessage(CHEAT_MESSAGES[Math.floor(Math.random() * CHEAT_MESSAGES.length)]);
+  }, []);
+
+  // Anti-cheat listener during observation phase
+  useEffect(() => {
+    if (phase !== 'observation') {
+      setCheatDetected(false);
+      return;
+    }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) triggerCheatOverlay();
+    };
+    const onBlur = () => triggerCheatOverlay();
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [phase, triggerCheatOverlay]);
+
   const startObservation = useCallback(() => {
     setPhase('observation');
     setTimerProgress(100);
@@ -99,6 +132,7 @@ const Index = () => {
     setResult(null);
     setSelectedColor(null);
     setVerifying(false);
+    setCheatDetected(false);
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
