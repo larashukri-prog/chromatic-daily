@@ -247,7 +247,7 @@ const Index = () => {
           className="text-3xl sm:text-4xl tracking-tight mb-1 text-foreground"
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
         >
-          Hue Day
+          Chromatic Daily
         </h1>
         <p className="text-sm text-muted-foreground tracking-wide uppercase">
           {dayName} · #{dayNum} · Level: {difficultyName}
