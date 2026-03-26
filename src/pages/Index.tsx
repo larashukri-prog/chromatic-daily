@@ -3,17 +3,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 import {
-  GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
-  hasPlayedToday, saveResult, loadData, getStreaks, generateShareText,
-  getAttemptsUsed, MAX_ATTEMPTS
+  GamePhase, NEUTRAL, COLORS, generateDailySolutions, getDayInfo, getDayNumber,
+  isGameOver, saveAttempt, loadData, getStreaks, generateShareText,
+  getAttemptsUsed, getPuzzlesSolved, getCurrentPuzzleIndex, MAX_ATTEMPTS,
 } from '@/lib/game';
 
 const OBSERVATION_TIME = 5000;
 
+const AttemptTracker = ({ used, total }: { used: number; total: number }) => (
+  <div className="flex items-center gap-2 justify-center mb-1">
+    <span className="text-xs text-gray-400 uppercase tracking-widest mr-1">Attempts</span>
+    {Array.from({ length: total }).map((_, i) => (
+      <div
+        key={i}
+        className={`w-2.5 h-2.5 rounded-full transition-colors ${
+          i < used ? 'bg-gray-800' : 'bg-gray-200'
+        }`}
+      />
+    ))}
+  </div>
+);
+
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
-  const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
-  const [activeColors, setActiveColors] = useState<{ name: string; hex: string }[]>([]);
+  const [solutions, setSolutions] = useState<(string | null)[][]>([]);
+  const [currentPuzzleIdx, setCurrentPuzzleIdx] = useState(0);
   const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
@@ -21,39 +35,38 @@ const Index = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [shake, setShake] = useState(false);
-  const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [attemptNum, setAttemptNum] = useState(1);
+  const [attemptsUsed, setAttemptsUsed] = useState(0);
+  const [puzzlesSolved, setPuzzlesSolved] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
   const streaks = getStreaks();
 
+  const currentSolution = solutions[currentPuzzleIdx] ?? Array(9).fill(null);
+
   useEffect(() => {
-    const { solution: sol, activeColors: ac } = generateSolution();
-    setSolution(sol);
-    setActiveColors(ac);
+    const dailySolutions = generateDailySolutions();
+    setSolutions(dailySolutions);
 
     const used = getAttemptsUsed();
-    setAttemptNum(used + 1);
+    const solved = getPuzzlesSolved();
+    const puzzleIdx = getCurrentPuzzleIndex();
+    setAttemptsUsed(used);
+    setPuzzlesSolved(solved);
+    setCurrentPuzzleIdx(puzzleIdx);
 
-    if (hasPlayedToday()) {
-      setAlreadyPlayed(true);
-      const data = loadData();
-      if (data && data.attempts.length > 0) {
-        const lastAttempt = data.attempts[data.attempts.length - 1];
-        setPlayerGrid(lastAttempt.grid);
-        setResult(data.lastSolution.map((c, i) => lastAttempt.grid[i] === c));
-        setIsCorrect(data.lastResult);
-        setPhase('result');
-      }
+    if (isGameOver()) {
+      setGameFinished(true);
+      setPhase('gameover');
     }
   }, []);
 
-  const startGame = useCallback(() => {
-    if (alreadyPlayed) return;
+  const startObservation = useCallback(() => {
     setPhase('observation');
     setTimerProgress(100);
     setPlayerGrid(Array(9).fill(null));
@@ -71,7 +84,12 @@ const Index = () => {
         setSelectedColor(null);
       }
     }, 30);
-  }, [alreadyPlayed]);
+  }, []);
+
+  const startGame = useCallback(() => {
+    if (gameFinished) return;
+    startObservation();
+  }, [gameFinished, startObservation]);
 
   useEffect(() => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -91,13 +109,13 @@ const Index = () => {
     setSelectedColor(null);
   };
 
-  const filledColoredPositions = solution.filter((c, i) => c !== null && playerGrid[i] !== null).length;
-  const totalColoredPositions = solution.filter(c => c !== null).length;
+  const filledColoredPositions = currentSolution.filter((c, i) => c !== null && playerGrid[i] !== null).length;
+  const totalColoredPositions = currentSolution.filter(c => c !== null).length;
   const canVerify = phase === 'recall' && filledColoredPositions === totalColoredPositions;
 
   const verify = () => {
     if (!canVerify) return;
-    const res = solution.map((c, i) => {
+    const res = currentSolution.map((c, i) => {
       if (c === null) return playerGrid[i] === null;
       return playerGrid[i] === c;
     });
@@ -105,49 +123,50 @@ const Index = () => {
     setResult(res);
     setIsCorrect(correct);
     setPhase('result');
-    const savedData = saveResult(correct, playerGrid, solution);
 
-    const currentAttempt = attemptNum;
-    const done = correct || currentAttempt >= MAX_ATTEMPTS;
-    if (done) {
-      setAlreadyPlayed(true);
+    const savedData = saveAttempt(currentPuzzleIdx, correct, playerGrid, solutions);
+    const newAttemptsUsed = savedData.attemptsUsed;
+    setAttemptsUsed(newAttemptsUsed);
+    setPuzzlesSolved(savedData.puzzlesSolved);
+
+    if (correct) {
+      setCurrentPuzzleIdx(savedData.currentPuzzleIndex);
     }
+
+    const done = newAttemptsUsed >= MAX_ATTEMPTS;
 
     if (!correct) {
       setShake(true);
       setTimeout(() => setShake(false), 600);
-      setTimeout(() => setShowResult(true), 1200);
+      setTimeout(() => {
+        if (done) {
+          setGameFinished(true);
+          setPhase('gameover');
+          setShowGameOver(true);
+        } else {
+          setShowResult(true);
+        }
+      }, 1200);
     } else {
-      setShowResult(true);
+      if (done) {
+        setGameFinished(true);
+        setPhase('gameover');
+        setShowGameOver(true);
+      } else {
+        setShowResult(true);
+      }
     }
   };
 
   const nextAttempt = () => {
     setShowResult(false);
-    setAttemptNum(prev => prev + 1);
-    setPhase('observation');
-    setTimerProgress(100);
-    setPlayerGrid(Array(9).fill(null));
-    setResult(null);
-    setSelectedColor(null);
-
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / OBSERVATION_TIME) * 100);
-      setTimerProgress(remaining);
-      if (elapsed >= OBSERVATION_TIME) {
-        clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
-      }
-    }, 30);
+    startObservation();
   };
 
-  const canRetry = phase === 'result' && !isCorrect && attemptNum < MAX_ATTEMPTS;
-
   const share = async () => {
-    const text = generateShareText(playerGrid, solution, attemptNum);
+    const data = loadData();
+    if (!data) return;
+    const text = generateShareText(data);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -158,9 +177,9 @@ const Index = () => {
   };
 
   const getCircleColor = (index: number): string => {
-    if (phase === 'observation') return solution[index] || NEUTRAL;
+    if (phase === 'observation') return currentSolution[index] || NEUTRAL;
     if (phase === 'result' && result) {
-      if (!result[index] && solution[index]) return '#FCA5A5';
+      if (!result[index] && currentSolution[index]) return '#FCA5A5';
       if (playerGrid[index]) return playerGrid[index]!;
       return NEUTRAL;
     }
@@ -169,7 +188,7 @@ const Index = () => {
   };
 
   const getCircleBorder = (index: number): string => {
-    if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
+    if (phase === 'result' && result && !result[index] && currentSolution[index]) return '3px solid #DC2626';
     if (phase === 'recall' && selectedColor && !playerGrid[index]) return '2px dashed #9CA3AF';
     return '2px solid transparent';
   };
@@ -177,13 +196,19 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center px-4 py-8" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <h1 className="text-3xl sm:text-4xl tracking-tight mb-1" style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}>
           Chromatic Daily
         </h1>
-        <p className="text-sm text-gray-500 tracking-wide uppercase">
-          {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''} · Attempt {Math.min(attemptNum, MAX_ATTEMPTS)}/{MAX_ATTEMPTS}
+        <p className="text-sm text-gray-500 tracking-wide uppercase mb-3">
+          {dayName} · #{dayNum} · {colorCount} color{colorCount !== 1 ? 's' : ''}
         </p>
+        <AttemptTracker used={attemptsUsed} total={MAX_ATTEMPTS} />
+        {!gameFinished && phase !== 'idle' && (
+          <p className="text-xs text-gray-400 mt-1">
+            Puzzle {currentPuzzleIdx + 1} · Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS}
+          </p>
+        )}
       </div>
 
       {/* Main Card */}
@@ -244,16 +269,16 @@ const Index = () => {
 
         {/* Actions */}
         <div className="px-6 pb-6 flex gap-3 justify-center">
-          {phase === 'idle' && !alreadyPlayed && (
+          {phase === 'idle' && !gameFinished && (
             <Button onClick={startGame} className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 text-sm tracking-wide">
-              Start
+              Start Puzzle {currentPuzzleIdx + 1}
             </Button>
           )}
-          {phase === 'idle' && alreadyPlayed && (
+          {(phase === 'idle' || phase === 'gameover') && gameFinished && (
             <div className="text-center w-full">
-              <p className="text-sm text-gray-500 mb-2">You've used all attempts today</p>
-              <Button onClick={() => setShowResult(true)} variant="outline" className="rounded-xl">
-                View Result
+              <p className="text-sm text-gray-500 mb-2">All attempts used today</p>
+              <Button onClick={() => setShowGameOver(true)} variant="outline" className="rounded-xl">
+                View Results
               </Button>
             </div>
           )}
@@ -267,11 +292,6 @@ const Index = () => {
               </Button>
             </>
           )}
-          {phase === 'result' && !showResult && (
-            <Button onClick={() => setShowResult(true)} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white w-full">
-              View Result
-            </Button>
-          )}
         </div>
       </div>
 
@@ -284,6 +304,10 @@ const Index = () => {
         <div>
           <p className="text-2xl font-bold text-gray-800">{streaks.max}</p>
           <p className="text-xs text-gray-400 uppercase tracking-wider">Best</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-gray-800">{puzzlesSolved}/{MAX_ATTEMPTS}</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider">Today</p>
         </div>
       </div>
 
@@ -302,34 +326,34 @@ const Index = () => {
           <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
             <p>A new color memory puzzle every day.</p>
             <div className="space-y-2">
-              <p><strong>1.</strong> Press <strong>Start</strong> — a pattern of colored circles appears for <strong>5 seconds</strong>.</p>
+              <p><strong>1.</strong> Press <strong>Start</strong> — a pattern appears for <strong>5 seconds</strong>.</p>
               <p><strong>2.</strong> Memorize the colors and positions.</p>
-              <p><strong>3.</strong> Recreate the pattern from memory using the color picker.</p>
-              <p><strong>4.</strong> Hit <strong>Verify</strong> to check your answer.</p>
+              <p><strong>3.</strong> Recreate the pattern from the <strong>full 9-color palette</strong>.</p>
+              <p><strong>4.</strong> Hit <strong>Verify</strong> to use one attempt.</p>
+            </div>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="font-medium text-gray-800 mb-1">Three-Strike System</p>
+              <p>You get {MAX_ATTEMPTS} attempts per day. Solve a puzzle to unlock the next one. Fail and you retry the same puzzle with your next attempt.</p>
             </div>
             <div className="border-t border-gray-100 pt-4">
               <p className="font-medium text-gray-800 mb-1">Daily Difficulty</p>
               <p>Monday starts with 3 colors. Each day adds one more, reaching all 9 by Sunday.</p>
             </div>
             <div className="border-t border-gray-100 pt-4">
-              <p className="font-medium text-gray-800 mb-1">Attempts</p>
-              <p>You get {MAX_ATTEMPTS} attempts per day. Get it right on any attempt to keep your streak!</p>
-            </div>
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-gray-400 text-xs">Build your streak!</p>
+              <p className="text-gray-400 text-xs">Build your streak by solving at least one puzzle each day!</p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Result Modal */}
+      {/* Per-Attempt Result Modal (mid-game) */}
       <Dialog open={showResult} onOpenChange={setShowResult}>
         <DialogContent className="sm:max-w-sm rounded-2xl text-center">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }} className="text-2xl">
-              {isCorrect ? 'Perfect Recall' : canRetry ? `Attempt ${attemptNum}/${MAX_ATTEMPTS}` : 'Not Quite'}
+              {isCorrect ? 'Solved!' : 'Not Quite'}
             </DialogTitle>
-            <DialogDescription className="sr-only">Your game result</DialogDescription>
+            <DialogDescription className="sr-only">Attempt result</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {isCorrect ? (
@@ -338,28 +362,63 @@ const Index = () => {
               <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             )}
 
-            {/* Emoji grid preview */}
-            <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 3, 6].map((row) => (
-                <div key={row}>
-                  {solution.slice(row, row + 3).map((c, i) => {
-                    if (c === null) return '⬜';
-                    return playerGrid[row + i] === c ? '🟩' : '⬛';
-                  }).join('')}
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              {isCorrect
+                ? `Puzzle ${currentPuzzleIdx} solved! Next puzzle unlocked.`
+                : `You'll retry Puzzle ${currentPuzzleIdx + 1} on your next attempt.`}
+            </p>
 
             {!isCorrect && (
               <div className="mb-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Correct Pattern</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[120px] mx-auto">
-                  {solution.map((c, i) => (
+                  {currentSolution.map((c, i) => (
                     <div key={i} className="aspect-square rounded-full" style={{ backgroundColor: c || NEUTRAL, width: '100%' }} />
                   ))}
                 </div>
               </div>
             )}
+
+            <p className="text-xs text-gray-400 mb-4">
+              Attempts: {attemptsUsed}/{MAX_ATTEMPTS} · Puzzles Solved: {puzzlesSolved}
+            </p>
+
+            <Button onClick={nextAttempt} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white gap-2">
+              {isCorrect ? `Start Puzzle ${currentPuzzleIdx + 1}` : 'Try Again'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Game Over Modal (all attempts used) */}
+      <Dialog open={showGameOver} onOpenChange={setShowGameOver}>
+        <DialogContent className="sm:max-w-sm rounded-2xl text-center">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }} className="text-2xl">
+              Today's Results
+            </DialogTitle>
+            <DialogDescription className="sr-only">Final game results</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {puzzlesSolved > 0 ? (
+              <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+            ) : (
+              <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            )}
+
+            <p className="text-3xl font-bold mb-1">{puzzlesSolved}/{MAX_ATTEMPTS}</p>
+            <p className="text-sm text-gray-500 mb-4">Puzzles Solved</p>
+
+            {/* Attempt breakdown */}
+            <div className="space-y-1 mb-4 text-sm">
+              {(loadData()?.attempts ?? []).map((attempt, i) => (
+                <div key={i} className="flex items-center justify-center gap-2">
+                  <span className="text-gray-400">Attempt {i + 1}:</span>
+                  <span>Puzzle {attempt.puzzleIndex + 1}</span>
+                  <span>{attempt.isCorrect ? '🟩' : '⬛'}</span>
+                </div>
+              ))}
+            </div>
 
             <div className="flex gap-6 justify-center mb-4">
               <div>
@@ -372,17 +431,10 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center">
-              {canRetry && (
-                <Button onClick={nextAttempt} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white gap-2">
-                  <RotateCcw className="w-4 h-4" /> Try Again
-                </Button>
-              )}
-              <Button onClick={share} variant="outline" className="rounded-xl gap-2">
-                <Share2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share Result'}
-              </Button>
-            </div>
+            <Button onClick={share} variant="outline" className="rounded-xl gap-2">
+              <Share2 className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Share Result'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
