@@ -42,8 +42,8 @@ const Index = () => {
     if (hasPlayedToday()) {
       setAlreadyPlayed(true);
       const data = loadData();
-      if (data && data.attempts.length > 0) {
-        const lastAttempt = data.attempts[data.attempts.length - 1];
+      if (data && (data.attempts ?? []).length > 0 && data.lastSolution) {
+        const lastAttempt = (data.attempts ?? [])[data.attempts.length - 1];
         setPlayerGrid(lastAttempt.grid);
         setResult(data.lastSolution.map((c, i) => lastAttempt.grid[i] === c));
         setIsCorrect(data.lastResult);
