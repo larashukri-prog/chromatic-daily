@@ -261,7 +261,6 @@ export function generateShareText(rounds: RoundData[]): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
   const streaks = getStreaks();
-  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
   const anySolved = rounds.some(r => r.solved);
 
   const getDifficultyName = (count: number): string => {
@@ -277,26 +276,40 @@ export function generateShareText(rounds: RoundData[]): string {
     '',
   ];
 
-  if (anySolved) {
-    // Show the final solved round's grid (only 🟢 and ⚪)
-    const solvedRound = [...rounds].reverse().find(r => r.solved);
-    if (solvedRound) {
-      const grid = solvedRound.solution.map(c => c !== null ? '🟢' : '⚪');
+  // Flatten all attempts across rounds
+  let attemptNum = 0;
+  for (const round of rounds) {
+    for (const attempt of round.attempts) {
+      attemptNum++;
+      const statusIcon = attempt.isCorrect ? '✅' : '❌';
+      lines.push(`Attempt ${attemptNum} ${statusIcon}`);
+      const grid = round.solution.map((sol, i) => {
+        const hasColor = sol !== null || attempt.grid[i] !== null;
+        if (!hasColor) return '⚪';
+        const correct = sol === null ? attempt.grid[i] === null : attempt.grid[i] === sol;
+        return correct ? '🟢' : '🔴';
+      });
       lines.push(grid.slice(0, 3).join(''));
       lines.push(grid.slice(3, 6).join(''));
       lines.push(grid.slice(6, 9).join(''));
+      lines.push('');
     }
+  }
+
+  // Pad unplayed attempts
+  while (attemptNum < MAX_ROUNDS) {
+    attemptNum++;
+    lines.push(`Attempt ${attemptNum} ⬜`);
+    lines.push('⚪⚪⚪');
+    lines.push('⚪⚪⚪');
+    lines.push('⚪⚪⚪');
+    lines.push('');
+  }
+
+  if (anySolved) {
+    const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
     lines.push(`Solved in ${totalAttempts}/${MAX_ROUNDS} attempts`);
   } else {
-    // Failed all — grayscale grid
-    const lastRound = rounds[rounds.length - 1];
-    const lastAttempt = lastRound?.attempts[lastRound.attempts.length - 1];
-    if (lastAttempt) {
-      const grid = lastRound.solution.map(c => c !== null ? '⬜' : '⬛');
-      lines.push(grid.slice(0, 3).join(''));
-      lines.push(grid.slice(3, 6).join(''));
-      lines.push(grid.slice(6, 9).join(''));
-    }
     lines.push('Better luck tomorrow!');
   }
 
