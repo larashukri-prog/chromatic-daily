@@ -583,7 +583,7 @@ const Index = () => {
             )}
 
             {resultMessage && (
-              <p className="text-base text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
