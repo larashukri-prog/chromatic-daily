@@ -176,34 +176,32 @@ export function saveRoundAttempt(
   const allSolved = rounds.filter(r => r.solved).length >= MAX_ROUNDS;
   const finished = totalAttempts >= MAX_ROUNDS || allSolved;
 
-  // Streak logic
+  // Streak logic — only update when finishing for the first time today
   let currentStreak = existing?.currentStreak ?? 0;
   let maxStreak = existing?.maxStreak ?? 0;
 
-  if (finished && !isToday) {
-    const anySolved = rounds.some(r => r.solved);
-    if (anySolved) {
-      if (existing && existing.lastPlayed === getYesterdayString() && existing.rounds?.some(r => r.solved)) {
-        currentStreak = (existing.currentStreak ?? 0) + 1;
+  if (finished) {
+    const alreadyFinishedToday = isToday && existing?.finished;
+    if (!alreadyFinishedToday) {
+      // First time finishing today — calculate streak
+      const anySolved = rounds.some(r => r.solved);
+      if (anySolved) {
+        const prevPlayed = existing?.lastPlayed;
+        const playedYesterday = prevPlayed === getYesterdayString();
+        const hadSolveYesterday = existing?.rounds?.some(r => r.solved);
+        if (playedYesterday && hadSolveYesterday) {
+          currentStreak = (existing?.currentStreak ?? 0) + 1;
+        } else if (isToday) {
+          // First attempt today but no yesterday data — keep existing or start at 1
+          currentStreak = Math.max(existing?.currentStreak ?? 0, 1);
+        } else {
+          currentStreak = 1;
+        }
       } else {
-        currentStreak = 1;
-      }
-    } else {
-      currentStreak = 0;
-    }
-  } else if (finished && isToday) {
-    const anySolved = rounds.some(r => r.solved);
-    if (anySolved && (existing?.currentStreak ?? 0) === 0) {
-      if (existing && existing.lastPlayed === today) {
-        // Check yesterday for streak continuation
-        const prevRaw = localStorage.getItem(STORAGE_KEY + '-prev');
-        currentStreak = 1;
+        currentStreak = 0;
       }
     }
-  }
-
-  if (!finished) {
-    currentStreak = existing?.currentStreak ?? 0;
+    // If already finished today, keep existing streak values
   }
 
   maxStreak = Math.max(maxStreak, currentStreak);
