@@ -220,3 +220,29 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
     </div>
   );
 }
+
+function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalSlides: number }) {
+  return (
+    <div className="text-center">
+      <div className="flex items-center justify-center gap-2 mb-1">
+        <span className="w-4 h-4 rounded-full bg-muted inline-block" />
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+          Round {slideIndex + 1} of {totalSlides}
+        </h3>
+      </div>
+      <p className="text-xs text-muted-foreground mb-5">Not Played</p>
+      <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, delay: i * 0.04 }}
+            className="aspect-square rounded-full"
+            style={{ backgroundColor: NEUTRAL, border: '2px solid transparent' }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
