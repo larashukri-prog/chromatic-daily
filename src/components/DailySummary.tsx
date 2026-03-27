@@ -194,7 +194,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               }
 
               const cellColor = (() => {
-                if (!result[i] && solution[i]) return '#FCA5A5';
+                // Show the player's actual picked color (or neutral if empty)
                 if (playerGrid[i]) return playerGrid[i]!;
                 return NEUTRAL;
               })();
