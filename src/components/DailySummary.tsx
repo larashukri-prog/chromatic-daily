@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
+import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 
