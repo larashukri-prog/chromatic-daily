@@ -42,6 +42,7 @@ const Index = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
+  const { enabled: a11y } = useAccessibility();
 
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
