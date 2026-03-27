@@ -291,7 +291,7 @@ const Index = () => {
 
   return (
     <div
-      className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8"
+      className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-4 sm:py-8"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* Onboarding overlay (first-time only) */}
