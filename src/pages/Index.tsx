@@ -291,7 +291,7 @@ const Index = () => {
 
   return (
     <div
-      className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8"
+      className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-4 sm:py-8"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* Onboarding overlay (first-time only) */}
@@ -300,7 +300,7 @@ const Index = () => {
       {/* Header */}
       <div className="text-center mb-4">
         <h1
-          className="text-3xl sm:text-4xl tracking-tight mb-1 text-foreground"
+          className="hidden sm:block text-3xl sm:text-4xl tracking-tight mb-1 text-foreground"
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
         >
           Chromatic Daily
