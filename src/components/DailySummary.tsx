@@ -40,8 +40,9 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
   }
   const totalSlides = maxRounds;
 
-  const prev = () => setActiveSlide((s) => Math.max(0, s - 1));
-  const next = () => setActiveSlide((s) => Math.min(totalSlides - 1, s + 1));
+  const [swipeDir, setSwipeDir] = useState(0);
+  const prev = () => { setSwipeDir(-1); setActiveSlide((s) => Math.max(0, s - 1)); };
+  const next = () => { setSwipeDir(1); setActiveSlide((s) => Math.min(totalSlides - 1, s + 1)); };
 
   const solvedCount = rounds.filter((r) => r.solved).length;
 
