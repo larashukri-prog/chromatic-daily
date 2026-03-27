@@ -264,6 +264,16 @@ const Index = () => {
     }
   };
 
+  const shareWhatsApp = () => {
+    const data = getTodayData();
+    const rounds = data?.rounds ?? savedRounds;
+    const text = generateShareText(rounds);
+    const encoded = encodeURIComponent(text);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    window.open(url, '_blank');
+  };
+
   const solvedRounds = savedRounds.filter((r) => r.solved).length;
   const statusText =
     phase === 'idle' && !alreadyFinished
@@ -330,6 +340,7 @@ const Index = () => {
           totalAttempts={totalAttemptsUsed}
           maxRounds={MAX_ROUNDS}
           onShare={share}
+          onShareWhatsApp={shareWhatsApp}
           copied={copied}
         />
       ) : (
