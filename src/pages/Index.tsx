@@ -42,7 +42,7 @@ const Index = () => {
 
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
-  const streaks = getStreaks();
+  const [streaks, setStreaks] = useState(getStreaks());
 
   const getDifficultyName = (count: number): string => {
     if (count <= 2) return 'Minimalist';
@@ -225,6 +225,7 @@ const Index = () => {
 
       const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
       setSavedRounds(savedData.rounds);
+      setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
       setResultMessage(msg);
