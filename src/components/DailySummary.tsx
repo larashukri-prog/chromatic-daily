@@ -15,9 +15,11 @@ interface DailySummaryProps {
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Build slides for all attempts (up to maxRounds)
-  const slides = rounds.length > 0 ? rounds : [];
-  const totalSlides = slides.length || 1;
+  // Always show exactly maxRounds (3) slides, padding unplayed rounds
+  const slides: (RoundData | null)[] = Array.from({ length: maxRounds }, (_, i) => {
+    return rounds.find((r) => r.roundIndex === i) ?? null;
+  });
+  const totalSlides = maxRounds;
 
   const prev = () => setActiveSlide((s) => Math.max(0, s - 1));
   const next = () => setActiveSlide((s) => Math.min(totalSlides - 1, s + 1));
