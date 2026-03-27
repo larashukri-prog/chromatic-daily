@@ -12,13 +12,32 @@ interface DailySummaryProps {
   copied: boolean;
 }
 
+interface AttemptSlide {
+  attemptGrid: (string | null)[];
+  solution: (string | null)[];
+  isCorrect: boolean;
+  roundIndex: number;
+}
+
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Always show exactly maxRounds (3) slides, padding unplayed rounds
-  const slides: (RoundData | null)[] = Array.from({ length: maxRounds }, (_, i) => {
-    return rounds.find((r) => r.roundIndex === i) ?? null;
-  });
+  // Flatten all attempts across rounds into individual slides
+  const slides: AttemptSlide[] = [];
+  for (const round of rounds) {
+    for (const attempt of round.attempts) {
+      slides.push({
+        attemptGrid: attempt.grid,
+        solution: round.solution,
+        isCorrect: attempt.isCorrect,
+        roundIndex: round.roundIndex,
+      });
+    }
+  }
+  // Pad to always show maxRounds slides
+  while (slides.length < maxRounds) {
+    slides.push(null as any);
+  }
   const totalSlides = maxRounds;
 
   const prev = () => setActiveSlide((s) => Math.max(0, s - 1));
@@ -77,7 +96,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
             >
               {slides[activeSlide] ? (
                 <SlideContent
-                  round={slides[activeSlide]!}
+                  slide={slides[activeSlide]!}
                   slideIndex={activeSlide}
                   totalSlides={totalSlides}
                 />
@@ -117,12 +136,12 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
   );
 }
 
-function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; slideIndex: number; totalSlides: number }) {
+function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
   const [showSolution, setShowSolution] = useState(false);
-  const lastAttempt = round.attempts[round.attempts.length - 1];
-  const playerGrid = lastAttempt?.grid ?? Array(9).fill(null);
+  const playerGrid = slide.attemptGrid;
+  const solution = slide.solution;
 
-  const result = round.solution.map((c, i) => {
+  const result = solution.map((c, i) => {
     if (c === null) return playerGrid[i] === null;
     return playerGrid[i] === c;
   });
@@ -131,17 +150,17 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
     <div className="text-center">
       {/* Round header */}
       <div className="flex items-center justify-center gap-2 mb-1">
-        {round.solved ? (
+        {slide.isCorrect ? (
           <Trophy className="w-4 h-4 text-yellow-500" />
         ) : (
           <XCircle className="w-4 h-4 text-destructive" />
         )}
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Round {slideIndex + 1} of {totalSlides}
+          Attempt {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
-      <p className={`text-xs mb-5 ${round.solved ? 'text-emerald-500' : 'text-destructive'}`}>
-        {round.solved ? 'Solved' : 'Incorrect'}
+      <p className={`text-xs mb-5 ${slide.isCorrect ? 'text-emerald-500' : 'text-destructive'}`}>
+        {slide.isCorrect ? 'Solved' : 'Incorrect'}
       </p>
 
       {/* 3x3 grid */}
@@ -157,8 +176,7 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
           >
             {Array.from({ length: 9 }).map((_, i) => {
               if (showSolution) {
-                // Show the correct solution pattern
-                const color = round.solution[i] ?? NEUTRAL;
+                const color = solution[i] ?? NEUTRAL;
                 return (
                   <motion.div
                     key={i}
@@ -169,20 +187,19 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
                     style={{
                       backgroundColor: color,
                       border: '2px solid transparent',
-                      boxShadow: round.solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
+                      boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   />
                 );
               }
 
-              // Show the player's attempt with green/red glow
               const cellColor = (() => {
-                if (!result[i] && round.solution[i]) return '#FCA5A5';
+                if (!result[i] && solution[i]) return '#FCA5A5';
                 if (playerGrid[i]) return playerGrid[i]!;
                 return NEUTRAL;
               })();
 
-              const hasColor = round.solution[i] !== null || playerGrid[i] !== null;
+              const hasColor = solution[i] !== null || playerGrid[i] !== null;
               const glow = hasColor
                 ? result[i]
                   ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
@@ -199,7 +216,7 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
                   style={{
                     backgroundColor: cellColor,
                     boxShadow: glow,
-                    border: !result[i] && round.solution[i] ? '2px solid #DC2626' : '2px solid transparent',
+                    border: !result[i] && solution[i] ? '2px solid #DC2626' : '2px solid transparent',
                   }}
                 />
               );
@@ -208,8 +225,8 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
         </AnimatePresence>
       </div>
 
-      {/* View Solution toggle for incorrect rounds */}
-      {!round.solved && (
+      {/* View Solution toggle for incorrect attempts */}
+      {!slide.isCorrect && (
         <button
           onClick={() => setShowSolution((s) => !s)}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-1"
