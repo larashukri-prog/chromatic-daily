@@ -48,46 +48,46 @@ export function PatternDefs() {
             case 1: // Vertical Stripes
               return (
                 <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.3" />
+                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.55" />
                 </pattern>
               );
             case 2: // Horizontal Stripes
               return (
                 <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.3" />
+                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.55" />
                 </pattern>
               );
             case 3: // Diagonal 45°
               return (
                 <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="8" x2="8" y2="0" stroke={stroke} strokeWidth={sw} opacity="0.3" />
+                  <line x1="0" y1="8" x2="8" y2="0" stroke={stroke} strokeWidth={sw} opacity="0.55" />
                 </pattern>
               );
             case 4: // Cross-hatch
               return (
                 <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.3" />
-                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.3" />
+                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.55" />
                 </pattern>
               );
             case 5: // Polka Dots
               return (
                 <pattern key={id} id={id} width="10" height="10" patternUnits="userSpaceOnUse">
-                  <circle cx="5" cy="5" r="2" fill={stroke} opacity="0.3" />
+                  <circle cx="5" cy="5" r="2" fill={stroke} opacity="0.55" />
                 </pattern>
               );
             case 6: // Checkerboard
               return (
                 <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <rect x="0" y="0" width="4" height="4" fill={stroke} opacity="0.3" />
-                  <rect x="4" y="4" width="4" height="4" fill={stroke} opacity="0.3" />
+                  <rect x="0" y="0" width="4" height="4" fill={stroke} opacity="0.55" />
+                  <rect x="4" y="4" width="4" height="4" fill={stroke} opacity="0.55" />
                 </pattern>
               );
             case 7: // Concentric Circles
               return (
                 <pattern key={id} id={id} width="12" height="12" patternUnits="userSpaceOnUse">
-                  <circle cx="6" cy="6" r="4" fill="none" stroke={stroke} strokeWidth={sw} opacity="0.3" />
-                  <circle cx="6" cy="6" r="1.5" fill="none" stroke={stroke} strokeWidth={1} opacity="0.3" />
+                  <circle cx="6" cy="6" r="4" fill="none" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                  <circle cx="6" cy="6" r="1.5" fill="none" stroke={stroke} strokeWidth={1} opacity="0.55" />
                 </pattern>
               );
             case 8: // Zig-Zag
@@ -98,7 +98,7 @@ export function PatternDefs() {
                     fill="none"
                     stroke={stroke}
                     strokeWidth={sw}
-                    opacity="0.3"
+                    opacity="0.55"
                   />
                 </pattern>
               );
