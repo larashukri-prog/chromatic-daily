@@ -301,5 +301,7 @@ export function generateShareText(rounds: RoundData[]): string {
   }
 
   lines.push(`⚡ Streak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`);
+  lines.push('');
+  lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');
 }
