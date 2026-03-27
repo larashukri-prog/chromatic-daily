@@ -299,6 +299,9 @@ const Index = () => {
 
       {/* Header */}
       <div className="text-center mb-4">
+        <div className="flex justify-center mb-2">
+          <AccessibilityToggle />
+        </div>
         <h1
           className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
