@@ -619,10 +619,6 @@ const Index = () => {
                   <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                 </Button>
               )}
-              <Button onClick={share} variant="outline" className="rounded-xl gap-2">
-                <Share2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share Result'}
-              </Button>
             </div>
           </div>
         </DialogContent>
