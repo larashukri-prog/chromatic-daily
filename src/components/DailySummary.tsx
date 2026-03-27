@@ -9,6 +9,7 @@ interface DailySummaryProps {
   totalAttempts: number;
   maxRounds: number;
   onShare: () => void;
+  onShareWhatsApp: () => void;
   copied: boolean;
 }
 
