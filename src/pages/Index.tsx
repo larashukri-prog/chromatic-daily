@@ -6,6 +6,9 @@ import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-r
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
+import { AccessibilityToggle } from '@/components/AccessibilityToggle';
+import { useAccessibility } from '@/hooks/useAccessibility';
+import { PatternOverlay } from '@/components/PatternOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -39,6 +42,7 @@ const Index = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
+  const { enabled: a11y } = useAccessibility();
 
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
@@ -296,6 +300,9 @@ const Index = () => {
 
       {/* Header */}
       <div className="text-center mb-4">
+        <div className="flex justify-center mb-2">
+          <AccessibilityToggle />
+        </div>
         <h1
           className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
@@ -418,7 +425,7 @@ const Index = () => {
                     <button
                       key={c.hex}
                       onClick={() => setSelectedColor(c.hex)}
-                      className="w-9 h-9 rounded-full transition-all duration-200"
+                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden"
                       style={{
                         backgroundColor: c.hex,
                         outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
@@ -426,7 +433,9 @@ const Index = () => {
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
                       }}
                       title={c.name}
-                    />
+                    >
+                      {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -594,9 +603,11 @@ const Index = () => {
                   {solution.map((c, i) => (
                     <div
                       key={i}
-                      className="aspect-square rounded-full"
+                      className="aspect-square rounded-full relative overflow-hidden"
                       style={{ backgroundColor: c || NEUTRAL, width: '100%' }}
-                    />
+                    >
+                      {a11y && <PatternOverlay colorHex={c} size="100%" />}
+                    </div>
                   ))}
                 </div>
               </div>

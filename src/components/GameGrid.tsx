@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { GamePhase, NEUTRAL } from '@/lib/game';
+import { useAccessibility } from '@/hooks/useAccessibility';
+import { PatternOverlay } from '@/components/PatternOverlay';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -12,6 +14,8 @@ interface GameGridProps {
 }
 
 export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, onCircleClick }: GameGridProps) {
+  const { enabled: a11y } = useAccessibility();
+
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
     if (phase === 'result' && result) {
@@ -21,6 +25,16 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     }
     if (phase === 'recall') return playerGrid[index] || NEUTRAL;
     return NEUTRAL;
+  };
+
+  const getPatternColor = (index: number): string | null => {
+    if (phase === 'observation') return solution[index];
+    if (phase === 'result' && result) {
+      if (!result[index] && solution[index]) return null; // error state, no pattern
+      return playerGrid[index];
+    }
+    if (phase === 'recall') return playerGrid[index];
+    return null;
   };
 
   const getCircleBorder = (index: number): string => {
@@ -58,13 +72,15 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           }
           whileHover={phase === 'recall' ? { scale: 1.05 } : {}}
           whileTap={phase === 'recall' ? { scale: 0.95 } : {}}
-          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default"
+          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
           style={{
             backgroundColor: getCircleColor(i),
             border: getCircleBorder(i),
             ...getGlowStyle(i),
           }}
-        />
+        >
+          {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
+        </motion.button>
       ))}
     </div>
   );
