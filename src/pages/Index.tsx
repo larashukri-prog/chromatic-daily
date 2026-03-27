@@ -42,7 +42,7 @@ const Index = () => {
 
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
-  const streaks = getStreaks();
+  const [streaks, setStreaks] = useState(getStreaks());
 
   const getDifficultyName = (count: number): string => {
     if (count <= 2) return 'Minimalist';
