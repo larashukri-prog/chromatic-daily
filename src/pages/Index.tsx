@@ -225,6 +225,7 @@ const Index = () => {
 
       const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
       setSavedRounds(savedData.rounds);
+      setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
       setResultMessage(msg);
