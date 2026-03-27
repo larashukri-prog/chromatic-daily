@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
+import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
 import {
