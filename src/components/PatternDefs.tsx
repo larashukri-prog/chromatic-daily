@@ -42,7 +42,7 @@ export function PatternDefs() {
             case 0: // Solid - no pattern needed, just a filled rect
               return (
                 <pattern key={id} id={id} width="10" height="10" patternUnits="userSpaceOnUse">
-                  <rect width="10" height="10" fill={stroke} opacity="0.3" />
+                  <rect width="10" height="10" fill={stroke} opacity="0.55" />
                 </pattern>
               );
             case 1: // Vertical Stripes

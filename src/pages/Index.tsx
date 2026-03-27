@@ -300,9 +300,6 @@ const Index = () => {
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="flex justify-center mb-2">
-          <AccessibilityToggle />
-        </div>
         <h1
           className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
@@ -478,9 +475,16 @@ const Index = () => {
         </>
       )}
 
+      {/* Accessibility Toggle (below card, above streaks) */}
+      {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
+        <div className="mt-5 flex justify-center">
+          <AccessibilityToggle />
+        </div>
+      )}
+
       {/* Streak Display (only when not showing summary) */}
       {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
-        <div className="mt-6 flex gap-6 text-center">
+        <div className="mt-4 flex gap-6 text-center">
           <div>
             <p className="text-2xl font-bold text-foreground">{streaks.current}</p>
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
