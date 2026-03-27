@@ -75,12 +75,14 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
               transition={{ duration: 0.25 }}
               className="p-6 sm:p-8"
             >
-              {slides[activeSlide] && (
+              {slides[activeSlide] ? (
                 <SlideContent
-                  round={slides[activeSlide]}
+                  round={slides[activeSlide]!}
                   slideIndex={activeSlide}
                   totalSlides={totalSlides}
                 />
+              ) : (
+                <UnplayedSlide slideIndex={activeSlide} totalSlides={totalSlides} />
               )}
             </motion.div>
           </AnimatePresence>
