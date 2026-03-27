@@ -114,10 +114,10 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
 }
 
 function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; slideIndex: number; totalSlides: number }) {
+  const [showSolution, setShowSolution] = useState(false);
   const lastAttempt = round.attempts[round.attempts.length - 1];
   const playerGrid = lastAttempt?.grid ?? Array(9).fill(null);
 
-  // Compute result per cell
   const result = round.solution.map((c, i) => {
     if (c === null) return playerGrid[i] === null;
     return playerGrid[i] === c;
@@ -140,38 +140,79 @@ function SlideContent({ round, slideIndex, totalSlides }: { round: RoundData; sl
         {round.solved ? 'Solved' : 'Incorrect'}
       </p>
 
-      {/* 3x3 grid with verification glow */}
-      <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4">
-        {Array.from({ length: 9 }).map((_, i) => {
-          const cellColor = (() => {
-            if (!result[i] && round.solution[i]) return '#FCA5A5';
-            if (playerGrid[i]) return playerGrid[i]!;
-            return NEUTRAL;
-          })();
+      {/* 3x3 grid */}
+      <div className="relative">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={showSolution ? 'solution' : 'player'}
+            initial={{ opacity: 0, rotateY: 90 }}
+            animate={{ opacity: 1, rotateY: 0 }}
+            exit={{ opacity: 0, rotateY: -90 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4"
+          >
+            {Array.from({ length: 9 }).map((_, i) => {
+              if (showSolution) {
+                // Show the correct solution pattern
+                const color = round.solution[i] ?? NEUTRAL;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: i * 0.04 }}
+                    className="aspect-square rounded-full"
+                    style={{
+                      backgroundColor: color,
+                      border: '2px solid transparent',
+                      boxShadow: round.solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
+                    }}
+                  />
+                );
+              }
 
-          const hasColor = round.solution[i] !== null || playerGrid[i] !== null;
-          const glow = hasColor
-            ? result[i]
-              ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
-              : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
-            : 'none';
+              // Show the player's attempt with green/red glow
+              const cellColor = (() => {
+                if (!result[i] && round.solution[i]) return '#FCA5A5';
+                if (playerGrid[i]) return playerGrid[i]!;
+                return NEUTRAL;
+              })();
 
-          return (
-            <motion.div
-              key={i}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3, delay: i * 0.04 }}
-              className="aspect-square rounded-full"
-              style={{
-                backgroundColor: cellColor,
-                boxShadow: glow,
-                border: !result[i] && round.solution[i] ? '2px solid #DC2626' : '2px solid transparent',
-              }}
-            />
-          );
-        })}
+              const hasColor = round.solution[i] !== null || playerGrid[i] !== null;
+              const glow = hasColor
+                ? result[i]
+                  ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
+                  : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
+                : 'none';
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  className="aspect-square rounded-full"
+                  style={{
+                    backgroundColor: cellColor,
+                    boxShadow: glow,
+                    border: !result[i] && round.solution[i] ? '2px solid #DC2626' : '2px solid transparent',
+                  }}
+                />
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* View Solution toggle for incorrect rounds */}
+      {!round.solved && (
+        <button
+          onClick={() => setShowSolution((s) => !s)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-1"
+        >
+          {showSolution ? 'View Your Attempt' : 'View Solution'}
+        </button>
+      )}
     </div>
   );
 }
