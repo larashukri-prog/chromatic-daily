@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
+import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
 import {
@@ -334,147 +335,154 @@ const Index = () => {
         {statusText && <p className="text-xs text-muted-foreground text-center mt-1.5">{statusText}</p>}
       </div>
 
-      {/* Main Card */}
-      <div
-        className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
-      >
-        {/* Timer Bar */}
-        {phase === 'observation' && (
-          <div className="h-1 bg-muted">
-            <div
-              className="h-full bg-primary transition-all duration-75 ease-linear"
-              style={{ width: `${timerProgress}%` }}
-            />
-          </div>
-        )}
-
-        {/* Grid with animated transitions */}
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={verifying ? 'verifying' : phase}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3 }}
-              className="p-6 sm:p-8"
-            >
-              <GameGrid
-                phase={phase}
-                solution={solution}
-                playerGrid={playerGrid}
-                result={result}
-                selectedColor={selectedColor}
-                verifying={verifying}
-                onCircleClick={handleCircleClick}
-              />
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Anti-cheat overlay */}
-          <AnimatePresence>
-            {cheatDetected && phase === 'observation' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-md rounded-xl"
-              >
-                <p className="text-3xl mb-3">🚫</p>
-                <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
-                  {cheatMessage}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Color Picker */}
-        {phase === 'recall' && (
-          <div className="px-6 pb-4 border-t border-border pt-4">
-            <motion.p
-              key={selectedCount}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
-            >
-              {selectedCount}/{colorCount} colors placed
-            </motion.p>
-            <div className="flex justify-center gap-2 flex-wrap">
-              {COLORS.map((c) => (
-                <button
-                  key={c.hex}
-                  onClick={() => setSelectedColor(c.hex)}
-                  className="w-9 h-9 rounded-full transition-all duration-200"
-                  style={{
-                    backgroundColor: c.hex,
-                    outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
-                    outlineOffset: '2px',
-                    transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
-                  }}
-                  title={c.name}
+      {/* Daily Summary (replaces game when finished) */}
+      {alreadyFinished && (phase === 'idle' || phase === 'result') ? (
+        <DailySummary
+          rounds={savedRounds}
+          totalAttempts={totalAttemptsUsed}
+          maxRounds={MAX_ROUNDS}
+          onShare={share}
+          copied={copied}
+        />
+      ) : (
+        <>
+          {/* Main Card */}
+          <div
+            className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
+          >
+            {/* Timer Bar */}
+            {phase === 'observation' && (
+              <div className="h-1 bg-muted">
+                <div
+                  className="h-full bg-primary transition-all duration-75 ease-linear"
+                  style={{ width: `${timerProgress}%` }}
                 />
-              ))}
+              </div>
+            )}
+
+            {/* Grid with animated transitions */}
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={verifying ? 'verifying' : phase}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-6 sm:p-8"
+                >
+                  <GameGrid
+                    phase={phase}
+                    solution={solution}
+                    playerGrid={playerGrid}
+                    result={result}
+                    selectedColor={selectedColor}
+                    verifying={verifying}
+                    onCircleClick={handleCircleClick}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Anti-cheat overlay */}
+              <AnimatePresence>
+                {cheatDetected && phase === 'observation' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-md rounded-xl"
+                  >
+                    <p className="text-3xl mb-3">🚫</p>
+                    <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
+                      {cheatMessage}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Color Picker */}
+            {phase === 'recall' && (
+              <div className="px-6 pb-4 border-t border-border pt-4">
+                <motion.p
+                  key={selectedCount}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
+                >
+                  {selectedCount}/{colorCount} colors placed
+                </motion.p>
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c.hex}
+                      onClick={() => setSelectedColor(c.hex)}
+                      className="w-9 h-9 rounded-full transition-all duration-200"
+                      style={{
+                        backgroundColor: c.hex,
+                        outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
+                        outlineOffset: '2px',
+                        transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
+                      }}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3 justify-center">
+              {phase === 'idle' && !alreadyFinished && (
+                <Button
+                  onClick={startGame}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
+                >
+                  Start
+                </Button>
+              )}
+              {phase === 'recall' && (
+                <>
+                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
+                    <RotateCcw className="w-4 h-4" /> Clear
+                  </Button>
+                  <Button
+                    onClick={verify}
+                    disabled={!canVerify}
+                    className="rounded-xl flex-1 bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Verify
+                  </Button>
+                </>
+              )}
+              {phase === 'result' && !showResult && !alreadyFinished && (
+                <Button
+                  onClick={() => setShowResult(true)}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                >
+                  View Result
+                </Button>
+              )}
             </div>
           </div>
-        )}
+        </>
+      )}
 
-        {/* Actions */}
-        <div className="px-6 pb-6 flex gap-3 justify-center">
-          {phase === 'idle' && !alreadyFinished && (
-            <Button
-              onClick={startGame}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
-            >
-              Start
-            </Button>
-          )}
-          {phase === 'idle' && alreadyFinished && (
-            <div className="text-center w-full">
-              <p className="text-sm text-muted-foreground mb-2">You've completed all rounds today</p>
-              <Button onClick={() => setShowResult(true)} variant="outline" className="rounded-xl">
-                View Result
-              </Button>
-            </div>
-          )}
-          {phase === 'recall' && (
-            <>
-              <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
-                <RotateCcw className="w-4 h-4" /> Clear
-              </Button>
-              <Button
-                onClick={verify}
-                disabled={!canVerify}
-                className="rounded-xl flex-1 bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" /> Verify
-              </Button>
-            </>
-          )}
-          {phase === 'result' && !showResult && (
-            <Button
-              onClick={() => setShowResult(true)}
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-            >
-              View Result
-            </Button>
-          )}
+      {/* Streak Display (only when not showing summary) */}
+      {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
+        <div className="mt-6 flex gap-6 text-center">
+          <div>
+            <p className="text-2xl font-bold text-foreground">{streaks.current}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground">{streaks.max}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Best</p>
+          </div>
         </div>
-      </div>
-
-      {/* Streak Display */}
-      <div className="mt-6 flex gap-6 text-center">
-        <div>
-          <p className="text-2xl font-bold text-foreground">{streaks.current}</p>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground">{streaks.max}</p>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Best</p>
-        </div>
-      </div>
+      )}
 
       {/* Info & Reset buttons */}
       <div className="mt-6 flex items-center gap-4">
