@@ -276,38 +276,42 @@ export function generateShareText(rounds: RoundData[]): string {
     '',
   ];
 
-  // Flatten all attempts across rounds
-  let attemptNum = 0;
+  // Flatten all attempts across rounds, capped at MAX_ROUNDS
+  type FlatAttempt = { grid: (string | null)[]; isCorrect: boolean; solution: (string | null)[] };
+  const allAttempts: FlatAttempt[] = [];
   for (const round of rounds) {
     for (const attempt of round.attempts) {
-      attemptNum++;
-      const statusIcon = attempt.isCorrect ? '✅' : '❌';
-      lines.push(`Attempt ${attemptNum} ${statusIcon}`);
-      const grid = round.solution.map((sol, i) => {
-        const hasColor = sol !== null || attempt.grid[i] !== null;
+      if (allAttempts.length < MAX_ROUNDS) {
+        allAttempts.push({ ...attempt, solution: round.solution });
+      }
+    }
+  }
+
+  for (let i = 0; i < MAX_ROUNDS; i++) {
+    const a = allAttempts[i];
+    if (a) {
+      const statusIcon = a.isCorrect ? '✅' : '❌';
+      lines.push(`Attempt ${i + 1} ${statusIcon}`);
+      const grid = a.solution.map((sol, j) => {
+        const hasColor = sol !== null || a.grid[j] !== null;
         if (!hasColor) return '⚪';
-        const correct = sol === null ? attempt.grid[i] === null : attempt.grid[i] === sol;
+        const correct = sol === null ? a.grid[j] === null : a.grid[j] === sol;
         return correct ? '🟢' : '🔴';
       });
       lines.push(grid.slice(0, 3).join(''));
       lines.push(grid.slice(3, 6).join(''));
       lines.push(grid.slice(6, 9).join(''));
-      lines.push('');
+    } else {
+      lines.push(`Attempt ${i + 1} ⬜`);
+      lines.push('⚪⚪⚪');
+      lines.push('⚪⚪⚪');
+      lines.push('⚪⚪⚪');
     }
-  }
-
-  // Pad unplayed attempts
-  while (attemptNum < MAX_ROUNDS) {
-    attemptNum++;
-    lines.push(`Attempt ${attemptNum} ⬜`);
-    lines.push('⚪⚪⚪');
-    lines.push('⚪⚪⚪');
-    lines.push('⚪⚪⚪');
     lines.push('');
   }
 
+  const totalAttempts = Math.min(allAttempts.length, MAX_ROUNDS);
   if (anySolved) {
-    const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
     lines.push(`Solved in ${totalAttempts}/${MAX_ROUNDS} attempts`);
   } else {
     lines.push('Better luck tomorrow!');
