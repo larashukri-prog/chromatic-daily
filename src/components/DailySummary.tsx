@@ -96,7 +96,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied
             >
               {slides[activeSlide] ? (
                 <SlideContent
-                  round={slides[activeSlide]!}
+                  slide={slides[activeSlide]!}
                   slideIndex={activeSlide}
                   totalSlides={totalSlides}
                 />
