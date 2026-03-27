@@ -12,13 +12,32 @@ interface DailySummaryProps {
   copied: boolean;
 }
 
+interface AttemptSlide {
+  attemptGrid: (string | null)[];
+  solution: (string | null)[];
+  isCorrect: boolean;
+  roundIndex: number;
+}
+
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, copied }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Always show exactly maxRounds (3) slides, padding unplayed rounds
-  const slides: (RoundData | null)[] = Array.from({ length: maxRounds }, (_, i) => {
-    return rounds.find((r) => r.roundIndex === i) ?? null;
-  });
+  // Flatten all attempts across rounds into individual slides
+  const slides: AttemptSlide[] = [];
+  for (const round of rounds) {
+    for (const attempt of round.attempts) {
+      slides.push({
+        attemptGrid: attempt.grid,
+        solution: round.solution,
+        isCorrect: attempt.isCorrect,
+        roundIndex: round.roundIndex,
+      });
+    }
+  }
+  // Pad to always show maxRounds slides
+  while (slides.length < maxRounds) {
+    slides.push(null as any);
+  }
   const totalSlides = maxRounds;
 
   const prev = () => setActiveSlide((s) => Math.max(0, s - 1));
