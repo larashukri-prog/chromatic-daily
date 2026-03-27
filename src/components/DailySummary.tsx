@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
+import { useAccessibility } from '@/hooks/useAccessibility';
+import { PatternOverlay } from '@/components/PatternOverlay';
 
 interface DailySummaryProps {
   rounds: RoundData[];
@@ -150,6 +152,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 }
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
+  const { enabled: a11y } = useAccessibility();
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
