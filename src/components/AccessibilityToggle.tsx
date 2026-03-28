@@ -1,7 +1,13 @@
 import { useAccessibility } from '@/hooks/useAccessibility';
+import { posthog } from '@/lib/posthog';
 
 export function AccessibilityToggle() {
   const { enabled, toggle } = useAccessibility();
+
+  const handleToggle = () => {
+    toggle();
+    posthog.capture('Accessibility Toggled', { state: !enabled ? 'ON' : 'OFF' });
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -9,7 +15,7 @@ export function AccessibilityToggle() {
         Accessibility
       </span>
       <button
-        onClick={toggle}
+        onClick={handleToggle}
         className="relative w-[51px] h-[31px] rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ backgroundColor: enabled ? '#34C759' : '#78788033' }}
         role="switch"

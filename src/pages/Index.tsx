@@ -14,6 +14,7 @@ import {
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData
 } from '@/lib/game';
+import { posthog } from '@/lib/posthog';
 
 const OBSERVATION_TIME = 5000;
 
@@ -159,8 +160,9 @@ const Index = () => {
 
   const startGame = useCallback(() => {
     if (alreadyFinished) return;
+    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName });
     startObservation();
-  }, [alreadyFinished, startObservation]);
+  }, [alreadyFinished, startObservation, roundIndex, dayNum, difficultyName]);
 
   useEffect(() => {
     return () => {
@@ -217,6 +219,8 @@ const Index = () => {
       const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
+
+      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
       setResultMessage(msg);
