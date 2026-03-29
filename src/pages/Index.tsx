@@ -172,13 +172,14 @@ const Index = () => {
 
   // Auto-transition final result to daily summary after 2 seconds
   useEffect(() => {
-    if (showResult && !canContinue && alreadyFinished) {
+    const isFinal = phase === 'result' && (totalAttemptsUsed >= MAX_ROUNDS || alreadyFinished);
+    if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, canContinue, alreadyFinished]);
+  }, [showResult, phase, totalAttemptsUsed, alreadyFinished]);
 
   // Tap-to-undo: if circle already has color, reset it; otherwise paint it
   const handleCircleClick = (index: number) => {
