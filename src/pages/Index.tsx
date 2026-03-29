@@ -10,11 +10,12 @@ import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import {
-  GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
+  GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData
+  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel
 } from '@/lib/game';
 import { posthog } from '@/lib/posthog';
+import { toast } from 'sonner';
 
 const OBSERVATION_TIME = 5000;
 
@@ -40,12 +41,14 @@ const Index = () => {
   const [verifying, setVerifying] = useState(false);
   const [cheatDetected, setCheatDetected] = useState(false);
   const [cheatMessage, setCheatMessage] = useState('');
+  const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
 
-  const { dayName, colorCount } = getDayInfo();
+  const { dayName, colorCount: baseColorCount } = getDayInfo();
+  const [effectiveColorCount, setEffectiveColorCount] = useState(baseColorCount);
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
 
@@ -55,7 +58,7 @@ const Index = () => {
     if (count <= 6) return 'Complex';
     return 'Master';
   };
-  const difficultyName = getDifficultyName(colorCount);
+  const difficultyName = getDifficultyName(baseColorCount);
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {
@@ -194,7 +197,7 @@ const Index = () => {
     if (!selectedColor) return;
     // Cap: prevent placing more than the daily target
     const currentCount = newGrid.filter((c) => c !== null).length;
-    if (currentCount >= colorCount) return;
+    if (currentCount >= effectiveColorCount) return;
     newGrid[index] = selectedColor;
     setPlayerGrid(newGrid);
   };
@@ -206,7 +209,7 @@ const Index = () => {
   };
 
   const selectedCount = playerGrid.filter((c) => c !== null).length;
-  const canVerify = phase === 'recall' && selectedCount === colorCount;
+  const canVerify = phase === 'recall' && selectedCount === effectiveColorCount;
 
   const verify = () => {
     if (!canVerify) return;
@@ -232,6 +235,15 @@ const Index = () => {
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
       posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
+
+      // DDA: if Round 1 solved on first attempt, level up for remaining rounds
+      if (roundIndex === 0 && correct && attemptInRound === 1) {
+        setDdaLevel('hard');
+        toast('Level Up! Round 2 is getting harder... 🔥', {
+          description: '!زيادة الصعوبة... الجولة الثانية أصبحت أصعب',
+          duration: 3000,
+        });
+      }
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
       setResultMessage(msg);
@@ -260,9 +272,10 @@ const Index = () => {
       const newRound = roundIndex + 1;
       setRoundIndex(newRound);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolution(newRound);
+      const { solution: sol, activeColors: ac, colorCount: cc } = generateSolutionDDA(newRound, ddaLevel);
       setSolution(sol);
       setActiveColors(ac);
+      setEffectiveColorCount(cc);
     } else {
       setAttemptInRound((prev) => prev + 1);
     }
@@ -430,7 +443,7 @@ const Index = () => {
                   transition={{ duration: 0.2 }}
                   className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
                 >
-                  {selectedCount}/{colorCount} colors placed
+                  {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
                   {COLORS.map((c) => (
