@@ -568,8 +568,8 @@ const Index = () => {
       </Dialog>
 
       {/* Result Modal */}
-      <Dialog open={showResult} onOpenChange={setShowResult}>
-        <DialogContent className="sm:max-w-sm rounded-2xl text-center">
+      <Dialog open={showResult} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
