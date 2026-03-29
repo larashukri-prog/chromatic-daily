@@ -142,6 +142,7 @@ const Index = () => {
   }, [phase, triggerCheatOverlay]);
 
   const startObservation = useCallback(() => {
+    const duration = a11y ? OBSERVATION_TIME_A11Y : OBSERVATION_TIME_DEFAULT;
     setPhase('observation');
     setTimerProgress(100);
     setPlayerGrid(Array(9).fill(null));
@@ -153,15 +154,15 @@ const Index = () => {
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / OBSERVATION_TIME) * 100);
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
       setTimerProgress(remaining);
-      if (elapsed >= OBSERVATION_TIME) {
+      if (elapsed >= duration) {
         clearInterval(timerRef.current!);
         setPhase('recall');
         setSelectedColor(null);
       }
     }, 30);
-  }, []);
+  }, [a11y]);
 
   const startGame = useCallback(() => {
     if (alreadyFinished) return;
