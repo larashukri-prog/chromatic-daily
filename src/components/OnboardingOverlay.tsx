@@ -70,8 +70,15 @@ export function OnboardingOverlay({ show, onDismiss }: { show: boolean; onDismis
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center mt-0.5">
                     <step.icon className="w-4 h-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{step.label}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground">{step.label}</p>
+                      {step.badge && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-[10px] font-bold text-primary tracking-wide">
+                          {step.badge}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
                   </div>
                 </motion.div>
