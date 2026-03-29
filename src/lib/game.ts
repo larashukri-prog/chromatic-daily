@@ -65,6 +65,60 @@ export function generateSolution(roundIndex: number = 0): { solution: (string | 
   return { solution, activeColors: chosen, colorCount };
 }
 
+export type DDALevel = 'standard' | 'hard';
+
+/**
+ * Dynamic Difficulty Adjustment generator.
+ * Uses a secondary randomizer (seeded differently) to modify positions/colors
+ * when the player aced Round 1.
+ *
+ * - Round 2 hard: same color count but positions avoid center (index 4),
+ *   scattered to edges/corners for harder spatial memory.
+ * - Round 3 hard: adds +1 extra color to the grid.
+ */
+export function generateSolutionDDA(
+  roundIndex: number,
+  ddaLevel: DDALevel
+): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+  if (ddaLevel === 'standard' || roundIndex === 0) {
+    return generateSolution(roundIndex);
+  }
+
+  const { colorCount: baseCount } = getDayInfo();
+  const baseSeed = getDateSeed();
+  // Primary seed for color selection (deterministic per day)
+  const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
+  // Secondary seed for DDA position/color modifications
+  const ddaSeed = baseSeed + roundIndex * 13337 + 42;
+  const ddaRand = seededRandom(ddaSeed);
+
+  // Round 3 hard: add 1 extra color (capped at 9)
+  const colorCount = roundIndex >= 2 ? Math.min(baseCount + 1, 9) : baseCount;
+
+  const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+  const chosen = shuffled.slice(0, colorCount);
+
+  let coloredPositions: number[];
+
+  if (roundIndex === 1) {
+    // Round 2 hard: avoid center (index 4), prefer edges/corners
+    const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8];
+    const shuffledPositions = nonCenter.sort(() => ddaRand() - 0.5);
+    coloredPositions = shuffledPositions.slice(0, colorCount);
+  } else {
+    // Round 3 hard: fully random positions with secondary seed
+    const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
+    coloredPositions = allPositions.slice(0, colorCount);
+  }
+
+  const solution: (string | null)[] = Array(9).fill(null);
+  coloredPositions.forEach((pos, i) => {
+    solution[pos] = chosen[i].hex;
+  });
+
+  return { solution, activeColors: chosen, colorCount };
+}
+
 export function getDayNumber(): number {
   const start = new Date(2024, 0, 1);
   const now = new Date();

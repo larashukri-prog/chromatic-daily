@@ -10,11 +10,12 @@ import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import {
-  GamePhase, NEUTRAL, COLORS, generateSolution, getDayInfo, getDayNumber,
+  GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData
+  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel
 } from '@/lib/game';
 import { posthog } from '@/lib/posthog';
+import { toast } from 'sonner';
 
 const OBSERVATION_TIME = 5000;
 
