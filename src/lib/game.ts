@@ -1,15 +1,15 @@
 // Chromatic Daily - Game Logic
 
 const COLORS = [
-  { name: 'Red', hex: '#EF4444' },
-  { name: 'Yellow', hex: '#FDE047' },
-  { name: 'Teal', hex: '#6EE7B7' },
-  { name: 'Orange', hex: '#F97316' },
-  { name: 'Purple', hex: '#8B5CF6' },
-  { name: 'Lime', hex: '#BEF264' },
-  { name: 'Green', hex: '#3F6212' },
-  { name: 'Pink', hex: '#EC4899' },
-  { name: 'Blue', hex: '#2563EB' },
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Teal', hex: '#6EE7B7', hue: 155 },
+  { name: 'Orange', hex: '#F97316', hue: 25 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Lime', hex: '#BEF264', hue: 82 },
+  { name: 'Green', hex: '#3F6212', hue: 90 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: 'Blue', hex: '#2563EB', hue: 220 },
 ];
 
 const NEUTRAL = '#D1D5DB';
@@ -67,14 +67,73 @@ export function generateSolution(roundIndex: number = 0): { solution: (string | 
 
 export type DDALevel = 'standard' | 'hard';
 
+/** Difficulty tier based on color count */
+export function getDayDifficultyTier(colorCount: number): 'easy' | 'medium' | 'hard' {
+  if (colorCount <= 3) return 'easy';   // Mon (2), Tue (3)
+  if (colorCount <= 5) return 'medium'; // Wed (4), Thu (5)
+  return 'hard';                        // Fri (6), Sat (7), Sun (9)
+}
+
 /**
- * Dynamic Difficulty Adjustment generator.
- * Uses a secondary randomizer (seeded differently) to modify positions/colors
- * when the player aced Round 1.
+ * Check if two colors are "palette neighbors" (hue distance < 50).
+ */
+function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
+  const diff = Math.abs(a.hue - b.hue);
+  return Math.min(diff, 360 - diff) < 50;
+}
+
+/**
+ * For hard days: ensure placed colors on the grid are not adjacent to
+ * their palette neighbors. Re-shuffle positions so that neighboring
+ * cells (in the 3x3 grid) don't hold hue-similar colors.
+ */
+function getNonAdjacentPositions(
+  chosen: typeof COLORS,
+  colorCount: number,
+  rand: () => number
+): number[] {
+  // 3x3 adjacency (including diagonals)
+  const adjacent: Record<number, number[]> = {
+    0: [1, 3, 4], 1: [0, 2, 3, 4, 5], 2: [1, 4, 5],
+    3: [0, 1, 4, 6, 7], 4: [0, 1, 2, 3, 5, 6, 7, 8], 5: [1, 2, 4, 7, 8],
+    6: [3, 4, 7], 7: [3, 4, 5, 6, 8], 8: [4, 5, 7],
+  };
+
+  // Try up to 200 random arrangements and pick the best one
+  let bestPositions: number[] = [];
+  let bestConflicts = Infinity;
+
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const allPos = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
+    const positions = allPos.slice(0, colorCount);
+
+    // Count neighbor conflicts
+    let conflicts = 0;
+    for (let i = 0; i < positions.length; i++) {
+      for (let j = i + 1; j < positions.length; j++) {
+        if (adjacent[positions[i]].includes(positions[j]) && areHueNeighbors(chosen[i], chosen[j])) {
+          conflicts++;
+        }
+      }
+    }
+
+    if (conflicts < bestConflicts) {
+      bestConflicts = conflicts;
+      bestPositions = positions;
+      if (conflicts === 0) break;
+    }
+  }
+
+  return bestPositions;
+}
+
+/**
+ * Dynamic Difficulty Adjustment generator with Cognitive Cap.
  *
- * - Round 2 hard: same color count but positions avoid center (index 4),
- *   scattered to edges/corners for harder spatial memory.
- * - Round 3 hard: adds +1 extra color to the grid.
+ * Easy days (Mon/Tue): Add +1 color for Rounds 2 & 3.
+ * Medium days (Wed/Thu): Add +1 color for Rounds 2 & 3, avoid center.
+ * Hard days (Fri/Sat/Sun): Keep same colors, enforce spatial separation
+ *   (no hue-similar colors in adjacent cells).
  */
 export function generateSolutionDDA(
   roundIndex: number,
@@ -85,28 +144,37 @@ export function generateSolutionDDA(
   }
 
   const { colorCount: baseCount } = getDayInfo();
+  const tier = getDayDifficultyTier(baseCount);
   const baseSeed = getDateSeed();
-  // Primary seed for color selection (deterministic per day)
   const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
-  // Secondary seed for DDA position/color modifications
   const ddaSeed = baseSeed + roundIndex * 13337 + 42;
   const ddaRand = seededRandom(ddaSeed);
 
-  // Round 3 hard: add 1 extra color (capped at 9)
-  const colorCount = roundIndex >= 2 ? Math.min(baseCount + 1, 9) : baseCount;
+  if (tier === 'hard') {
+    // Hard days: same color count, but enforce spatial separation
+    const colorCount = baseCount;
+    const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+    const chosen = shuffled.slice(0, colorCount);
+    const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
 
+    const solution: (string | null)[] = Array(9).fill(null);
+    coloredPositions.forEach((pos, i) => {
+      solution[pos] = chosen[i].hex;
+    });
+    return { solution, activeColors: chosen, colorCount };
+  }
+
+  // Easy/Medium days: add +1 color (capped at 9)
+  const colorCount = Math.min(baseCount + 1, 9);
   const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
   const chosen = shuffled.slice(0, colorCount);
 
   let coloredPositions: number[];
-
-  if (roundIndex === 1) {
-    // Round 2 hard: avoid center (index 4), prefer edges/corners
-    const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8];
-    const shuffledPositions = nonCenter.sort(() => ddaRand() - 0.5);
-    coloredPositions = shuffledPositions.slice(0, colorCount);
+  if (tier === 'medium' && roundIndex === 1) {
+    // Medium Round 2: avoid center
+    const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
+    coloredPositions = nonCenter.slice(0, colorCount);
   } else {
-    // Round 3 hard: fully random positions with secondary seed
     const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
     coloredPositions = allPositions.slice(0, colorCount);
   }
