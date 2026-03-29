@@ -58,7 +58,7 @@ const Index = () => {
     if (count <= 6) return 'Complex';
     return 'Master';
   };
-  const difficultyName = getDifficultyName(colorCount);
+  const difficultyName = getDifficultyName(baseColorCount);
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {
@@ -197,7 +197,7 @@ const Index = () => {
     if (!selectedColor) return;
     // Cap: prevent placing more than the daily target
     const currentCount = newGrid.filter((c) => c !== null).length;
-    if (currentCount >= colorCount) return;
+    if (currentCount >= effectiveColorCount) return;
     newGrid[index] = selectedColor;
     setPlayerGrid(newGrid);
   };
@@ -209,7 +209,7 @@ const Index = () => {
   };
 
   const selectedCount = playerGrid.filter((c) => c !== null).length;
-  const canVerify = phase === 'recall' && selectedCount === colorCount;
+  const canVerify = phase === 'recall' && selectedCount === effectiveColorCount;
 
   const verify = () => {
     if (!canVerify) return;
@@ -442,7 +442,7 @@ const Index = () => {
                   transition={{ duration: 0.2 }}
                   className="text-xs text-muted-foreground uppercase tracking-widest mb-3 text-center"
                 >
-                  {selectedCount}/{colorCount} colors placed
+                  {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
                   {COLORS.map((c) => (
