@@ -275,6 +275,7 @@ const Index = () => {
       const { solution: sol, activeColors: ac, colorCount: cc } = generateSolutionDDA(newRound, ddaLevel);
       setSolution(sol);
       setActiveColors(ac);
+      setEffectiveColorCount(cc);
     } else {
       setAttemptInRound((prev) => prev + 1);
     }
