@@ -8,7 +8,7 @@ const ONBOARDING_KEY = 'hueday_onboarded';
 const steps = [
   { icon: Eye, label: 'Watch', desc: 'Hit Start to see a color pattern for 5 seconds.' },
   { icon: Brain, label: 'Memorize', desc: 'Study the colors and their positions.' },
-  { icon: Palette, label: 'Recreate', desc: 'Use the color picker to fill the grid.' },
+  { icon: Palette, label: 'Recreate', desc: 'Select a color below, then tap the grid to place it.', badge: '1 ➔ 2' },
   { icon: CheckCircle2, label: 'Verify', desc: 'Check your accuracy.' },
 ];
 
