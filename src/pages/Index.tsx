@@ -235,6 +235,15 @@ const Index = () => {
 
       posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
 
+      // DDA: if Round 1 solved on first attempt, level up for remaining rounds
+      if (roundIndex === 0 && correct && attemptInRound === 1) {
+        setDdaLevel('hard');
+        toast('Level Up! Round 2 is getting harder... 🔥', {
+          description: '!زيادة الصعوبة... الجولة الثانية أصبحت أصعب',
+          duration: 3000,
+        });
+      }
+
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
       setResultMessage(msg);
 
@@ -262,7 +271,7 @@ const Index = () => {
       const newRound = roundIndex + 1;
       setRoundIndex(newRound);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolution(newRound);
+      const { solution: sol, activeColors: ac, colorCount: cc } = generateSolutionDDA(newRound, ddaLevel);
       setSolution(sol);
       setActiveColors(ac);
     } else {
