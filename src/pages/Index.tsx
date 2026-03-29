@@ -18,7 +18,8 @@ import {
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
 
-const OBSERVATION_TIME = 5000;
+const OBSERVATION_TIME_DEFAULT = 5000;
+const OBSERVATION_TIME_A11Y = 7000;
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
