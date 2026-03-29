@@ -47,7 +47,8 @@ const Index = () => {
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
 
-  const { dayName, colorCount } = getDayInfo();
+  const { dayName, colorCount: baseColorCount } = getDayInfo();
+  const [effectiveColorCount, setEffectiveColorCount] = useState(baseColorCount);
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
 
