@@ -41,6 +41,7 @@ const Index = () => {
   const [verifying, setVerifying] = useState(false);
   const [cheatDetected, setCheatDetected] = useState(false);
   const [cheatMessage, setCheatMessage] = useState('');
+  const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
