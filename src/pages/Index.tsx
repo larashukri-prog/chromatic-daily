@@ -170,6 +170,17 @@ const Index = () => {
     };
   }, []);
 
+  // Auto-transition final result to daily summary after 2 seconds
+  useEffect(() => {
+    const isFinal = phase === 'result' && (totalAttemptsUsed >= MAX_ROUNDS || alreadyFinished);
+    if (showResult && isFinal) {
+      const timer = setTimeout(() => {
+        setShowResult(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showResult, phase, totalAttemptsUsed, alreadyFinished]);
+
   // Tap-to-undo: if circle already has color, reset it; otherwise paint it
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
@@ -568,8 +579,8 @@ const Index = () => {
       </Dialog>
 
       {/* Result Modal */}
-      <Dialog open={showResult} onOpenChange={setShowResult}>
-        <DialogContent className="sm:max-w-sm rounded-2xl text-center">
+      <Dialog open={showResult} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
