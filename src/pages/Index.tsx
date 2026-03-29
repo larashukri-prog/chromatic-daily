@@ -12,7 +12,8 @@ import { PatternOverlay } from '@/components/PatternOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel
+  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
+  getDayDifficultyTier
 } from '@/lib/game';
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
@@ -239,10 +240,20 @@ const Index = () => {
       // DDA: if Round 1 solved on first attempt, level up for remaining rounds
       if (roundIndex === 0 && correct && attemptInRound === 1) {
         setDdaLevel('hard');
-        toast('Level Up! Round 2 is getting harder... 🔥', {
-          description: '!زيادة الصعوبة... الجولة الثانية أصبحت أصعب',
-          duration: 3000,
-        });
+        const tier = getDayDifficultyTier(baseColorCount);
+        // Only show toast on easy/medium days — hard days keep UI clean
+        if (tier !== 'hard') {
+          toast('Level Up! Round 2 is getting harder... 🔥', {
+            description: '!زيادة الصعوبة... الجولة الثانية أصبحت أصعب',
+            duration: 3000,
+          });
+        }
+      }
+
+      // Failure reset: revert to standard difficulty if user fails
+      if (!correct && ddaLevel === 'hard') {
+        setDdaLevel('standard');
+        setEffectiveColorCount(baseColorCount);
       }
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
