@@ -58,24 +58,28 @@ export function getDayInfo() {
 }
 
 export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  const { colorCount } = getDayInfo();
-  const baseSeed = getDateSeed();
-  // Each round gets a different seed so puzzles differ
-  const seed = baseSeed + roundIndex * 7919;
-  const rand = seededRandom(seed);
+  try {
+    const { colorCount } = getDayInfo();
+    const baseSeed = getDateSeed();
+    const seed = baseSeed + roundIndex * 7919;
+    const rand = seededRandom(seed);
 
-  const shuffled = [...COLORS].sort(() => rand() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
+    const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    const chosen = shuffled.slice(0, colorCount);
 
-  const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
-  const coloredPositions = positions.slice(0, colorCount);
+    const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
+    const coloredPositions = positions.slice(0, colorCount);
 
-  const solution: (string | null)[] = Array(9).fill(null);
-  coloredPositions.forEach((pos, i) => {
-    solution[pos] = chosen[i].hex;
-  });
+    const solution: (string | null)[] = Array(9).fill(null);
+    coloredPositions.forEach((pos, i) => {
+      solution[pos] = chosen[i].hex;
+    });
 
-  return { solution, activeColors: chosen, colorCount };
+    return { solution, activeColors: chosen, colorCount };
+  } catch (err) {
+    console.error('[Chromatic] generateSolution failed, using fallback palette:', err);
+    return generateFallbackSolution();
+  }
 }
 
 export type DDALevel = 'standard' | 'hard';
