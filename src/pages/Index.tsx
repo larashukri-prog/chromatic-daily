@@ -225,15 +225,29 @@ const Index = () => {
     setIsCorrect(correct);
     setVerifying(true);
 
+    // Save result IMMEDIATELY before any state transitions to prevent stale data
+    const newTotalUsed = totalAttemptsUsed + 1;
+    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
+
+    // Debug: audit resultsArray in real-time
+    console.log('[Chromatic] Round verified:', {
+      roundIndex,
+      attemptInRound,
+      isCorrect: correct,
+      totalAttemptsUsed: newTotalUsed,
+      resultsArray: savedData.rounds.map(r => ({
+        round: r.roundIndex,
+        solved: r.solved,
+        attempts: r.attempts.map(a => a.isCorrect ? '✅' : '❌'),
+      })),
+    });
+
     // After glow animation, transition to result
     setTimeout(() => {
       setVerifying(false);
       setPhase('result');
 
-      const newTotalUsed = totalAttemptsUsed + 1;
       setTotalAttemptsUsed(newTotalUsed);
-
-      const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
