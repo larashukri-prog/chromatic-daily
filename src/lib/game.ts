@@ -168,52 +168,54 @@ export function generateSolutionDDA(
   roundIndex: number,
   ddaLevel: DDALevel
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  if (ddaLevel === 'standard' || roundIndex === 0) {
-    return generateSolution(roundIndex);
-  }
+  try {
+    if (ddaLevel === 'standard' || roundIndex === 0) {
+      return generateSolution(roundIndex);
+    }
 
-  const { colorCount: baseCount } = getDayInfo();
-  const tier = getDayDifficultyTier(baseCount);
-  const baseSeed = getDateSeed();
-  const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
-  const ddaSeed = baseSeed + roundIndex * 13337 + 42;
-  const ddaRand = seededRandom(ddaSeed);
+    const { colorCount: baseCount } = getDayInfo();
+    const tier = getDayDifficultyTier(baseCount);
+    const baseSeed = getDateSeed();
+    const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
+    const ddaSeed = baseSeed + roundIndex * 13337 + 42;
+    const ddaRand = seededRandom(ddaSeed);
 
-  if (tier === 'hard') {
-    // Hard days: same color count, but enforce spatial separation
-    const colorCount = baseCount;
+    if (tier === 'hard') {
+      const colorCount = baseCount;
+      const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+      const chosen = shuffled.slice(0, colorCount);
+      const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
+
+      const solution: (string | null)[] = Array(9).fill(null);
+      coloredPositions.forEach((pos, i) => {
+        solution[pos] = chosen[i].hex;
+      });
+      return { solution, activeColors: chosen, colorCount };
+    }
+
+    const colorCount = Math.min(baseCount + 1, 9);
     const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
     const chosen = shuffled.slice(0, colorCount);
-    const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
+
+    let coloredPositions: number[];
+    if (tier === 'medium' && roundIndex === 1) {
+      const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
+      coloredPositions = nonCenter.slice(0, colorCount);
+    } else {
+      const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
+      coloredPositions = allPositions.slice(0, colorCount);
+    }
 
     const solution: (string | null)[] = Array(9).fill(null);
     coloredPositions.forEach((pos, i) => {
       solution[pos] = chosen[i].hex;
     });
+
     return { solution, activeColors: chosen, colorCount };
+  } catch (err) {
+    console.error('[Chromatic] generateSolutionDDA failed, using fallback:', err);
+    return generateFallbackSolution();
   }
-
-  // Easy/Medium days: add +1 color (capped at 9)
-  const colorCount = Math.min(baseCount + 1, 9);
-  const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
-
-  let coloredPositions: number[];
-  if (tier === 'medium' && roundIndex === 1) {
-    // Medium Round 2: avoid center
-    const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
-    coloredPositions = nonCenter.slice(0, colorCount);
-  } else {
-    const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
-    coloredPositions = allPositions.slice(0, colorCount);
-  }
-
-  const solution: (string | null)[] = Array(9).fill(null);
-  coloredPositions.forEach((pos, i) => {
-    solution[pos] = chosen[i].hex;
-  });
-
-  return { solution, activeColors: chosen, colorCount };
 }
 
 export function getDayNumber(): number {
