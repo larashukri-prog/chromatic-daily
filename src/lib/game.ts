@@ -12,6 +12,19 @@ const COLORS = [
   { name: 'Blue', hex: '#2563EB', hue: 220 },
 ];
 
+/** Hard-coded fallback palette in case the randomizer fails */
+const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Blue', hex: '#2563EB', hue: 220 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Teal', hex: '#6EE7B7', hue: 155 },
+  { name: 'Orange', hex: '#F97316', hue: 25 },
+  { name: 'Green', hex: '#3F6212', hue: 90 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: 'Lime', hex: '#BEF264', hue: 82 },
+];
+
 const NEUTRAL = '#D1D5DB';
 
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
