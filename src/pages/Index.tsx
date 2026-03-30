@@ -246,7 +246,6 @@ const Index = () => {
         // Only show toast on easy/medium days — hard days keep UI clean
         if (tier !== 'hard') {
           toast('Level Up! Round 2 is getting harder... 🔥', {
-            description: '!زيادة الصعوبة... الجولة الثانية أصبحت أصعب',
             duration: 3000,
           });
         }
