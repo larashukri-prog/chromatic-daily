@@ -57,6 +57,18 @@ export function getDayInfo() {
   };
 }
 
+/** Fallback solution using hard-coded palette when generation fails */
+function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+  const { colorCount } = getDayInfo();
+  const chosen = FALLBACK_PALETTE.slice(0, colorCount);
+  const positions = Array.from({ length: colorCount }, (_, i) => i);
+  const solution: (string | null)[] = Array(9).fill(null);
+  positions.forEach((pos, i) => {
+    solution[pos] = chosen[i].hex;
+  });
+  return { solution, activeColors: chosen, colorCount };
+}
+
 export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
     const { colorCount } = getDayInfo();
