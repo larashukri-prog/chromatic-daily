@@ -12,6 +12,19 @@ const COLORS = [
   { name: 'Blue', hex: '#2563EB', hue: 220 },
 ];
 
+/** Hard-coded fallback palette in case the randomizer fails */
+const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Blue', hex: '#2563EB', hue: 220 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Teal', hex: '#6EE7B7', hue: 155 },
+  { name: 'Orange', hex: '#F97316', hue: 25 },
+  { name: 'Green', hex: '#3F6212', hue: 90 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: 'Lime', hex: '#BEF264', hue: 82 },
+];
+
 const NEUTRAL = '#D1D5DB';
 
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
@@ -44,25 +57,41 @@ export function getDayInfo() {
   };
 }
 
-export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+/** Fallback solution using hard-coded palette when generation fails */
+function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   const { colorCount } = getDayInfo();
-  const baseSeed = getDateSeed();
-  // Each round gets a different seed so puzzles differ
-  const seed = baseSeed + roundIndex * 7919;
-  const rand = seededRandom(seed);
-
-  const shuffled = [...COLORS].sort(() => rand() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
-
-  const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
-  const coloredPositions = positions.slice(0, colorCount);
-
+  const chosen = FALLBACK_PALETTE.slice(0, colorCount);
+  const positions = Array.from({ length: colorCount }, (_, i) => i);
   const solution: (string | null)[] = Array(9).fill(null);
-  coloredPositions.forEach((pos, i) => {
+  positions.forEach((pos, i) => {
     solution[pos] = chosen[i].hex;
   });
-
   return { solution, activeColors: chosen, colorCount };
+}
+
+export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+  try {
+    const { colorCount } = getDayInfo();
+    const baseSeed = getDateSeed();
+    const seed = baseSeed + roundIndex * 7919;
+    const rand = seededRandom(seed);
+
+    const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    const chosen = shuffled.slice(0, colorCount);
+
+    const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
+    const coloredPositions = positions.slice(0, colorCount);
+
+    const solution: (string | null)[] = Array(9).fill(null);
+    coloredPositions.forEach((pos, i) => {
+      solution[pos] = chosen[i].hex;
+    });
+
+    return { solution, activeColors: chosen, colorCount };
+  } catch (err) {
+    console.error('[Chromatic] generateSolution failed, using fallback palette:', err);
+    return generateFallbackSolution();
+  }
 }
 
 export type DDALevel = 'standard' | 'hard';
@@ -139,52 +168,54 @@ export function generateSolutionDDA(
   roundIndex: number,
   ddaLevel: DDALevel
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  if (ddaLevel === 'standard' || roundIndex === 0) {
-    return generateSolution(roundIndex);
-  }
+  try {
+    if (ddaLevel === 'standard' || roundIndex === 0) {
+      return generateSolution(roundIndex);
+    }
 
-  const { colorCount: baseCount } = getDayInfo();
-  const tier = getDayDifficultyTier(baseCount);
-  const baseSeed = getDateSeed();
-  const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
-  const ddaSeed = baseSeed + roundIndex * 13337 + 42;
-  const ddaRand = seededRandom(ddaSeed);
+    const { colorCount: baseCount } = getDayInfo();
+    const tier = getDayDifficultyTier(baseCount);
+    const baseSeed = getDateSeed();
+    const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
+    const ddaSeed = baseSeed + roundIndex * 13337 + 42;
+    const ddaRand = seededRandom(ddaSeed);
 
-  if (tier === 'hard') {
-    // Hard days: same color count, but enforce spatial separation
-    const colorCount = baseCount;
+    if (tier === 'hard') {
+      const colorCount = baseCount;
+      const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+      const chosen = shuffled.slice(0, colorCount);
+      const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
+
+      const solution: (string | null)[] = Array(9).fill(null);
+      coloredPositions.forEach((pos, i) => {
+        solution[pos] = chosen[i].hex;
+      });
+      return { solution, activeColors: chosen, colorCount };
+    }
+
+    const colorCount = Math.min(baseCount + 1, 9);
     const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
     const chosen = shuffled.slice(0, colorCount);
-    const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
+
+    let coloredPositions: number[];
+    if (tier === 'medium' && roundIndex === 1) {
+      const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
+      coloredPositions = nonCenter.slice(0, colorCount);
+    } else {
+      const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
+      coloredPositions = allPositions.slice(0, colorCount);
+    }
 
     const solution: (string | null)[] = Array(9).fill(null);
     coloredPositions.forEach((pos, i) => {
       solution[pos] = chosen[i].hex;
     });
+
     return { solution, activeColors: chosen, colorCount };
+  } catch (err) {
+    console.error('[Chromatic] generateSolutionDDA failed, using fallback:', err);
+    return generateFallbackSolution();
   }
-
-  // Easy/Medium days: add +1 color (capped at 9)
-  const colorCount = Math.min(baseCount + 1, 9);
-  const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
-
-  let coloredPositions: number[];
-  if (tier === 'medium' && roundIndex === 1) {
-    // Medium Round 2: avoid center
-    const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
-    coloredPositions = nonCenter.slice(0, colorCount);
-  } else {
-    const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
-    coloredPositions = allPositions.slice(0, colorCount);
-  }
-
-  const solution: (string | null)[] = Array(9).fill(null);
-  coloredPositions.forEach((pos, i) => {
-    solution[pos] = chosen[i].hex;
-  });
-
-  return { solution, activeColors: chosen, colorCount };
 }
 
 export function getDayNumber(): number {

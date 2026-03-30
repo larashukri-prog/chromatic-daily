@@ -713,4 +713,12 @@ const Index = () => {
   );
 };
 
-export default Index;
+// Wrap in ErrorBoundary
+import { GameErrorBoundary } from '@/components/GameErrorBoundary';
+const IndexWithErrorBoundary = () => (
+  <GameErrorBoundary>
+    <Index />
+  </GameErrorBoundary>
+);
+
+export default IndexWithErrorBoundary;
