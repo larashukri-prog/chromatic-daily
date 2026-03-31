@@ -436,15 +436,6 @@ const Index = () => {
           <div
             className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
           >
-            {/* Circular Timer above grid */}
-            {phase === 'observation' && (
-              <div className="flex justify-center pt-5 pb-1">
-                <CircularTimer
-                  progress={timerProgress}
-                  totalSeconds={Math.round(timerDuration / 1000)}
-                />
-              </div>
-            )}
 
             {/* Grid with animated transitions */}
             <div className="relative">

@@ -9,17 +9,17 @@ interface CircularTimerProps {
   size?: number;
 }
 
-export function CircularTimer({ progress, totalSeconds, size = 72 }: CircularTimerProps) {
-  const strokeWidth = 4;
+export function CircularTimer({ progress, totalSeconds, size = 28 }: CircularTimerProps) {
+  const strokeWidth = 2.5;
   const radius = (size - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress / 100);
   const secondsLeft = Math.ceil((progress / 100) * totalSeconds);
+  const fontSize = size * 0.4;
 
   return (
-    <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Background ring */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -28,13 +28,12 @@ export function CircularTimer({ progress, totalSeconds, size = 72 }: CircularTim
           stroke="hsl(var(--muted))"
           strokeWidth={strokeWidth}
         />
-        {/* Progress ring */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="hsl(var(--primary))"
+          stroke="hsl(var(--muted-foreground))"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -42,10 +41,9 @@ export function CircularTimer({ progress, totalSeconds, size = 72 }: CircularTim
           style={{ transition: 'stroke-dashoffset 0.1s linear' }}
         />
       </svg>
-      {/* Centered number */}
       <span
-        className="absolute text-xl font-bold text-foreground tabular-nums"
-        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        className="absolute text-muted-foreground font-semibold tabular-nums leading-none"
+        style={{ fontSize }}
       >
         {secondsLeft}
       </span>
