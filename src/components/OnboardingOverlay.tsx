@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 const ONBOARDING_KEY = 'hueday_onboarded';
 
 const steps: { icon: typeof Eye; label: string; desc: string; badge?: string }[] = [
-  { icon: Eye, label: 'Watch', desc: 'Hit Start to see a color pattern for 5 seconds.' },
+  { icon: Eye, label: 'Watch', desc: 'Hit Start to see a color pattern for a few seconds.' },
   { icon: Brain, label: 'Memorize', desc: 'Study the colors and their positions.' },
   { icon: Palette, label: 'Recreate', desc: 'Select a color below, then tap the grid to place it.', badge: '1 ➔ 2' },
   { icon: CheckCircle2, label: 'Verify', desc: 'Check your accuracy.' },
