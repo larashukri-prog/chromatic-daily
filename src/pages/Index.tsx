@@ -6,6 +6,7 @@ import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-r
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
+import { CircularTimer } from '@/components/CircularTimer';
 import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
@@ -18,8 +19,16 @@ import {
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
 
-const OBSERVATION_TIME_DEFAULT = 5000;
-const OBSERVATION_TIME_A11Y = 7000;
+/** Dynamic timer durations in ms based on color count */
+function getObservationDuration(colorCount: number, isA11y: boolean): number {
+  let base: number;
+  if (colorCount <= 2) base = 5000;
+  else if (colorCount <= 3) base = 6000;
+  else if (colorCount <= 4) base = 8000;
+  else if (colorCount <= 6) base = 10000;
+  else base = 15000;
+  return isA11y ? base * 2 : base;
+}
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
@@ -28,6 +37,7 @@ const Index = () => {
   const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
+  const [timerDuration, setTimerDuration] = useState(5000);
   const [result, setResult] = useState<boolean[] | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
@@ -143,7 +153,8 @@ const Index = () => {
   }, [phase, triggerCheatOverlay]);
 
   const startObservation = useCallback(() => {
-    const duration = a11y ? OBSERVATION_TIME_A11Y : OBSERVATION_TIME_DEFAULT;
+    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
     setPlayerGrid(Array(9).fill(null));
@@ -163,7 +174,7 @@ const Index = () => {
         setSelectedColor(null);
       }
     }, 30);
-  }, [a11y]);
+  }, [a11y, activeColors.length, baseColorCount]);
 
   const startGame = useCallback(() => {
     if (alreadyFinished) return;
@@ -414,12 +425,12 @@ const Index = () => {
           <div
             className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
           >
-            {/* Timer Bar */}
+            {/* Circular Timer above grid */}
             {phase === 'observation' && (
-              <div className="h-1 bg-muted">
-                <div
-                  className="h-full bg-primary transition-all duration-75 ease-linear"
-                  style={{ width: `${timerProgress}%` }}
+              <div className="flex justify-center pt-5 pb-1">
+                <CircularTimer
+                  progress={timerProgress}
+                  totalSeconds={Math.round(timerDuration / 1000)}
                 />
               </div>
             )}
@@ -586,7 +597,7 @@ const Index = () => {
             <div className="space-y-2">
               <p>
                 <strong className="text-foreground">1.</strong> Press <strong className="text-foreground">Start</strong> — a pattern of colored circles
-                appears for <strong className="text-foreground">5 seconds</strong>.
+                appears for a few seconds (duration scales with difficulty).
               </p>
               <p>
                 <strong className="text-foreground">2.</strong> Memorize the colors and positions.
