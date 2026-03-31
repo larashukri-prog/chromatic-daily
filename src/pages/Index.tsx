@@ -153,7 +153,8 @@ const Index = () => {
   }, [phase, triggerCheatOverlay]);
 
   const startObservation = useCallback(() => {
-    const duration = a11y ? OBSERVATION_TIME_A11Y : OBSERVATION_TIME_DEFAULT;
+    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
     setPlayerGrid(Array(9).fill(null));
@@ -173,7 +174,7 @@ const Index = () => {
         setSelectedColor(null);
       }
     }, 30);
-  }, [a11y]);
+  }, [a11y, activeColors.length, baseColorCount]);
 
   const startGame = useCallback(() => {
     if (alreadyFinished) return;
