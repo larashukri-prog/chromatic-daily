@@ -406,7 +406,18 @@ const Index = () => {
             {totalAttemptsUsed}/{MAX_ROUNDS} used
           </span>
         </div>
-        {statusText && <p className="text-xs text-muted-foreground text-center mt-1.5">{statusText}</p>}
+        {statusText && (
+          <div className="flex items-center justify-center gap-2 mt-1.5">
+            {phase === 'observation' && (
+              <CircularTimer
+                progress={timerProgress}
+                totalSeconds={Math.round(timerDuration / 1000)}
+                size={28}
+              />
+            )}
+            <p className="text-xs text-muted-foreground">{statusText}</p>
+          </div>
+        )}
       </div>
 
       {/* Daily Summary (replaces game when finished) */}
