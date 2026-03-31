@@ -20,7 +20,7 @@ export function PatternOverlay({ colorHex, size, className = '' }: PatternOverla
       className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}
       viewBox="0 0 96 96"
       preserveAspectRatio="xMidYMid meet"
-      style={{ opacity: 0.72 }}
+      style={{ opacity: 0.9 }}
     >
       <circle cx="48" cy="48" r="47" fill={`url(#${patternId})`} />
     </svg>
