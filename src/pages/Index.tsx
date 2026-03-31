@@ -269,7 +269,6 @@ const Index = () => {
       // Failure reset: revert to standard difficulty if user fails
       if (!correct && ddaLevel === 'hard') {
         setDdaLevel('standard');
-        setEffectiveColorCount(baseColorCount);
       }
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
