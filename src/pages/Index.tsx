@@ -19,8 +19,16 @@ import {
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
 
-const OBSERVATION_TIME_DEFAULT = 5000;
-const OBSERVATION_TIME_A11Y = 7000;
+/** Dynamic timer durations in ms based on color count */
+function getObservationDuration(colorCount: number, isA11y: boolean): number {
+  let base: number;
+  if (colorCount <= 2) base = 5000;
+  else if (colorCount <= 3) base = 6000;
+  else if (colorCount <= 4) base = 8000;
+  else if (colorCount <= 6) base = 10000;
+  else base = 15000;
+  return isA11y ? base * 2 : base;
+}
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
