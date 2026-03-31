@@ -50,7 +50,8 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
-  const [effectiveColorCount, setEffectiveColorCount] = useState(baseColorCount);
+  // Derive effective color count from activeColors to stay in sync
+  const effectiveColorCount = activeColors.length || baseColorCount;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
 
