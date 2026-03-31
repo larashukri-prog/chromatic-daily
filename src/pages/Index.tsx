@@ -597,7 +597,7 @@ const Index = () => {
             <div className="space-y-2">
               <p>
                 <strong className="text-foreground">1.</strong> Press <strong className="text-foreground">Start</strong> — a pattern of colored circles
-                appears for <strong className="text-foreground">5 seconds</strong>.
+                appears for a few seconds (duration scales with difficulty).
               </p>
               <p>
                 <strong className="text-foreground">2.</strong> Memorize the colors and positions.
