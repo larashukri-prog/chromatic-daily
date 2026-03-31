@@ -425,12 +425,12 @@ const Index = () => {
           <div
             className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
           >
-            {/* Timer Bar */}
+            {/* Circular Timer above grid */}
             {phase === 'observation' && (
-              <div className="h-1 bg-muted">
-                <div
-                  className="h-full bg-primary transition-all duration-75 ease-linear"
-                  style={{ width: `${timerProgress}%` }}
+              <div className="flex justify-center pt-5 pb-1">
+                <CircularTimer
+                  progress={timerProgress}
+                  totalSeconds={Math.round(timerDuration / 1000)}
                 />
               </div>
             )}
