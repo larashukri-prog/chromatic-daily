@@ -1,26 +1,21 @@
-// SVG pattern definitions for accessibility mode
-// 9 unique patterns mapped to the 9 possible colors
-
 import { COLORS } from '@/lib/game';
 
-// Light colors get dark strokes, dark colors get white strokes
-const LIGHT_COLORS = ['#FDE047', '#BEF264', '#6EE7B7'];
+const LIGHT_COLORS = new Set(['#FDE047', '#BEF264', '#6EE7B7']);
 
 export function getPatternStroke(hex: string): string {
-  return LIGHT_COLORS.includes(hex) ? '#1a1a1a' : '#ffffff';
+  return LIGHT_COLORS.has(hex) ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
 }
 
-// Each color index maps to a unique pattern ID
 export const PATTERN_IDS = [
-  'pat-solid',        // 0 - Red
-  'pat-vstripes',     // 1 - Yellow
-  'pat-hstripes',     // 2 - Teal
-  'pat-diagonal',     // 3 - Orange
-  'pat-crosshatch',   // 4 - Purple
-  'pat-dots',         // 5 - Lime
-  'pat-checker',      // 6 - Green
-  'pat-circles',      // 7 - Pink
-  'pat-zigzag',       // 8 - Blue
+  'pat-solid',
+  'pat-vstripes',
+  'pat-hstripes',
+  'pat-diagonal',
+  'pat-crosshatch',
+  'pat-dots',
+  'pat-checker',
+  'pat-circles',
+  'pat-zigzag',
 ];
 
 export function getPatternId(colorHex: string): string {
@@ -34,72 +29,68 @@ export function PatternDefs() {
     <svg width="0" height="0" style={{ position: 'absolute' }}>
       <defs>
         {COLORS.map((color, idx) => {
-          const stroke = getPatternStroke(color.hex);
+          const s = getPatternStroke(color.hex);
           const id = PATTERN_IDS[idx];
-          const sw = 2; // stroke width
 
           switch (idx) {
-            case 0: // Solid - no pattern needed, just a filled rect
+            case 0: // Solid (transparent)
               return (
-                <pattern key={id} id={id} width="10" height="10" patternUnits="userSpaceOnUse">
-                  <rect width="10" height="10" fill={stroke} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="4" height="4">
+                  <rect width="4" height="4" fill="transparent" />
                 </pattern>
               );
             case 1: // Vertical Stripes
               return (
-                <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="12" height="12">
+                  <line x1="3" y1="0" x2="3" y2="12" stroke={s} strokeWidth={2} />
+                  <line x1="9" y1="0" x2="9" y2="12" stroke={s} strokeWidth={2} />
                 </pattern>
               );
             case 2: // Horizontal Stripes
               return (
-                <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="12" height="12">
+                  <line x1="0" y1="3" x2="12" y2="3" stroke={s} strokeWidth={2} />
+                  <line x1="0" y1="9" x2="12" y2="9" stroke={s} strokeWidth={2} />
                 </pattern>
               );
             case 3: // Diagonal 45°
               return (
-                <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="8" x2="8" y2="0" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="10" stroke={s} strokeWidth={2} />
                 </pattern>
               );
-            case 4: // Cross-hatch
+            case 4: // Crosshatch
               return (
-                <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <line x1="0" y1="4" x2="8" y2="4" stroke={stroke} strokeWidth={sw} opacity="0.55" />
-                  <line x1="4" y1="0" x2="4" y2="8" stroke={stroke} strokeWidth={sw} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="12" height="12">
+                  <line x1="0" y1="6" x2="12" y2="6" stroke={s} strokeWidth={1.5} />
+                  <line x1="6" y1="0" x2="6" y2="12" stroke={s} strokeWidth={1.5} />
                 </pattern>
               );
             case 5: // Polka Dots
               return (
-                <pattern key={id} id={id} width="10" height="10" patternUnits="userSpaceOnUse">
-                  <circle cx="5" cy="5" r="2" fill={stroke} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="14" height="14">
+                  <circle cx="4" cy="4" r="2.5" fill={s} />
+                  <circle cx="11" cy="11" r="2.5" fill={s} />
                 </pattern>
               );
             case 6: // Checkerboard
               return (
-                <pattern key={id} id={id} width="8" height="8" patternUnits="userSpaceOnUse">
-                  <rect x="0" y="0" width="4" height="4" fill={stroke} opacity="0.55" />
-                  <rect x="4" y="4" width="4" height="4" fill={stroke} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="10" height="10">
+                  <rect x="0" y="0" width="5" height="5" fill={s} opacity="0.5" />
+                  <rect x="5" y="5" width="5" height="5" fill={s} opacity="0.5" />
                 </pattern>
               );
             case 7: // Concentric Circles
               return (
-                <pattern key={id} id={id} width="12" height="12" patternUnits="userSpaceOnUse">
-                  <circle cx="6" cy="6" r="4" fill="none" stroke={stroke} strokeWidth={sw} opacity="0.55" />
-                  <circle cx="6" cy="6" r="1.5" fill="none" stroke={stroke} strokeWidth={1} opacity="0.55" />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="16" height="16">
+                  <circle cx="8" cy="8" r="3" fill="none" stroke={s} strokeWidth={1.5} />
+                  <circle cx="8" cy="8" r="7" fill="none" stroke={s} strokeWidth={1.5} />
                 </pattern>
               );
-            case 8: // Zig-Zag
+            case 8: // Zigzag
               return (
-                <pattern key={id} id={id} width="12" height="8" patternUnits="userSpaceOnUse">
-                  <polyline
-                    points="0,6 3,2 6,6 9,2 12,6"
-                    fill="none"
-                    stroke={stroke}
-                    strokeWidth={sw}
-                    opacity="0.55"
-                  />
+                <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="12" height="10">
+                  <polyline points="0,8 3,2 6,8 9,2 12,8" fill="none" stroke={s} strokeWidth={2} />
                 </pattern>
               );
             default:

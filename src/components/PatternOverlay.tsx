@@ -18,9 +18,11 @@ export function PatternOverlay({ colorHex, size, className = '' }: PatternOverla
   return (
     <svg
       className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}
-      viewBox="0 0 100 100"
+      viewBox="0 0 96 96"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ opacity: 0.65 }}
     >
-      <circle cx="50" cy="50" r="49" fill={`url(#${patternId})`} />
+      <circle cx="48" cy="48" r="47" fill={`url(#${patternId})`} />
     </svg>
   );
 }
