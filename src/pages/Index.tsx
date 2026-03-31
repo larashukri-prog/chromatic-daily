@@ -37,6 +37,7 @@ const Index = () => {
   const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
+  const [timerDuration, setTimerDuration] = useState(5000);
   const [result, setResult] = useState<boolean[] | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
