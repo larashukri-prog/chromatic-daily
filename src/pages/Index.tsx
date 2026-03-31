@@ -50,7 +50,8 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
-  const [effectiveColorCount, setEffectiveColorCount] = useState(baseColorCount);
+  // Derive effective color count from activeColors to stay in sync
+  const effectiveColorCount = activeColors.length || baseColorCount;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
 
@@ -235,6 +236,9 @@ const Index = () => {
       attemptInRound,
       isCorrect: correct,
       totalAttemptsUsed: newTotalUsed,
+      effectiveColorCount,
+      activeColorsCount: activeColors.length,
+      ddaLevel,
       resultsArray: savedData.rounds.map(r => ({
         round: r.roundIndex,
         solved: r.solved,
@@ -268,7 +272,6 @@ const Index = () => {
       // Failure reset: revert to standard difficulty if user fails
       if (!correct && ddaLevel === 'hard') {
         setDdaLevel('standard');
-        setEffectiveColorCount(baseColorCount);
       }
 
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
@@ -295,15 +298,19 @@ const Index = () => {
     setShowResult(false);
 
     if (isCorrect) {
+      // New puzzle for next round
       const newRound = roundIndex + 1;
       setRoundIndex(newRound);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac, colorCount: cc } = generateSolutionDDA(newRound, ddaLevel);
+      const { solution: sol, activeColors: ac } = generateSolutionDDA(newRound, ddaLevel);
       setSolution(sol);
       setActiveColors(ac);
-      setEffectiveColorCount(cc);
     } else {
+      // Retry same puzzle — regenerate with current (possibly reset) difficulty
       setAttemptInRound((prev) => prev + 1);
+      const { solution: sol, activeColors: ac } = generateSolutionDDA(roundIndex, ddaLevel);
+      setSolution(sol);
+      setActiveColors(ac);
     }
 
     startObservation();
