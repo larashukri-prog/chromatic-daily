@@ -295,15 +295,19 @@ const Index = () => {
     setShowResult(false);
 
     if (isCorrect) {
+      // New puzzle for next round
       const newRound = roundIndex + 1;
       setRoundIndex(newRound);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac, colorCount: cc } = generateSolutionDDA(newRound, ddaLevel);
+      const { solution: sol, activeColors: ac } = generateSolutionDDA(newRound, ddaLevel);
       setSolution(sol);
       setActiveColors(ac);
-      setEffectiveColorCount(cc);
     } else {
+      // Retry same puzzle — regenerate with current (possibly reset) difficulty
       setAttemptInRound((prev) => prev + 1);
+      const { solution: sol, activeColors: ac } = generateSolutionDDA(roundIndex, ddaLevel);
+      setSolution(sol);
+      setActiveColors(ac);
     }
 
     startObservation();
