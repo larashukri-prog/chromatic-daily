@@ -236,6 +236,9 @@ const Index = () => {
       attemptInRound,
       isCorrect: correct,
       totalAttemptsUsed: newTotalUsed,
+      effectiveColorCount,
+      activeColorsCount: activeColors.length,
+      ddaLevel,
       resultsArray: savedData.rounds.map(r => ({
         round: r.roundIndex,
         solved: r.solved,
