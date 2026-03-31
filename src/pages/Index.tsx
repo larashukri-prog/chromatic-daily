@@ -6,6 +6,7 @@ import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-r
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
+import { CircularTimer } from '@/components/CircularTimer';
 import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
