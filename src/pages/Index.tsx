@@ -331,6 +331,7 @@ const Index = () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds);
+    console.log('[Chromatic] Share text preview:\n' + text);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
