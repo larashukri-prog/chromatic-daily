@@ -345,6 +345,7 @@ const Index = () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds);
+    console.log('[Chromatic] WhatsApp share text preview:\n' + text);
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
