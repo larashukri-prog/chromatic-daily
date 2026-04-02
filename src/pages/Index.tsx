@@ -558,19 +558,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* Streak Display (only when not showing summary) */}
-      {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
-        <div className="mt-4 flex gap-6 text-center">
-          <div>
-            <p className="text-2xl font-bold text-foreground">{streaks.current}</p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{streaks.max}</p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Best</p>
-          </div>
-        </div>
-      )}
 
       {/* Info & Reset buttons */}
       <div className="mt-6 flex items-center gap-4">
