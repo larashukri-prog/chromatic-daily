@@ -680,16 +680,6 @@ const Index = () => {
               </div>
             )}
 
-            <div className="flex gap-6 justify-center mb-4">
-              <div>
-                <p className="text-xl font-bold text-foreground">{streaks.current}</p>
-                <p className="text-xs text-muted-foreground">Streak</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-foreground">{streaks.max}</p>
-                <p className="text-xs text-muted-foreground">Best</p>
-              </div>
-            </div>
 
             <div className="flex gap-3 justify-center">
               {canContinue && (
