@@ -620,7 +620,7 @@ const Index = () => {
               <p>Monday starts with 2 colors (Minimalist). Each day adds more, reaching all 9 (Master) by Sunday.</p>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="text-muted-foreground text-xs">Build your streak!</p>
+              <p className="text-muted-foreground text-xs">Come back tomorrow for a new puzzle!</p>
             </div>
           </div>
         </DialogContent>
