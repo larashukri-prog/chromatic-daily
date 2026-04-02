@@ -411,7 +411,6 @@ export function getResultMessage(roundIndex: number, attemptInRound: number, isC
 export function generateShareText(rounds: RoundData[]): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
-  const streaks = getStreaks();
   const anySolved = rounds.some(r => r.solved);
 
   const getDifficultyName = (count: number): string => {
