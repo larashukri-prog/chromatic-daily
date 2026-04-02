@@ -3,7 +3,7 @@
 const COLORS = [
   { name: 'Red', hex: '#EF4444', hue: 0 },
   { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Teal', hex: '#6EE7B7', hue: 155 },
+  { name: 'Teal', hex: '#2DD4BF', hue: 174 },
   { name: 'Orange', hex: '#F97316', hue: 25 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#BEF264', hue: 82 },
