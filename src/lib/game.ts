@@ -411,7 +411,6 @@ export function getResultMessage(roundIndex: number, attemptInRound: number, isC
 export function generateShareText(rounds: RoundData[]): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
-  const streaks = getStreaks();
   const anySolved = rounds.some(r => r.solved);
 
   const getDifficultyName = (count: number): string => {
@@ -468,8 +467,6 @@ export function generateShareText(rounds: RoundData[]): string {
     lines.push('Better luck tomorrow!');
   }
 
-  lines.push(`⚡ Streak: ${streaks.current} day${streaks.current !== 1 ? 's' : ''}`);
-  lines.push('');
   lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');
 }

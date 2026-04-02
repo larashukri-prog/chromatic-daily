@@ -558,19 +558,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* Streak Display (only when not showing summary) */}
-      {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
-        <div className="mt-4 flex gap-6 text-center">
-          <div>
-            <p className="text-2xl font-bold text-foreground">{streaks.current}</p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{streaks.max}</p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Best</p>
-          </div>
-        </div>
-      )}
 
       {/* Info & Reset buttons */}
       <div className="mt-6 flex items-center gap-4">
@@ -633,7 +620,7 @@ const Index = () => {
               <p>Monday starts with 2 colors (Minimalist). Each day adds more, reaching all 9 (Master) by Sunday.</p>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="text-muted-foreground text-xs">Build your streak!</p>
+              <p className="text-muted-foreground text-xs">Come back tomorrow for a new puzzle!</p>
             </div>
           </div>
         </DialogContent>
@@ -693,16 +680,6 @@ const Index = () => {
               </div>
             )}
 
-            <div className="flex gap-6 justify-center mb-4">
-              <div>
-                <p className="text-xl font-bold text-foreground">{streaks.current}</p>
-                <p className="text-xs text-muted-foreground">Streak</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-foreground">{streaks.max}</p>
-                <p className="text-xs text-muted-foreground">Best</p>
-              </div>
-            </div>
 
             <div className="flex gap-3 justify-center">
               {canContinue && (
