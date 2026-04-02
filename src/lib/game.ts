@@ -6,7 +6,7 @@ const COLORS = [
   { name: 'Teal', hex: '#2DD4BF', hue: 174 },
   { name: 'Orange', hex: '#F97316', hue: 25 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Lime', hex: '#BEF264', hue: 82 },
+  { name: 'Lime', hex: '#84CC16', hue: 82 },
   { name: 'Green', hex: '#3F6212', hue: 90 },
   { name: 'Pink', hex: '#EC4899', hue: 330 },
   { name: 'Blue', hex: '#2563EB', hue: 220 },
