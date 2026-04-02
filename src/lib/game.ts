@@ -18,7 +18,7 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
   { name: 'Blue', hex: '#2563EB', hue: 220 },
   { name: 'Yellow', hex: '#FDE047', hue: 50 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Teal', hex: '#6EE7B7', hue: 155 },
+  { name: 'Teal', hex: '#2DD4BF', hue: 174 },
   { name: 'Orange', hex: '#F97316', hue: 25 },
   { name: 'Green', hex: '#3F6212', hue: 90 },
   { name: 'Pink', hex: '#EC4899', hue: 330 },
