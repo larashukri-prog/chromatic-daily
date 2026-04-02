@@ -22,7 +22,7 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
   { name: 'Orange', hex: '#F97316', hue: 25 },
   { name: 'Green', hex: '#3F6212', hue: 90 },
   { name: 'Pink', hex: '#EC4899', hue: 330 },
-  { name: 'Lime', hex: '#BEF264', hue: 82 },
+  { name: 'Lime', hex: '#84CC16', hue: 82 },
 ];
 
 const NEUTRAL = '#D1D5DB';
