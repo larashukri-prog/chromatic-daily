@@ -442,11 +442,19 @@ export function generateShareText(rounds: RoundData[]): string {
     if (a) {
       const statusIcon = a.isCorrect ? '✅' : '❌';
       lines.push(`Attempt ${i + 1} ${statusIcon}`);
-      const grid = a.solution.map((sol, j) => {
-        const hasColor = sol !== null || a.grid[j] !== null;
-        if (!hasColor) return '⚪';
-        const correct = sol === null ? a.grid[j] === null : a.grid[j] === sol;
-        return correct ? '🟢' : '🔴';
+      // Direct 1:1 mapping: index 0 = top-left circle = first emoji
+      const grid = Array.from({ length: 9 }, (_, j) => {
+        const sol = a.solution[j];
+        const placed = a.grid[j];
+        // Both empty — no color in this slot
+        if (sol === null && placed === null) return '⚪';
+        // Player placed nothing but solution expected a color — missed
+        if (sol !== null && placed === null) return '🔴';
+        // Player placed a color where solution is empty — wrong placement
+        if (sol === null && placed !== null) return '🔴';
+        // Both have colors — compare (case-insensitive for hex safety)
+        const isMatch = sol!.toLowerCase() === placed!.toLowerCase();
+        return isMatch ? '🟢' : '🔴';
       });
       lines.push(grid.slice(0, 3).join(''));
       lines.push(grid.slice(3, 6).join(''));
