@@ -328,7 +328,8 @@ export function saveRoundAttempt(
     rounds.push(round);
   }
 
-  round.attempts.push({ grid: playerGrid, isCorrect });
+  round.attempts.push({ grid: playerGrid, isCorrect, solution });
+  round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
   const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
