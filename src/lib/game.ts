@@ -229,10 +229,16 @@ export { NEUTRAL, COLORS };
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
 
+export interface RoundAttempt {
+  grid: (string | null)[];
+  isCorrect: boolean;
+  solution: (string | null)[];
+}
+
 export interface RoundData {
   roundIndex: number; // which puzzle (0, 1, 2)
-  attempts: { grid: (string | null)[]; isCorrect: boolean }[];
-  solution: (string | null)[];
+  attempts: RoundAttempt[];
+  solution: (string | null)[]; // kept for back-compat; latest solution for this round
   solved: boolean;
 }
 
