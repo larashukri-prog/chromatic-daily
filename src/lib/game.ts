@@ -229,10 +229,16 @@ export { NEUTRAL, COLORS };
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
 
+export interface RoundAttempt {
+  grid: (string | null)[];
+  isCorrect: boolean;
+  solution: (string | null)[];
+}
+
 export interface RoundData {
   roundIndex: number; // which puzzle (0, 1, 2)
-  attempts: { grid: (string | null)[]; isCorrect: boolean }[];
-  solution: (string | null)[];
+  attempts: RoundAttempt[];
+  solution: (string | null)[]; // kept for back-compat; latest solution for this round
   solved: boolean;
 }
 
@@ -322,7 +328,8 @@ export function saveRoundAttempt(
     rounds.push(round);
   }
 
-  round.attempts.push({ grid: playerGrid, isCorrect });
+  round.attempts.push({ grid: playerGrid, isCorrect, solution });
+  round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
   const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
@@ -432,7 +439,7 @@ export function generateShareText(rounds: RoundData[]): string {
   for (const round of rounds) {
     for (const attempt of round.attempts) {
       if (allAttempts.length < MAX_ROUNDS) {
-        allAttempts.push({ ...attempt, solution: round.solution });
+        allAttempts.push({ ...attempt, solution: attempt.solution ?? round.solution });
       }
     }
   }

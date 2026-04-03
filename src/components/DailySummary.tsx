@@ -31,7 +31,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
     for (const attempt of round.attempts) {
       slides.push({
         attemptGrid: attempt.grid,
-        solution: round.solution,
+        solution: attempt.solution ?? round.solution,
         isCorrect: attempt.isCorrect,
         roundIndex: round.roundIndex,
       });
