@@ -439,7 +439,7 @@ export function generateShareText(rounds: RoundData[]): string {
   for (const round of rounds) {
     for (const attempt of round.attempts) {
       if (allAttempts.length < MAX_ROUNDS) {
-        allAttempts.push({ ...attempt, solution: round.solution });
+        allAttempts.push({ ...attempt, solution: attempt.solution ?? round.solution });
       }
     }
   }
