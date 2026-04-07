@@ -206,10 +206,17 @@ const Index = () => {
     const newGrid = [...playerGrid];
 
     if (selectedColor) {
+      // Tap same-color slot → clear it back to neutral
+      if (newGrid[index] === selectedColor) {
+        newGrid[index] = null;
+        setPlayerGrid(newGrid);
+        setActiveSlot(null);
+        return;
+      }
       // Color-then-Slot: place/overwrite immediately
       const isOverwrite = newGrid[index] !== null;
       const currentCount = newGrid.filter((c) => c !== null).length;
-      if (!isOverwrite && currentCount >= effectiveColorCount) return; // cap on new placements only
+      if (!isOverwrite && currentCount >= effectiveColorCount) return;
       newGrid[index] = selectedColor;
       setPlayerGrid(newGrid);
       setActiveSlot(null);
@@ -223,8 +230,8 @@ const Index = () => {
       setPlayerGrid(newGrid);
       setActiveSlot(null);
     } else {
-      // Tap empty slot → set as active (Slot-then-Color mode)
-      setActiveSlot(index);
+      // Tapping the already-active slot → deselect it
+      setActiveSlot(activeSlot === index ? null : index);
     }
   };
 
