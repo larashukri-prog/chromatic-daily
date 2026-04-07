@@ -63,6 +63,8 @@ const Index = () => {
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
@@ -191,6 +193,43 @@ const Index = () => {
   }, [alreadyFinished, isFreeplay, startObservation, roundIndex, dayNum, difficultyName, mode]);
 
   // --- Free Play callbacks ---
+  /** Start a 3-2-1 countdown, then call `onComplete` */
+  const startCountdown = useCallback((onComplete: () => void) => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    setCountdown(3);
+    let tick = 3;
+    countdownRef.current = setInterval(() => {
+      tick -= 1;
+      if (tick <= 0) {
+        clearInterval(countdownRef.current!);
+        countdownRef.current = null;
+        setCountdown(null);
+        onComplete();
+      } else {
+        setCountdown(tick);
+      }
+    }, 1000);
+  }, []);
+
+  const startFreePlayObservation = useCallback((puzzle: { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number }) => {
+    const duration = getObservationDuration(puzzle.colorCount, a11y);
+    setTimerDuration(duration);
+    setPhase('observation');
+    setTimerProgress(100);
+
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+      setTimerProgress(remaining);
+      if (elapsed >= duration) {
+        clearInterval(timerRef.current!);
+        setPhase('recall');
+        setSelectedColor(null);
+      }
+    }, 30);
+  }, [a11y]);
+
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     const puzzle = generateFreePlayPuzzle();
@@ -207,29 +246,13 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
-    // Start observation after a brief tick so state settles
-    setTimeout(() => {
-      const duration = getObservationDuration(puzzle.colorCount, a11y);
-      setTimerDuration(duration);
-      setPhase('observation');
-      setTimerProgress(100);
-
-      const startTime = Date.now();
-      timerRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-        setTimerProgress(remaining);
-        if (elapsed >= duration) {
-          clearInterval(timerRef.current!);
-          setPhase('recall');
-          setSelectedColor(null);
-        }
-      }, 30);
-    }, 50);
-  }, [a11y]);
+    startCountdown(() => startFreePlayObservation(puzzle));
+  }, [a11y, startCountdown, startFreePlayObservation]);
 
   const backToDaily = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setCountdown(null);
     setMode('daily');
     setFreeplayRoundNum(0);
     setShowResult(false);
@@ -260,6 +283,7 @@ const Index = () => {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
     };
   }, []);
 
@@ -440,9 +464,19 @@ const Index = () => {
     setSelectedColor(null);
     setActiveSlot(null);
     setPhase('idle');
+    startCountdown(() => startFreePlayObservation(puzzle));
+  }, [startCountdown, startFreePlayObservation]);
 
-    setTimeout(() => {
-      const duration = getObservationDuration(puzzle.colorCount, a11y);
+  const freeplayRetry = useCallback(() => {
+    setShowResult(false);
+    setPlayerGrid(Array(9).fill(null));
+    setResult(null);
+    setSelectedColor(null);
+    setActiveSlot(null);
+    setPhase('idle');
+    const currentColorCount = activeColors.length;
+    startCountdown(() => {
+      const duration = getObservationDuration(currentColorCount, a11y);
       setTimerDuration(duration);
       setPhase('observation');
       setTimerProgress(100);
@@ -458,34 +492,8 @@ const Index = () => {
           setSelectedColor(null);
         }
       }, 30);
-    }, 50);
-  }, [a11y]);
-
-  const freeplayRetry = useCallback(() => {
-    setShowResult(false);
-    setPlayerGrid(Array(9).fill(null));
-    setResult(null);
-    setSelectedColor(null);
-    setActiveSlot(null);
-
-    // Re-show same solution
-    const duration = getObservationDuration(activeColors.length, a11y);
-    setTimerDuration(duration);
-    setPhase('observation');
-    setTimerProgress(100);
-
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-      setTimerProgress(remaining);
-      if (elapsed >= duration) {
-        clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
-      }
-    }, 30);
-  }, [a11y, activeColors.length]);
+    });
+  }, [a11y, activeColors.length, startCountdown]);
 
   const share = async () => {
     const data = getTodayData();
@@ -689,6 +697,31 @@ const Index = () => {
                     <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
                       {cheatMessage}
                     </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Countdown overlay for Practice Mode */}
+              <AnimatePresence>
+                {countdown !== null && isFreeplay && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 z-20 flex items-center justify-center bg-card/90 backdrop-blur-sm rounded-xl"
+                  >
+                    <motion.span
+                      key={countdown}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 1.5, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="text-8xl font-bold text-muted-foreground select-none"
+                      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+                    >
+                      {countdown}
+                    </motion.span>
                   </motion.div>
                 )}
               </AnimatePresence>
