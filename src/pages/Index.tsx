@@ -193,6 +193,43 @@ const Index = () => {
   }, [alreadyFinished, isFreeplay, startObservation, roundIndex, dayNum, difficultyName, mode]);
 
   // --- Free Play callbacks ---
+  /** Start a 3-2-1 countdown, then call `onComplete` */
+  const startCountdown = useCallback((onComplete: () => void) => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    setCountdown(3);
+    let tick = 3;
+    countdownRef.current = setInterval(() => {
+      tick -= 1;
+      if (tick <= 0) {
+        clearInterval(countdownRef.current!);
+        countdownRef.current = null;
+        setCountdown(null);
+        onComplete();
+      } else {
+        setCountdown(tick);
+      }
+    }, 1000);
+  }, []);
+
+  const startFreePlayObservation = useCallback((puzzle: { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number }) => {
+    const duration = getObservationDuration(puzzle.colorCount, a11y);
+    setTimerDuration(duration);
+    setPhase('observation');
+    setTimerProgress(100);
+
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+      setTimerProgress(remaining);
+      if (elapsed >= duration) {
+        clearInterval(timerRef.current!);
+        setPhase('recall');
+        setSelectedColor(null);
+      }
+    }, 30);
+  }, [a11y]);
+
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     const puzzle = generateFreePlayPuzzle();
@@ -209,26 +246,8 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
-    // Start observation after a brief tick so state settles
-    setTimeout(() => {
-      const duration = getObservationDuration(puzzle.colorCount, a11y);
-      setTimerDuration(duration);
-      setPhase('observation');
-      setTimerProgress(100);
-
-      const startTime = Date.now();
-      timerRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-        setTimerProgress(remaining);
-        if (elapsed >= duration) {
-          clearInterval(timerRef.current!);
-          setPhase('recall');
-          setSelectedColor(null);
-        }
-      }, 30);
-    }, 50);
-  }, [a11y]);
+    startCountdown(() => startFreePlayObservation(puzzle));
+  }, [a11y, startCountdown, startFreePlayObservation]);
 
   const backToDaily = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
