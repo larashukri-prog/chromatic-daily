@@ -461,9 +461,19 @@ const Index = () => {
     setSelectedColor(null);
     setActiveSlot(null);
     setPhase('idle');
+    startCountdown(() => startFreePlayObservation(puzzle));
+  }, [startCountdown, startFreePlayObservation]);
 
-    setTimeout(() => {
-      const duration = getObservationDuration(puzzle.colorCount, a11y);
+  const freeplayRetry = useCallback(() => {
+    setShowResult(false);
+    setPlayerGrid(Array(9).fill(null));
+    setResult(null);
+    setSelectedColor(null);
+    setActiveSlot(null);
+    setPhase('idle');
+    const currentColorCount = activeColors.length;
+    startCountdown(() => {
+      const duration = getObservationDuration(currentColorCount, a11y);
       setTimerDuration(duration);
       setPhase('observation');
       setTimerProgress(100);
@@ -479,34 +489,8 @@ const Index = () => {
           setSelectedColor(null);
         }
       }, 30);
-    }, 50);
-  }, [a11y]);
-
-  const freeplayRetry = useCallback(() => {
-    setShowResult(false);
-    setPlayerGrid(Array(9).fill(null));
-    setResult(null);
-    setSelectedColor(null);
-    setActiveSlot(null);
-
-    // Re-show same solution
-    const duration = getObservationDuration(activeColors.length, a11y);
-    setTimerDuration(duration);
-    setPhase('observation');
-    setTimerProgress(100);
-
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-      setTimerProgress(remaining);
-      if (elapsed >= duration) {
-        clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
-      }
-    }, 30);
-  }, [a11y, activeColors.length]);
+    });
+  }, [a11y, activeColors.length, startCountdown]);
 
   const share = async () => {
     const data = getTodayData();
