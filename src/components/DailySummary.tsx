@@ -151,7 +151,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Free Play button */}
         {onStartFreePlay && (
           <div className="px-6 pb-6 flex justify-center">
-            <Button onClick={onStartFreePlay} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 w-full">
+            <Button onClick={onStartFreePlay} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
               <span className="text-base">✨</span> Start Free Play
             </Button>
           </div>
