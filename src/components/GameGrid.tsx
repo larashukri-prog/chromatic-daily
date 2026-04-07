@@ -10,10 +10,11 @@ interface GameGridProps {
   result: boolean[] | null;
   selectedColor: string | null;
   verifying: boolean;
+  activeSlot?: number | null;
   onCircleClick: (index: number) => void;
 }
 
-export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, onCircleClick }: GameGridProps) {
+export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, activeSlot, onCircleClick }: GameGridProps) {
   const { enabled: a11y } = useAccessibility();
 
   const getCircleColor = (index: number): string => {
@@ -38,6 +39,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   const getCircleBorder = (index: number): string => {
+    if (phase === 'recall' && activeSlot === index) return '3px solid hsl(var(--primary))';
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
     if (phase === 'recall' && selectedColor && !playerGrid[index]) return '2px dashed #9CA3AF';
     return '2px solid transparent';
@@ -72,7 +74,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           }
           whileHover={phase === 'recall' ? { scale: 1.05 } : {}}
           whileTap={phase === 'recall' ? { scale: 0.95 } : {}}
-          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
+          className={`aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden ${phase === 'recall' && activeSlot === i ? 'animate-pulse' : ''}`}
           style={{
             backgroundColor: getCircleColor(i),
             border: getCircleBorder(i),

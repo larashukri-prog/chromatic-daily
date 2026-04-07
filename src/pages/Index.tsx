@@ -51,6 +51,7 @@ const Index = () => {
   const [resultMessage, setResultMessage] = useState('');
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [cheatDetected, setCheatDetected] = useState(false);
   const [cheatMessage, setCheatMessage] = useState('');
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
@@ -162,6 +163,7 @@ const Index = () => {
     setSelectedColor(null);
     setVerifying(false);
     setCheatDetected(false);
+    setActiveSlot(null);
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -199,28 +201,38 @@ const Index = () => {
     }
   }, [showResult, phase, totalAttemptsUsed, alreadyFinished]);
 
-  // Tap-to-undo: if circle already has color, reset it; otherwise paint it
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
     const newGrid = [...playerGrid];
-    if (newGrid[index] !== null) {
-      // Undo: reset to neutral
-      newGrid[index] = null;
+
+    if (selectedColor) {
+      // Color-then-Slot: place/overwrite immediately
+      const isOverwrite = newGrid[index] !== null;
+      const currentCount = newGrid.filter((c) => c !== null).length;
+      if (!isOverwrite && currentCount >= effectiveColorCount) return; // cap on new placements only
+      newGrid[index] = selectedColor;
       setPlayerGrid(newGrid);
+      setActiveSlot(null);
       return;
     }
-    if (!selectedColor) return;
-    // Cap: prevent placing more than the daily target
-    const currentCount = newGrid.filter((c) => c !== null).length;
-    if (currentCount >= effectiveColorCount) return;
-    newGrid[index] = selectedColor;
-    setPlayerGrid(newGrid);
+
+    // No color selected
+    if (newGrid[index] !== null) {
+      // Tap filled slot → clear it
+      newGrid[index] = null;
+      setPlayerGrid(newGrid);
+      setActiveSlot(null);
+    } else {
+      // Tap empty slot → set as active (Slot-then-Color mode)
+      setActiveSlot(index);
+    }
   };
 
   const clearGrid = () => {
     if (phase !== 'recall') return;
     setPlayerGrid(Array(9).fill(null));
     setSelectedColor(null);
+    setActiveSlot(null);
   };
 
   const selectedCount = playerGrid.filter((c) => c !== null).length;
@@ -457,6 +469,7 @@ const Index = () => {
                     result={result}
                     selectedColor={selectedColor}
                     verifying={verifying}
+                    activeSlot={activeSlot}
                     onCircleClick={handleCircleClick}
                   />
                 </motion.div>
@@ -497,7 +510,22 @@ const Index = () => {
                   {COLORS.map((c) => (
                     <button
                       key={c.hex}
-                      onClick={() => setSelectedColor(c.hex)}
+                      onClick={() => {
+                        if (activeSlot !== null) {
+                          // Slot-then-Color: fill active slot immediately
+                          const newGrid = [...playerGrid];
+                          const isOverwrite = newGrid[activeSlot] !== null;
+                          const currentCount = newGrid.filter((cl) => cl !== null).length;
+                          if (isOverwrite || currentCount < effectiveColorCount) {
+                            newGrid[activeSlot] = c.hex;
+                            setPlayerGrid(newGrid);
+                          }
+                          setActiveSlot(null);
+                          setSelectedColor(c.hex);
+                        } else {
+                          setSelectedColor(c.hex);
+                        }
+                      }}
                       className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden"
                       style={{
                         backgroundColor: c.hex,
