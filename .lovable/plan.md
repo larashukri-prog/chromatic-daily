@@ -1,20 +1,53 @@
 
 
-## Fix: Reset to Neutral After Slot-then-Color Action
+## Two handleCircleClick Updates
 
-### Problem
-When using Slot-then-Color mode (tap slot, then pick color), after filling the slot the `selectedColor` remains set to the chosen color. This means the next slot tap immediately fills it with that same color instead of starting a fresh Slot-then-Color interaction.
+### Changes in `src/pages/Index.tsx`, lines 204-229
 
-### Solution
-One-line change in `src/pages/Index.tsx` line 524: change `setSelectedColor(c.hex)` to `setSelectedColor(null)` inside the `if (activeSlot !== null)` branch of the palette onClick handler.
+**Update 1 — Deselect active empty slot** (line 225-228): Replace `setActiveSlot(index)` with `setActiveSlot(activeSlot === index ? null : index)` so tapping the already-active slot toggles it off.
 
-This makes each Slot-then-Color interaction feel like one atomic action: tap slot → pick color → done (back to neutral). The user must deliberately pick a color first if they want Color-then-Slot mode.
+**Update 2 — Clear same-color slot** (lines 208-216): Add a check at the top of the `if (selectedColor)` block: if the tapped slot already has the same color as `selectedColor`, clear it to null and return.
 
-### File Changed
-| File | Change |
-|------|--------|
-| `src/pages/Index.tsx` | Line 524: `setSelectedColor(c.hex)` → `setSelectedColor(null)` |
+### Updated `handleCircleClick` function
 
-### Not Touched
-- Game engine, timer, share logic, accessibility — all unchanged
+```typescript
+const handleCircleClick = (index: number) => {
+  if (phase !== 'recall') return;
+  const newGrid = [...playerGrid];
+
+  if (selectedColor) {
+    // NEW: Tap same-color slot → clear it back to neutral
+    if (newGrid[index] === selectedColor) {
+      newGrid[index] = null;
+      setPlayerGrid(newGrid);
+      setActiveSlot(null);
+      return;
+    }
+    // Color-then-Slot: place/overwrite immediately
+    const isOverwrite = newGrid[index] !== null;
+    const currentCount = newGrid.filter((c) => c !== null).length;
+    if (!isOverwrite && currentCount >= effectiveColorCount) return;
+    newGrid[index] = selectedColor;
+    setPlayerGrid(newGrid);
+    setActiveSlot(null);
+    return;
+  }
+
+  // No color selected
+  if (newGrid[index] !== null) {
+    // Tap filled slot → clear it
+    newGrid[index] = null;
+    setPlayerGrid(newGrid);
+    setActiveSlot(null);
+  } else {
+    // NEW: Tapping the already-active slot → deselect it
+    setActiveSlot(activeSlot === index ? null : index);
+  }
+};
+```
+
+### Files Modified
+| File | Lines | Change |
+|------|-------|--------|
+| `src/pages/Index.tsx` | 204-229 | Two additions inside `handleCircleClick` |
 
