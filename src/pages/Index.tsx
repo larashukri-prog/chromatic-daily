@@ -553,7 +553,7 @@ const Index = () => {
               className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
             >
-              Free Play
+              Practice Mode
             </h1>
             <button
               onClick={backToDaily}
@@ -586,7 +586,7 @@ const Index = () => {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Free Play
+                  Practice Mode
                 </span>
               </div>
               {freeplayRoundNum > 0 && (
@@ -954,7 +954,7 @@ const Index = () => {
                   )}
                   {!canContinue && alreadyFinished && (
                     <Button onClick={startFreePlay} variant="outline" className="rounded-xl gap-2">
-                      <Sparkles className="w-4 h-4" /> Start Free Play
+                      <Sparkles className="w-4 h-4" /> Start Practice Mode
                     </Button>
                   )}
                 </>
