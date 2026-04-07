@@ -464,8 +464,8 @@ const Index = () => {
     setSelectedColor(null);
     setActiveSlot(null);
     setPhase('idle');
-    startCountdown(() => startFreePlayObservation(puzzle));
-  }, [startCountdown, startFreePlayObservation]);
+    setTimeout(() => startFreePlayObservation(puzzle), 50);
+  }, [startFreePlayObservation]);
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
@@ -475,7 +475,7 @@ const Index = () => {
     setActiveSlot(null);
     setPhase('idle');
     const currentColorCount = activeColors.length;
-    startCountdown(() => {
+    setTimeout(() => {
       const duration = getObservationDuration(currentColorCount, a11y);
       setTimerDuration(duration);
       setPhase('observation');
@@ -492,8 +492,8 @@ const Index = () => {
           setSelectedColor(null);
         }
       }, 30);
-    });
-  }, [a11y, activeColors.length, startCountdown]);
+    }, 50);
+  }, [a11y, activeColors.length]);
 
   const share = async () => {
     const data = getTodayData();
