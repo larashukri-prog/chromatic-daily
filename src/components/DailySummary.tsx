@@ -23,7 +23,7 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
   // Flatten all attempts across rounds into individual slides
