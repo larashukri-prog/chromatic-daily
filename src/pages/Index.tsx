@@ -521,7 +521,7 @@ const Index = () => {
                             setPlayerGrid(newGrid);
                           }
                           setActiveSlot(null);
-                          setSelectedColor(c.hex);
+                          setSelectedColor(null);
                         } else {
                           setSelectedColor(c.hex);
                         }
