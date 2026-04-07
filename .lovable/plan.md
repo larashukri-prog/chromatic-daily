@@ -1,23 +1,20 @@
 
 
-## 3-Second Countdown Before Practice Mode
+## Remove Countdown from freeplayNext and freeplayRetry
 
-### Overview
-When the user taps "Start Practice Mode", show a full-screen 3-2-1 countdown overlay before the observation phase begins. This gives the user a moment to prepare.
-
-### New State
-- `countdown: number | null` (default `null`) — when set to 3, 2, or 1, shows the countdown overlay; `null` hides it
+### Problem
+Currently, the 3-2-1 countdown fires every time the player moves to the next puzzle or retries after a failure in Practice Mode. It should only appear once — when "Start Practice Mode" is first tapped.
 
 ### Changes to `src/pages/Index.tsx`
 
-**Modify `startFreePlay`**: Instead of immediately starting observation after 50ms, set `countdown = 3` and run a 1-second interval that decrements to 2, 1, then 0. When it hits 0, clear the countdown (`null`), then start the observation phase (existing timer logic).
+**`freeplayNext` (~line 467)**: Replace `startCountdown(() => startFreePlayObservation(puzzle))` with a direct call to `startFreePlayObservation(puzzle)` (wrapped in a short `setTimeout` like the daily mode uses, ~50ms).
 
-**Same change to `freeplayNext` and `freeplayRetry`**: Both should also trigger the 3-second countdown before observation begins.
+**`freeplayRetry` (~line 478)**: Replace `startCountdown(() => { ... })` with the same observation-start logic inline (no countdown wrapper). Keep the existing timer/phase logic, just remove the countdown wrapping.
 
-**Render countdown overlay**: When `countdown !== null && mode === 'freeplay'`, render a centered overlay with the countdown number in large grey text (e.g. `text-8xl font-bold text-muted-foreground`) over a subtle backdrop, positioned above the grid area. The number animates with a scale/fade pulse on each tick.
+**`startFreePlay` (~line 249)**: Keep the countdown here — this is the only entry point that should have it.
 
 ### Files Modified
 | File | Change |
 |------|--------|
-| `src/pages/Index.tsx` | Add `countdown` state, countdown logic in `startFreePlay`/`freeplayNext`/`freeplayRetry`, render countdown overlay |
+| `src/pages/Index.tsx` | Remove `startCountdown` wrapping from `freeplayNext` and `freeplayRetry` |
 
