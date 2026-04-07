@@ -63,6 +63,8 @@ const Index = () => {
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
