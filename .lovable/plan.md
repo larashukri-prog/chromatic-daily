@@ -1,53 +1,67 @@
 
 
-## Two handleCircleClick Updates
+## Free Play Mode — Implementation Plan
 
-### Changes in `src/pages/Index.tsx`, lines 204-229
+### Overview
+Add a session-only "Free Play" mode that lets users keep playing random puzzles after finishing the daily challenge. No persistence, no DDA, no streaks — purely for practice.
 
-**Update 1 — Deselect active empty slot** (line 225-228): Replace `setActiveSlot(index)` with `setActiveSlot(activeSlot === index ? null : index)` so tapping the already-active slot toggles it off.
+### New File: `src/lib/freeplay.ts`
+Utility to generate random puzzles with 2-5 colors using `Math.random()` and the existing `COLORS` array from `game.ts`. Returns `{ solution, activeColors, colorCount }` in the same shape as `generateSolution`.
 
-**Update 2 — Clear same-color slot** (lines 208-216): Add a check at the top of the `if (selectedColor)` block: if the tapped slot already has the same color as `selectedColor`, clear it to null and return.
+### Changes to `src/pages/Index.tsx`
 
-### Updated `handleCircleClick` function
+**New state:**
+- `mode: 'daily' | 'freeplay'` (default `'daily'`)
+- `freeplayRoundNum: number` (tracks how many freeplay rounds completed)
 
-```typescript
-const handleCircleClick = (index: number) => {
-  if (phase !== 'recall') return;
-  const newGrid = [...playerGrid];
+**New callbacks:**
+- `startFreePlay`: Sets mode to `'freeplay'`, generates random solution via `freeplay.ts`, resets grid/phase, starts observation timer
+- `backToDaily`: Clears timer, switches mode back to `'daily'`, reloads finished daily state
 
-  if (selectedColor) {
-    // NEW: Tap same-color slot → clear it back to neutral
-    if (newGrid[index] === selectedColor) {
-      newGrid[index] = null;
-      setPlayerGrid(newGrid);
-      setActiveSlot(null);
-      return;
-    }
-    // Color-then-Slot: place/overwrite immediately
-    const isOverwrite = newGrid[index] !== null;
-    const currentCount = newGrid.filter((c) => c !== null).length;
-    if (!isOverwrite && currentCount >= effectiveColorCount) return;
-    newGrid[index] = selectedColor;
-    setPlayerGrid(newGrid);
-    setActiveSlot(null);
-    return;
-  }
+**Header changes:**
+- When `mode === 'freeplay'`: Show "Free Play" title + "Back to Daily Challenge" link instead of "Chromatic Daily"
 
-  // No color selected
-  if (newGrid[index] !== null) {
-    // Tap filled slot → clear it
-    newGrid[index] = null;
-    setPlayerGrid(newGrid);
-    setActiveSlot(null);
-  } else {
-    // NEW: Tapping the already-active slot → deselect it
-    setActiveSlot(activeSlot === index ? null : index);
-  }
-};
-```
+**Status bar changes:**
+- When freeplay: Show "Free Play" pill (no round counter dots, no "X/3 used"). Same circular timer during observation.
+
+**Verify logic:**
+- Add freeplay branch: skip `saveRoundAttempt`, skip DDA, skip localStorage. Just compute correct/incorrect and show result.
+
+**Result modal:**
+- Freeplay buttons: "Next Level" (correct) or "Try Again" (incorrect) — both regenerate a new random puzzle and restart observation
+- Daily finished state: Add "Start Free Play" button alongside existing continue/game-over UI
+
+**Daily Summary condition:**
+- Only render `<DailySummary>` when `mode === 'daily'` AND finished
+
+**Background:**
+- When freeplay: Apply `bg-[hsl(260,30%,97%)]` (soft lavender) to the container
+
+**Auto-transition:**
+- Only auto-dismiss result modal when `mode === 'daily'`
+
+**Action buttons:**
+- Freeplay idle: Show "Start" button (same as daily but triggers `startFreePlay` flow)
+- Freeplay result without modal: Show "View Result" button
+
+### Changes to `src/components/DailySummary.tsx`
+
+- Add optional `onStartFreePlay?: () => void` prop
+- Render a "Start Free Play" button at the bottom of the summary when the prop is provided
+- Pass `onStartFreePlay={startFreePlay}` from Index.tsx
+
+### What stays the same
+- `game.ts` — no changes
+- Share/copy/WhatsApp — unchanged
+- DDA logic — unchanged (freeplay bypasses it)
+- Streaks, localStorage — unchanged (freeplay is session-only)
+- Timer duration logic — reused as-is
+- GameGrid, CircularTimer, accessibility — unchanged
 
 ### Files Modified
-| File | Lines | Change |
-|------|-------|--------|
-| `src/pages/Index.tsx` | 204-229 | Two additions inside `handleCircleClick` |
+| File | Change |
+|------|--------|
+| `src/lib/freeplay.ts` | **New** — random puzzle generator |
+| `src/pages/Index.tsx` | Add mode state, freeplay callbacks, conditional UI |
+| `src/components/DailySummary.tsx` | Add `onStartFreePlay` prop + button |
 
