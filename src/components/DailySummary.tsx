@@ -13,6 +13,7 @@ interface DailySummaryProps {
   onShare: () => void;
   onShareWhatsApp: () => void;
   copied: boolean;
+  onStartFreePlay?: () => void;
 }
 
 interface AttemptSlide {

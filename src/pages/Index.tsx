@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
+import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
@@ -16,6 +16,7 @@ import {
   saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier
 } from '@/lib/game';
+import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
 
@@ -29,6 +30,8 @@ function getObservationDuration(colorCount: number, isA11y: boolean): number {
   else base = 15000;
   return isA11y ? base * 2 : base;
 }
+
+type GameMode = 'daily' | 'freeplay';
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
@@ -57,11 +60,14 @@ const Index = () => {
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Free Play state
+  const [mode, setMode] = useState<GameMode>('daily');
+  const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
+
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
-  // Derive effective color count from activeColors to stay in sync
   const effectiveColorCount = activeColors.length || baseColorCount;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
@@ -73,6 +79,8 @@ const Index = () => {
     return 'Master';
   };
   const difficultyName = getDifficultyName(baseColorCount);
+
+  const isFreeplay = mode === 'freeplay';
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {
@@ -127,7 +135,6 @@ const Index = () => {
     setCheatMessage(CHEAT_MESSAGES[Math.floor(Math.random() * CHEAT_MESSAGES.length)]);
   }, []);
 
-  // Anti-cheat listener during observation phase
   useEffect(() => {
     if (phase !== 'observation') {
       setCheatDetected(false);
@@ -141,7 +148,6 @@ const Index = () => {
     };
     const onBlur = () => triggerCheatOverlay();
 
-    // Only attach desktop-reliable listeners
     document.addEventListener('visibilitychange', onVisibilityChange);
     if (!isMobile) {
       window.addEventListener('blur', onBlur);
@@ -179,10 +185,77 @@ const Index = () => {
   }, [a11y, activeColors.length, baseColorCount]);
 
   const startGame = useCallback(() => {
-    if (alreadyFinished) return;
-    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName });
+    if (alreadyFinished && !isFreeplay) return;
+    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
     startObservation();
-  }, [alreadyFinished, startObservation, roundIndex, dayNum, difficultyName]);
+  }, [alreadyFinished, isFreeplay, startObservation, roundIndex, dayNum, difficultyName, mode]);
+
+  // --- Free Play callbacks ---
+  const startFreePlay = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const puzzle = generateFreePlayPuzzle();
+    setMode('freeplay');
+    setFreeplayRoundNum(1);
+    setSolution(puzzle.solution);
+    setActiveColors(puzzle.activeColors);
+    setPlayerGrid(Array(9).fill(null));
+    setResult(null);
+    setSelectedColor(null);
+    setShowResult(false);
+    setIsCorrect(false);
+    setResultMessage('');
+    setVerifying(false);
+    setActiveSlot(null);
+    setPhase('idle');
+    // Start observation after a brief tick so state settles
+    setTimeout(() => {
+      const duration = getObservationDuration(puzzle.colorCount, a11y);
+      setTimerDuration(duration);
+      setPhase('observation');
+      setTimerProgress(100);
+
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setTimerProgress(remaining);
+        if (elapsed >= duration) {
+          clearInterval(timerRef.current!);
+          setPhase('recall');
+          setSelectedColor(null);
+        }
+      }, 30);
+    }, 50);
+  }, [a11y]);
+
+  const backToDaily = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setMode('daily');
+    setFreeplayRoundNum(0);
+    setShowResult(false);
+
+    // Reload daily finished state
+    const info = getCurrentRoundInfo();
+    setTotalAttemptsUsed(info.totalAttemptsUsed);
+    setSavedRounds(info.rounds);
+    setStreaks(getStreaks());
+
+    if (info.finished) {
+      setAlreadyFinished(true);
+      const lastRound = info.rounds[info.rounds.length - 1];
+      if (lastRound) {
+        const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
+        setSolution(lastRound.solution);
+        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
+        setIsCorrect(lastRound.solved);
+        setRoundIndex(lastRound.roundIndex);
+        setPhase('result');
+      }
+    } else {
+      setPhase('idle');
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -190,8 +263,9 @@ const Index = () => {
     };
   }, []);
 
-  // Auto-transition final result to daily summary after 2 seconds
+  // Auto-transition final result to daily summary after 2 seconds (daily only)
   useEffect(() => {
+    if (isFreeplay) return; // No auto-dismiss in freeplay
     const isFinal = phase === 'result' && (totalAttemptsUsed >= MAX_ROUNDS || alreadyFinished);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
@@ -199,7 +273,7 @@ const Index = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, totalAttemptsUsed, alreadyFinished]);
+  }, [showResult, phase, totalAttemptsUsed, alreadyFinished, isFreeplay]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
@@ -256,11 +330,28 @@ const Index = () => {
     setIsCorrect(correct);
     setVerifying(true);
 
-    // Save result IMMEDIATELY before any state transitions to prevent stale data
+    if (isFreeplay) {
+      // Freeplay: no save, no DDA, no localStorage
+      setTimeout(() => {
+        setVerifying(false);
+        setPhase('result');
+        setResultMessage(correct ? 'Great memory! Ready for the next one?' : 'Not quite — give it another shot!');
+        if (!correct) {
+          setShake(true);
+          setTimeout(() => setShake(false), 600);
+          setTimeout(() => setShowResult(true), 800);
+        } else {
+          setFreeplayRoundNum((n) => n + 1);
+          setShowResult(true);
+        }
+      }, 1500);
+      return;
+    }
+
+    // Daily mode verification
     const newTotalUsed = totalAttemptsUsed + 1;
     const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
 
-    // Debug: audit resultsArray in real-time
     console.log('[Chromatic] Round verified:', {
       roundIndex,
       attemptInRound,
@@ -276,7 +367,6 @@ const Index = () => {
       })),
     });
 
-    // After glow animation, transition to result
     setTimeout(() => {
       setVerifying(false);
       setPhase('result');
@@ -287,19 +377,14 @@ const Index = () => {
 
       posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
 
-      // DDA: if Round 1 solved on first attempt, level up for remaining rounds
       if (roundIndex === 0 && correct && attemptInRound === 1) {
         setDdaLevel('hard');
         const tier = getDayDifficultyTier(baseColorCount);
-        // Only show toast on easy/medium days — hard days keep UI clean
         if (tier !== 'hard') {
-          toast('Level Up! Round 2 is getting harder... 🔥', {
-            duration: 3000,
-          });
+          toast('Level Up! Round 2 is getting harder... 🔥', { duration: 3000 });
         }
       }
 
-      // Failure reset: revert to standard difficulty if user fails
       if (!correct && ddaLevel === 'hard') {
         setDdaLevel('standard');
       }
@@ -328,7 +413,6 @@ const Index = () => {
     setShowResult(false);
 
     if (isCorrect) {
-      // New puzzle for next round
       const newRound = roundIndex + 1;
       setRoundIndex(newRound);
       setAttemptInRound(1);
@@ -336,7 +420,6 @@ const Index = () => {
       setSolution(sol);
       setActiveColors(ac);
     } else {
-      // Retry same puzzle — regenerate with current (possibly reset) difficulty
       setAttemptInRound((prev) => prev + 1);
       const { solution: sol, activeColors: ac } = generateSolutionDDA(roundIndex, ddaLevel);
       setSolution(sol);
@@ -345,6 +428,64 @@ const Index = () => {
 
     startObservation();
   };
+
+  // Freeplay: next level or retry
+  const freeplayNext = useCallback(() => {
+    setShowResult(false);
+    const puzzle = generateFreePlayPuzzle();
+    setSolution(puzzle.solution);
+    setActiveColors(puzzle.activeColors);
+    setPlayerGrid(Array(9).fill(null));
+    setResult(null);
+    setSelectedColor(null);
+    setActiveSlot(null);
+    setPhase('idle');
+
+    setTimeout(() => {
+      const duration = getObservationDuration(puzzle.colorCount, a11y);
+      setTimerDuration(duration);
+      setPhase('observation');
+      setTimerProgress(100);
+
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setTimerProgress(remaining);
+        if (elapsed >= duration) {
+          clearInterval(timerRef.current!);
+          setPhase('recall');
+          setSelectedColor(null);
+        }
+      }, 30);
+    }, 50);
+  }, [a11y]);
+
+  const freeplayRetry = useCallback(() => {
+    setShowResult(false);
+    setPlayerGrid(Array(9).fill(null));
+    setResult(null);
+    setSelectedColor(null);
+    setActiveSlot(null);
+
+    // Re-show same solution
+    const duration = getObservationDuration(activeColors.length, a11y);
+    setTimerDuration(duration);
+    setPhase('observation');
+    setTimerProgress(100);
+
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+      setTimerProgress(remaining);
+      if (elapsed >= duration) {
+        clearInterval(timerRef.current!);
+        setPhase('recall');
+        setSelectedColor(null);
+      }
+    }, 30);
+  }, [a11y, activeColors.length]);
 
   const share = async () => {
     const data = getTodayData();
@@ -372,8 +513,16 @@ const Index = () => {
   };
 
   const solvedRounds = savedRounds.filter((r) => r.solved).length;
-  const statusText =
-    phase === 'idle' && !alreadyFinished
+
+  const statusText = isFreeplay
+    ? phase === 'observation'
+      ? 'Memorize the pattern...'
+      : phase === 'recall'
+        ? 'Recreate from memory'
+        : phase === 'result'
+          ? isCorrect ? 'Nice one!' : 'Not quite...'
+          : 'Ready to play'
+    : phase === 'idle' && !alreadyFinished
       ? 'Ready to play'
       : alreadyFinished
         ? `Game complete · Solved ${solvedRounds}/${savedRounds.length}`
@@ -383,9 +532,14 @@ const Index = () => {
             ? 'Recreate from memory'
             : '';
 
+  // Show daily summary only in daily mode when finished
+  const showDailySummary = !isFreeplay && alreadyFinished && (phase === 'idle' || phase === 'result');
+
   return (
     <div
-      className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-4 sm:py-8"
+      className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
+        isFreeplay ? 'bg-[hsl(260,30%,97%)]' : 'bg-background'
+      }`}
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* Onboarding overlay (first-time only) */}
@@ -393,39 +547,77 @@ const Index = () => {
 
       {/* Header */}
       <div className="text-center mb-4">
-        <h1
-          className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
-          style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
-        >
-          Chromatic Daily
-        </h1>
-        <p className="text-sm text-muted-foreground tracking-wide uppercase">
-          {dayName} · #{dayNum} · Level: {difficultyName}
-        </p>
+        {isFreeplay ? (
+          <>
+            <h1
+              className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
+              style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
+            >
+              Free Play
+            </h1>
+            <button
+              onClick={backToDaily}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back to Daily Challenge
+            </button>
+          </>
+        ) : (
+          <>
+            <h1
+              className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
+              style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
+            >
+              Chromatic Daily
+            </h1>
+            <p className="text-sm text-muted-foreground tracking-wide uppercase">
+              {dayName} · #{dayNum} · Level: {difficultyName}
+            </p>
+          </>
+        )}
       </div>
 
       {/* Status Bar */}
       <div className="w-full max-w-sm mb-4">
         <div className="flex items-center justify-between bg-card rounded-xl border border-border px-4 py-2.5 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              Round {Math.min(roundIndex + 1, MAX_ROUNDS)} of {MAX_ROUNDS}
-            </span>
-          </div>
-          <div className="flex gap-1.5">
-            {Array.from({ length: MAX_ROUNDS }).map((_, i) => {
-              const round = savedRounds.find((r) => r.roundIndex === i);
-              let bgColor = 'bg-muted';
-              if (round?.solved) bgColor = 'bg-emerald-400';
-              else if (round && !round.solved && round.attempts.length > 0 && (alreadyFinished || i < roundIndex))
-                bgColor = 'bg-destructive';
-              else if (i === roundIndex && phase !== 'idle') bgColor = 'bg-primary animate-pulse';
-              return <div key={i} className={`w-2.5 h-2.5 rounded-full ${bgColor} transition-colors`} />;
-            })}
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {totalAttemptsUsed}/{MAX_ROUNDS} used
-          </span>
+          {isFreeplay ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Free Play
+                </span>
+              </div>
+              {freeplayRoundNum > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Round {freeplayRoundNum}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Round {Math.min(roundIndex + 1, MAX_ROUNDS)} of {MAX_ROUNDS}
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {Array.from({ length: MAX_ROUNDS }).map((_, i) => {
+                  const round = savedRounds.find((r) => r.roundIndex === i);
+                  let bgColor = 'bg-muted';
+                  if (round?.solved) bgColor = 'bg-emerald-400';
+                  else if (round && !round.solved && round.attempts.length > 0 && (alreadyFinished || i < roundIndex))
+                    bgColor = 'bg-destructive';
+                  else if (i === roundIndex && phase !== 'idle') bgColor = 'bg-primary animate-pulse';
+                  return <div key={i} className={`w-2.5 h-2.5 rounded-full ${bgColor} transition-colors`} />;
+                })}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {totalAttemptsUsed}/{MAX_ROUNDS} used
+              </span>
+            </>
+          )}
         </div>
         {statusText && (
           <div className="flex items-center justify-center gap-2 mt-1.5">
@@ -441,8 +633,8 @@ const Index = () => {
         )}
       </div>
 
-      {/* Daily Summary (replaces game when finished) */}
-      {alreadyFinished && (phase === 'idle' || phase === 'result') ? (
+      {/* Daily Summary (replaces game when finished, daily only) */}
+      {showDailySummary ? (
         <DailySummary
           rounds={savedRounds}
           totalAttempts={totalAttemptsUsed}
@@ -450,6 +642,7 @@ const Index = () => {
           onShare={share}
           onShareWhatsApp={shareWhatsApp}
           copied={copied}
+          onStartFreePlay={startFreePlay}
         />
       ) : (
         <>
@@ -519,7 +712,6 @@ const Index = () => {
                       key={c.hex}
                       onClick={() => {
                         if (activeSlot !== null) {
-                          // Slot-then-Color: fill active slot immediately
                           const newGrid = [...playerGrid];
                           const isOverwrite = newGrid[activeSlot] !== null;
                           const currentCount = newGrid.filter((cl) => cl !== null).length;
@@ -551,9 +743,19 @@ const Index = () => {
 
             {/* Actions */}
             <div className="px-6 pb-6 flex gap-3 justify-center">
-              {phase === 'idle' && !alreadyFinished && (
+              {/* Daily idle start */}
+              {phase === 'idle' && !isFreeplay && !alreadyFinished && (
                 <Button
                   onClick={startGame}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
+                >
+                  Start
+                </Button>
+              )}
+              {/* Freeplay idle start */}
+              {phase === 'idle' && isFreeplay && (
+                <Button
+                  onClick={startFreePlay}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
@@ -573,7 +775,17 @@ const Index = () => {
                   </Button>
                 </>
               )}
-              {phase === 'result' && !showResult && !alreadyFinished && (
+              {/* Freeplay result: view result button */}
+              {phase === 'result' && isFreeplay && !showResult && (
+                <Button
+                  onClick={() => setShowResult(true)}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                >
+                  View Result
+                </Button>
+              )}
+              {/* Daily result: view result button */}
+              {phase === 'result' && !isFreeplay && !showResult && !alreadyFinished && (
                 <Button
                   onClick={() => setShowResult(true)}
                   className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
@@ -587,7 +799,7 @@ const Index = () => {
       )}
 
       {/* Accessibility Toggle (below card, above streaks) */}
-      {!(alreadyFinished && (phase === 'idle' || phase === 'result')) && (
+      {!showDailySummary && (
         <div className="mt-5 flex justify-center">
           <AccessibilityToggle />
         </div>
@@ -599,16 +811,18 @@ const Index = () => {
         <button onClick={() => setShowHowTo(true)} className="text-muted-foreground hover:text-foreground transition-colors">
           <Info className="w-5 h-5" />
         </button>
-        <button
-          onClick={() => {
-            localStorage.removeItem('chromatic_daily');
-            window.location.href = window.location.pathname + '?reset';
-          }}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          title="Reset game"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
+        {!isFreeplay && (
+          <button
+            onClick={() => {
+              localStorage.removeItem('chromatic_daily');
+              window.location.href = window.location.pathname + '?reset';
+            }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title="Reset game"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* How to Play Modal */}
@@ -669,7 +883,10 @@ const Index = () => {
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
               className="text-2xl"
             >
-              {isCorrect ? 'Perfect Recall' : canContinue ? 'Not Quite' : 'Game Over'}
+              {isFreeplay
+                ? isCorrect ? 'Nice One!' : 'Not Quite'
+                : isCorrect ? 'Perfect Recall' : canContinue ? 'Not Quite' : 'Game Over'
+              }
             </DialogTitle>
             <DialogDescription className="sr-only">Your game result</DialogDescription>
           </DialogHeader>
@@ -715,12 +932,32 @@ const Index = () => {
               </div>
             )}
 
-
             <div className="flex gap-3 justify-center">
-              {canContinue && (
-                <Button onClick={nextAttempt} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-                  <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
-                </Button>
+              {isFreeplay ? (
+                <>
+                  {isCorrect ? (
+                    <Button onClick={freeplayNext} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                      <Sparkles className="w-4 h-4" /> Next Level
+                    </Button>
+                  ) : (
+                    <Button onClick={freeplayRetry} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                      <RotateCcw className="w-4 h-4" /> Try Again
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {canContinue && (
+                    <Button onClick={nextAttempt} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                      <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
+                    </Button>
+                  )}
+                  {!canContinue && alreadyFinished && (
+                    <Button onClick={startFreePlay} variant="outline" className="rounded-xl gap-2">
+                      <Sparkles className="w-4 h-4" /> Start Free Play
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
