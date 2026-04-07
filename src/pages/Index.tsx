@@ -698,6 +698,31 @@ const Index = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Countdown overlay for Practice Mode */}
+              <AnimatePresence>
+                {countdown !== null && isFreeplay && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 z-20 flex items-center justify-center bg-card/90 backdrop-blur-sm rounded-xl"
+                  >
+                    <motion.span
+                      key={countdown}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 1.5, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="text-8xl font-bold text-muted-foreground select-none"
+                      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+                    >
+                      {countdown}
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Color Picker */}
