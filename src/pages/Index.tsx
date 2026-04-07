@@ -251,6 +251,8 @@ const Index = () => {
 
   const backToDaily = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setCountdown(null);
     setMode('daily');
     setFreeplayRoundNum(0);
     setShowResult(false);
