@@ -13,6 +13,7 @@ interface DailySummaryProps {
   onShare: () => void;
   onShareWhatsApp: () => void;
   copied: boolean;
+  onStartFreePlay?: () => void;
 }
 
 interface AttemptSlide {
@@ -22,7 +23,7 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
   // Flatten all attempts across rounds into individual slides
@@ -135,8 +136,8 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
           </div>
         )}
 
-        {/* Share button */}
-        <div className="px-6 pb-6 flex justify-center gap-3">
+        {/* Share buttons */}
+        <div className="px-6 pb-4 flex justify-center gap-3">
           <Button onClick={onShare} variant="outline" className="rounded-xl gap-2">
             <Link2 className="w-4 h-4" />
             {copied ? 'Copied!' : 'Share Result'}
@@ -146,6 +147,15 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
             WhatsApp
           </Button>
         </div>
+
+        {/* Free Play button */}
+        {onStartFreePlay && (
+          <div className="px-6 pb-6 flex justify-center">
+            <Button onClick={onStartFreePlay} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 w-full">
+              <span className="text-base">✨</span> Start Free Play
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
