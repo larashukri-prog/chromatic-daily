@@ -39,7 +39,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   const getCircleBorder = (index: number): string => {
-    if (phase === 'recall' && activeSlot === index) return '3px solid hsl(var(--primary))';
+    if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
     if (phase === 'recall' && selectedColor && !playerGrid[index]) return '2px dashed #9CA3AF';
     return '2px solid transparent';
@@ -74,7 +74,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           }
           whileHover={phase === 'recall' ? { scale: 1.05 } : {}}
           whileTap={phase === 'recall' ? { scale: 0.95 } : {}}
-          className={`aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden ${phase === 'recall' && activeSlot === i ? 'animate-pulse' : ''}`}
+          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
           style={{
             backgroundColor: getCircleColor(i),
             border: getCircleBorder(i),
