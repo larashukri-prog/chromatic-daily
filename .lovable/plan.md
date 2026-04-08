@@ -1,29 +1,29 @@
 
 
-## Add PostHog Tracking for Practice Mode Events
+## Replace "Start Practice Mode" Button on Last Result Card
 
-### Changes to `src/pages/Index.tsx`
+### What changes
+The "Start Practice Mode" button on the **last daily result card** (the dialog shown when all attempts are used and `alreadyFinished` is true) gets replaced with a motivational message. The button in the **DailySummary carousel** (below Share/WhatsApp) stays unchanged.
 
-**1. `startFreePlay` (line 249)** — Add `posthog.capture('practice_mode_started', ...)` right after the puzzle is generated, before the countdown starts:
-```ts
-posthog.capture('practice_mode_started', {
-  difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
-  color_count: puzzle.colorCount,
-});
+### File: `src/pages/Index.tsx` (lines 998-1002)
+
+Replace:
+```tsx
+{!canContinue && alreadyFinished && (
+  <Button onClick={startFreePlay} variant="outline" className="rounded-xl gap-2">
+    <Sparkles className="w-4 h-4" /> Start Practice Mode
+  </Button>
+)}
 ```
 
-**2. `freeplayNext` (line 467)** — Add `posthog.capture('practice_mode_next_level', ...)` after generating the new puzzle, with `freeplayRoundNum` incremented:
-```ts
-setFreeplayRoundNum(prev => prev + 1);
-posthog.capture('practice_mode_next_level', {
-  difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
-  color_count: puzzle.colorCount,
-  round_number: freeplayRoundNum + 1,
-});
+With:
+```tsx
+{!canContinue && alreadyFinished && (
+  <p className="text-sm text-muted-foreground text-center mt-2">
+    Nice try! See you tomorrow for a new challenge.
+  </p>
+)}
 ```
 
-### Files Modified
-| File | Change |
-|------|--------|
-| `src/pages/Index.tsx` | Add two `posthog.capture` calls in `startFreePlay` and `freeplayNext` |
+No changes to `DailySummary.tsx` — the button there remains as-is.
 
