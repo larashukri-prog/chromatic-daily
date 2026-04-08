@@ -1,17 +1,13 @@
 
 
-## Update Four Color Hex Values
+## Remove "View Result" Button in Practice Mode
 
-### File: `src/lib/game.ts`
+### Problem
+When a guess fails in Practice Mode, there's a brief ~800ms window where a "View Result" button flashes on screen before the result dialog auto-opens. This button is unnecessary.
 
-Update these four colors in both the `COLORS` array and the `FALLBACK_PALETTE` array:
+### Solution
+Remove the freeplay-specific "View Result" button from `src/pages/Index.tsx` (lines 821-829). The result dialog already auto-opens after the shake animation, so this button serves no purpose.
 
-| Color | Old Hex | New Hex |
-|-------|---------|---------|
-| Pink | `#EC4899` | `#F198C4` |
-| Orange | `#F97316` | `#FD9349` |
-| Teal | `#2DD4BF` | `#2DD4D4` |
-| Lime | `#84CC16` | `#7AC00F` |
-
-Four find-and-replace operations across the two arrays in `game.ts`. No other files reference these hex values directly (patterns use the `COLORS` import).
+### File: `src/pages/Index.tsx`
+- Delete the block at lines 821-829 that renders the "View Result" button when `phase === 'result' && isFreeplay && !showResult`
 
