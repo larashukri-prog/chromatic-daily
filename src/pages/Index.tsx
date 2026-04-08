@@ -996,9 +996,9 @@ const Index = () => {
                     </Button>
                   )}
                   {!canContinue && alreadyFinished && (
-                    <Button onClick={startFreePlay} variant="outline" className="rounded-xl gap-2">
-                      <Sparkles className="w-4 h-4" /> Start Practice Mode
-                    </Button>
+                    <p className="text-sm text-muted-foreground text-center mt-2">
+                      Nice try! See you tomorrow for a new challenge.
+                    </p>
                   )}
                 </>
               )}
