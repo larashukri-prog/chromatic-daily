@@ -1,20 +1,29 @@
 
 
-## Remove Countdown from freeplayNext and freeplayRetry
-
-### Problem
-Currently, the 3-2-1 countdown fires every time the player moves to the next puzzle or retries after a failure in Practice Mode. It should only appear once — when "Start Practice Mode" is first tapped.
+## Add PostHog Tracking for Practice Mode Events
 
 ### Changes to `src/pages/Index.tsx`
 
-**`freeplayNext` (~line 467)**: Replace `startCountdown(() => startFreePlayObservation(puzzle))` with a direct call to `startFreePlayObservation(puzzle)` (wrapped in a short `setTimeout` like the daily mode uses, ~50ms).
+**1. `startFreePlay` (line 249)** — Add `posthog.capture('practice_mode_started', ...)` right after the puzzle is generated, before the countdown starts:
+```ts
+posthog.capture('practice_mode_started', {
+  difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
+  color_count: puzzle.colorCount,
+});
+```
 
-**`freeplayRetry` (~line 478)**: Replace `startCountdown(() => { ... })` with the same observation-start logic inline (no countdown wrapper). Keep the existing timer/phase logic, just remove the countdown wrapping.
-
-**`startFreePlay` (~line 249)**: Keep the countdown here — this is the only entry point that should have it.
+**2. `freeplayNext` (line 467)** — Add `posthog.capture('practice_mode_next_level', ...)` after generating the new puzzle, with `freeplayRoundNum` incremented:
+```ts
+setFreeplayRoundNum(prev => prev + 1);
+posthog.capture('practice_mode_next_level', {
+  difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
+  color_count: puzzle.colorCount,
+  round_number: freeplayRoundNum + 1,
+});
+```
 
 ### Files Modified
 | File | Change |
 |------|--------|
-| `src/pages/Index.tsx` | Remove `startCountdown` wrapping from `freeplayNext` and `freeplayRetry` |
+| `src/pages/Index.tsx` | Add two `posthog.capture` calls in `startFreePlay` and `freeplayNext` |
 
