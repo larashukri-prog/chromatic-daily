@@ -818,15 +818,6 @@ const Index = () => {
                   </Button>
                 </>
               )}
-              {/* Freeplay result: view result button */}
-              {phase === 'result' && isFreeplay && !showResult && (
-                <Button
-                  onClick={() => setShowResult(true)}
-                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-                >
-                  View Result
-                </Button>
-              )}
               {/* Daily result: view result button */}
               {phase === 'result' && !isFreeplay && !showResult && !alreadyFinished && (
                 <Button
