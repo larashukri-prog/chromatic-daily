@@ -39,7 +39,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   const getCircleBorder = (index: number): string => {
-    if (phase === 'recall' && activeSlot === index) return '3px solid hsl(var(--primary))';
+    if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
     if (phase === 'recall' && selectedColor && !playerGrid[index]) return '2px dashed #9CA3AF';
     return '2px solid transparent';
