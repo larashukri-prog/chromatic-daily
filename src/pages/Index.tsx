@@ -246,6 +246,10 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
+    posthog.capture('practice_mode_started', {
+      difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
+      color_count: puzzle.colorCount,
+    });
     startCountdown(() => startFreePlayObservation(puzzle));
   }, [a11y, startCountdown, startFreePlayObservation]);
 
@@ -457,6 +461,12 @@ const Index = () => {
   const freeplayNext = useCallback(() => {
     setShowResult(false);
     const puzzle = generateFreePlayPuzzle();
+    setFreeplayRoundNum(prev => prev + 1);
+    posthog.capture('practice_mode_next_level', {
+      difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
+      color_count: puzzle.colorCount,
+      round_number: freeplayRoundNum + 1,
+    });
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
     setPlayerGrid(Array(9).fill(null));
@@ -465,7 +475,7 @@ const Index = () => {
     setActiveSlot(null);
     setPhase('idle');
     setTimeout(() => startFreePlayObservation(puzzle), 50);
-  }, [startFreePlayObservation]);
+  }, [startFreePlayObservation, freeplayRoundNum]);
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
