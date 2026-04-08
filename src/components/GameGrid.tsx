@@ -74,7 +74,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           }
           whileHover={phase === 'recall' ? { scale: 1.05 } : {}}
           whileTap={phase === 'recall' ? { scale: 0.95 } : {}}
-          className={`aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden ${phase === 'recall' && activeSlot === i ? 'animate-pulse' : ''}`}
+          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
           style={{
             backgroundColor: getCircleColor(i),
             border: getCircleBorder(i),
