@@ -543,7 +543,7 @@ const Index = () => {
     : phase === 'idle' && !alreadyFinished
       ? 'Ready to play'
       : alreadyFinished
-        ? `Game complete · Solved ${solvedRounds}/${savedRounds.length}`
+        ? `Game complete · Solved ${solvedRounds}/${savedRounds.length} . See you tomorrow!`
         : phase === 'observation'
           ? 'Memorize the pattern...'
           : phase === 'recall'
