@@ -1,29 +1,17 @@
 
 
-## Replace "Start Practice Mode" Button on Last Result Card
+## Update Four Color Hex Values
 
-### What changes
-The "Start Practice Mode" button on the **last daily result card** (the dialog shown when all attempts are used and `alreadyFinished` is true) gets replaced with a motivational message. The button in the **DailySummary carousel** (below Share/WhatsApp) stays unchanged.
+### File: `src/lib/game.ts`
 
-### File: `src/pages/Index.tsx` (lines 998-1002)
+Update these four colors in both the `COLORS` array and the `FALLBACK_PALETTE` array:
 
-Replace:
-```tsx
-{!canContinue && alreadyFinished && (
-  <Button onClick={startFreePlay} variant="outline" className="rounded-xl gap-2">
-    <Sparkles className="w-4 h-4" /> Start Practice Mode
-  </Button>
-)}
-```
+| Color | Old Hex | New Hex |
+|-------|---------|---------|
+| Pink | `#EC4899` | `#F198C4` |
+| Orange | `#F97316` | `#FD9349` |
+| Teal | `#2DD4BF` | `#2DD4D4` |
+| Lime | `#84CC16` | `#7AC00F` |
 
-With:
-```tsx
-{!canContinue && alreadyFinished && (
-  <p className="text-sm text-muted-foreground text-center mt-2">
-    Nice try! See you tomorrow for a new challenge.
-  </p>
-)}
-```
-
-No changes to `DailySummary.tsx` — the button there remains as-is.
+Four find-and-replace operations across the two arrays in `game.ts`. No other files reference these hex values directly (patterns use the `COLORS` import).
 
