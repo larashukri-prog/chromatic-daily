@@ -54,7 +54,7 @@ export function OnboardingOverlay({ show, onDismiss }: { show: boolean; onDismis
               How to Play
             </h2>
             <p className="text-xs text-center text-muted-foreground uppercase tracking-widest mb-6">
-              Take your time. Precision over panic.
+              Study. Memorize. Match.
             </p>
 
             <div className="space-y-4">
