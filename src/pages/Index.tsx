@@ -554,7 +554,7 @@ const Index = () => {
 
   const statusText = isFreeplay
     ? phase === 'observation'
-      ? 'Memorize the pattern...'
+      ? 'Ready to match these? Tap when you are'
       : phase === 'recall'
         ? 'Recreate from memory'
         : phase === 'result'
@@ -565,7 +565,7 @@ const Index = () => {
       : alreadyFinished
         ? `Game complete · Solved ${solvedRounds}/${savedRounds.length} . See you tomorrow!`
         : phase === 'observation'
-          ? 'Memorize the pattern...'
+          ? 'Ready to match these? Tap when you are'
           : phase === 'recall'
             ? 'Recreate from memory'
             : '';
