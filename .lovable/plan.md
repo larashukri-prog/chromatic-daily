@@ -1,13 +1,14 @@
 
 
-## Update Subtitle Text in Onboarding Overlay
+## Update "3-Round Rule" Section Text
 
 ### Change
-In `src/components/OnboardingOverlay.tsx` (line 57), replace:
-> "Take your time. Precision over panic."
+In `src/pages/Index.tsx` (lines 978–992), replace the current "The 3-Round Rule" section with:
 
-with:
-> "Study. Memorize. Match."
+- **Title**: "3 Daily Attempts" (was "The 3-Round Rule")
+- **Body**: Remove the old paragraph and bullet list. Replace with two simple lines:
+  - **Persistence:** If you miss, you can use your next attempt to try the same puzzle again.
+  - **Success:** Solving a puzzle unlocks a brand-new, harder configuration!
 
-Single line change, one file.
+Single section rewrite, one file.
 
