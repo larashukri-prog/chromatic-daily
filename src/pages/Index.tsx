@@ -33,6 +33,25 @@ function getObservationDuration(colorCount: number, isA11y: boolean): number {
 
 type GameMode = 'daily' | 'freeplay';
 
+/** Play a short success chime using Web Audio API */
+function playSuccessChime() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880; // A5
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // Audio not available — fail silently
+  }
+}
+
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
@@ -59,6 +78,11 @@ const Index = () => {
   const [cheatMessage, setCheatMessage] = useState('');
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Speed Star state
+  const [isSpeedRound, setIsSpeedRound] = useState(false);
+  const [showStarPop, setShowStarPop] = useState(false);
+  const observationStartTime = useRef<number>(0);
 
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
@@ -172,6 +196,8 @@ const Index = () => {
     setVerifying(false);
     setCheatDetected(false);
     setActiveSlot(null);
+    setIsSpeedRound(false);
+    observationStartTime.current = Date.now();
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -180,20 +206,33 @@ const Index = () => {
       setTimerProgress(remaining);
       if (elapsed >= duration) {
         clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
+        // Timer expired — do NOT auto-transition; user must click "I am ready"
       }
     }, 30);
   }, [a11y, activeColors.length, baseColorCount]);
 
-  const startGame = useCallback(() => {
-    if (alreadyFinished && !isFreeplay) return;
-    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
-    startObservation();
-  }, [alreadyFinished, isFreeplay, startObservation, roundIndex, dayNum, difficultyName, mode]);
+  /** Handle user clicking "I am ready" during observation */
+  const handleReady = useCallback(() => {
+    if (phase !== 'observation') return;
+    if (timerRef.current) clearInterval(timerRef.current);
 
-  // --- Free Play callbacks ---
-  /** Start a 3-2-1 countdown, then call `onComplete` */
+    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    const elapsed = Date.now() - observationStartTime.current;
+
+    if (elapsed < duration) {
+      // Earned a Speed Star!
+      setIsSpeedRound(true);
+      setShowStarPop(true);
+      setTimeout(() => setShowStarPop(false), 400);
+      playSuccessChime();
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    setPhase('recall');
+    setSelectedColor(null);
+  }, [phase, activeColors.length, baseColorCount, a11y]);
+
+  // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
     if (countdownRef.current) clearInterval(countdownRef.current);
     setCountdown(3);
@@ -211,11 +250,29 @@ const Index = () => {
     }, 1000);
   }, []);
 
+  const startGame = useCallback(() => {
+    if (alreadyFinished && !isFreeplay) return;
+    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
+
+    const hasPlayed = localStorage.getItem('chromatic-has-played');
+    localStorage.setItem('chromatic-has-played', 'true');
+
+    if (!hasPlayed) {
+      startCountdown(() => startObservation());
+    } else {
+      startObservation();
+    }
+  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
+
+  // --- Free Play callbacks ---
+
   const startFreePlayObservation = useCallback((puzzle: { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number }) => {
     const duration = getObservationDuration(puzzle.colorCount, a11y);
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
+    setIsSpeedRound(false);
+    observationStartTime.current = Date.now();
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -224,8 +281,7 @@ const Index = () => {
       setTimerProgress(remaining);
       if (elapsed >= duration) {
         clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
+        // Do NOT auto-transition — user must click "I am ready"
       }
     }, 30);
   }, [a11y]);
@@ -403,7 +459,7 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
+      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct, speed_bonus: isSpeedRound });
 
       if (roundIndex === 0 && correct && attemptInRound === 1) {
         setDdaLevel('hard');
@@ -490,6 +546,8 @@ const Index = () => {
       setTimerDuration(duration);
       setPhase('observation');
       setTimerProgress(100);
+      setIsSpeedRound(false);
+      observationStartTime.current = Date.now();
 
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
@@ -498,8 +556,7 @@ const Index = () => {
         setTimerProgress(remaining);
         if (elapsed >= duration) {
           clearInterval(timerRef.current!);
-          setPhase('recall');
-          setSelectedColor(null);
+          // Do NOT auto-transition — user must click "I am ready"
         }
       }, 30);
     }, 50);
@@ -711,9 +768,9 @@ const Index = () => {
                 )}
               </AnimatePresence>
 
-              {/* Countdown overlay for Practice Mode */}
+              {/* Countdown overlay (works for both daily new users and freeplay) */}
               <AnimatePresence>
-                {countdown !== null && isFreeplay && (
+                {countdown !== null && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -732,6 +789,20 @@ const Index = () => {
                     >
                       {countdown}
                     </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Star Pop animation */}
+              <AnimatePresence>
+                {showStarPop && (
+                  <motion.div
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                  >
+                    <span className="text-6xl">⭐️</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -802,6 +873,15 @@ const Index = () => {
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
+                </Button>
+              )}
+              {/* "I am ready" button during observation */}
+              {phase === 'observation' && !cheatDetected && (
+                <Button
+                  onClick={handleReady}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
+                >
+                  I am ready
                 </Button>
               )}
               {phase === 'recall' && (
@@ -926,7 +1006,10 @@ const Index = () => {
           </DialogHeader>
           <div className="py-4">
             {isCorrect ? (
-              <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+              <div className="flex flex-col items-center mb-4">
+                {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
+                <Trophy className="w-12 h-12 text-yellow-500" />
+              </div>
             ) : (
               <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             )}
