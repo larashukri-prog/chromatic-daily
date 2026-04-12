@@ -978,7 +978,7 @@ const Index = () => {
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
               <p><span className="font-bold text-foreground">Persistence:</span> If you miss, you can use your next attempt to try the same puzzle again.</p>
-              <p><span className="font-medium">Success:</span> Solving a puzzle unlocks a brand-new, harder configuration!</p>
+              <p><span className="font-bold text-foreground">Success:</span> Solving a puzzle unlocks a brand-new, harder configuration!</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
