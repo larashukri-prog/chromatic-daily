@@ -972,10 +972,6 @@ const Index = () => {
               </div>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">The Transition Tip</p>
-              <p>On your first game, we'll show a quick 3-2-1 countdown after you tap 'Ready' to help you transition. For all future games, the colors will fade smoothly and instantly.</p>
-            </div>
-            <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Speed Star ⭐️</p>
               <p>The Speed Star is a mark of visual mastery. It proves you have both a sharp eye and a fast memory. Try to collect a star in every round of the Daily Challenge!</p>
             </div>
