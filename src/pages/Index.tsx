@@ -459,7 +459,7 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct });
+      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct, speed_bonus: isSpeedRound });
 
       if (roundIndex === 0 && correct && attemptInRound === 1) {
         setDdaLevel('hard');
@@ -861,7 +861,15 @@ const Index = () => {
                   Start
                 </Button>
               )}
-              {phase === 'recall' && (
+              {/* "I am ready" button during observation */}
+              {phase === 'observation' && !cheatDetected && (
+                <Button
+                  onClick={handleReady}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
+                >
+                  I am ready
+                </Button>
+              )}
                 <>
                   <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
                     <RotateCcw className="w-4 h-4" /> Clear
@@ -983,7 +991,10 @@ const Index = () => {
           </DialogHeader>
           <div className="py-4">
             {isCorrect ? (
-              <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+              <div className="flex flex-col items-center mb-4">
+                {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
+                <Trophy className="w-12 h-12 text-yellow-500" />
+              </div>
             ) : (
               <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             )}
