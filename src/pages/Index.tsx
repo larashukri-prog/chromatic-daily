@@ -875,7 +875,7 @@ const Index = () => {
                   onClick={handleReady}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
-                  I am ready
+                  I'm ready
                 </Button>
               )}
               {phase === 'recall' && (
@@ -958,7 +958,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Start the Challenge</p>
-                  <p className="text-xs text-muted-foreground">Tap the 'I am Ready' button once you've memorized the colors. The target colors will disappear once pressed.</p>
+                  <p className="text-xs text-muted-foreground">Tap the 'I'm Ready' button once you've memorized the colors. The target colors will disappear once pressed.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
