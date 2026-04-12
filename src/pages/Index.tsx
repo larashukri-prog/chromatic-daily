@@ -870,6 +870,7 @@ const Index = () => {
                   I am ready
                 </Button>
               )}
+              {phase === 'recall' && (
                 <>
                   <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
                     <RotateCcw className="w-4 h-4" /> Clear
