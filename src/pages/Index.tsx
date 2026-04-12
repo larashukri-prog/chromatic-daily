@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
@@ -934,11 +935,12 @@ const Index = () => {
 
       {/* How to Play Modal */}
       <Dialog open={showHowTo} onOpenChange={setShowHowTo}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>How to Play</DialogTitle>
             <DialogDescription className="sr-only">Instructions for Hue Day</DialogDescription>
           </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -1001,6 +1003,7 @@ const Index = () => {
               <p>Monday starts with 2 colors (Minimalist). Each day adds more, reaching all 9 (Master) by Sunday.</p>
             </div>
           </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
