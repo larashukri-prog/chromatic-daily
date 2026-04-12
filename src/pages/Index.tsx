@@ -976,19 +976,9 @@ const Index = () => {
               <p>The Speed Star is a mark of visual mastery. It proves you have both a sharp eye and a fast memory. Try to collect a star in every round of the Daily Challenge!</p>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">The 3-Round Rule</p>
-              <p>
-                You have a total of <strong className="text-foreground">{MAX_ROUNDS} attempts</strong> to play each day.
-              </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>
-                  <strong className="text-foreground">Success:</strong> If you solve a puzzle, the remaining attempts carry over to a brand-new color
-                  configuration.
-                </li>
-                <li>
-                  <strong className="text-foreground">Persistence:</strong> If you miss, you can use your next attempt to try the same puzzle again.
-                </li>
-              </ul>
+              <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
+              <p><span className="font-medium">Persistence:</span> If you miss, you can use your next attempt to try the same puzzle again.</p>
+              <p><span className="font-medium">Success:</span> Solving a puzzle unlocks a brand-new, harder configuration!</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
