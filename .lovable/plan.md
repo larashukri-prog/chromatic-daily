@@ -1,14 +1,10 @@
 
 
-## Update "3-Round Rule" Section Text
+## Make "Persistence:" and "Success:" Labels Visually Consistent
+
+### Problem
+Both labels already have identical CSS classes (`font-bold text-foreground`), but "Persistence:" appears visually thicker. This is likely a perceptual difference due to the word itself. Switching both to `font-semibold` should make them appear more uniform.
 
 ### Change
-In `src/pages/Index.tsx` (lines 978–992), replace the current "The 3-Round Rule" section with:
-
-- **Title**: "3 Daily Attempts" (was "The 3-Round Rule")
-- **Body**: Remove the old paragraph and bullet list. Replace with two simple lines:
-  - **Persistence:** If you miss, you can use your next attempt to try the same puzzle again.
-  - **Success:** Solving a puzzle unlocks a brand-new, harder configuration!
-
-Single section rewrite, one file.
+In `src/pages/Index.tsx` (lines 980–981), change `font-bold` to `font-semibold` on both spans to ensure consistent visual weight.
 
