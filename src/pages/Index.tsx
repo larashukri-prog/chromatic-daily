@@ -196,6 +196,8 @@ const Index = () => {
     setVerifying(false);
     setCheatDetected(false);
     setActiveSlot(null);
+    setIsSpeedRound(false);
+    observationStartTime.current = Date.now();
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -204,11 +206,31 @@ const Index = () => {
       setTimerProgress(remaining);
       if (elapsed >= duration) {
         clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
+        // Timer expired — do NOT auto-transition; user must click "I am ready"
       }
     }, 30);
   }, [a11y, activeColors.length, baseColorCount]);
+
+  /** Handle user clicking "I am ready" during observation */
+  const handleReady = useCallback(() => {
+    if (phase !== 'observation') return;
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    const elapsed = Date.now() - observationStartTime.current;
+
+    if (elapsed < duration) {
+      // Earned a Speed Star!
+      setIsSpeedRound(true);
+      setShowStarPop(true);
+      setTimeout(() => setShowStarPop(false), 400);
+      playSuccessChime();
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    setPhase('recall');
+    setSelectedColor(null);
+  }, [phase, activeColors.length, baseColorCount, a11y]);
 
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
