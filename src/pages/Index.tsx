@@ -972,10 +972,6 @@ const Index = () => {
               </div>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">Relaxed Mode</p>
-              <p>Play at your own pace. There is no time limit for studying the colors, making it the perfect way to relax while honing your visual perception skills.</p>
-            </div>
-            <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Transition Tip</p>
               <p>On your first game, we'll show a quick 3-2-1 countdown after you tap 'Ready' to help you transition. For all future games, the colors will fade smoothly and instantly.</p>
             </div>
