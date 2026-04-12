@@ -929,6 +929,10 @@ const Index = () => {
               <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
               <p>The challenge scales! We start with 2 colors on Monday and build up to a 9-color Master challenge by Sunday.</p>
             </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">Practice Makes Perfect</p>
+              <p>Finished your Daily Challenge? Practice Mode unlocks once you've used your daily attempts. Dive in for unlimited rounds to sharpen your eye and master the mix!</p>
+            </div>
           </div>
           </ScrollArea>
         </DialogContent>
