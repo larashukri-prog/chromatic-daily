@@ -1,18 +1,18 @@
 
 
-## Remove Anti-Cheat Overlay
+## Add "Practice Makes Perfect" Section to How to Play
 
-Remove the cheat detection system that shows jarring overlay messages during the observation phase.
+### Change
+In `src/pages/Index.tsx`, add a new section after the "Daily Difficulty" block (after line 931), using the same styling pattern as the other sections:
 
-### Changes in `src/pages/Index.tsx`
+```tsx
+<div className="border-t border-border pt-4">
+  <p className="font-medium text-foreground mb-1">Practice Makes Perfect</p>
+  <p>Finished your Daily Challenge? Practice Mode unlocks once you've used your daily attempts. Dive in for unlimited rounds to sharpen your eye and master the mix!</p>
+</div>
+```
 
-1. **Remove state variables** (lines ~78-79): `cheatDetected`, `cheatMessage`
-2. **Remove `CHEAT_MESSAGES` array** (lines ~153-158)
-3. **Remove `triggerCheatOverlay` callback** (lines ~160-163)
-4. **Remove the `useEffect` for visibility/blur detection** (lines ~165-187)
-5. **Remove `setCheatDetected(false)` from `startObservation`** (line ~198)
-6. **Remove the anti-cheat overlay JSX** (lines ~747-761, the `AnimatePresence` block with the 🚫 emoji and message)
-7. **Remove `!cheatDetected` condition** from the "I'm ready" button (line ~873) — just check `phase === 'observation'`
+Also add the same section to the `OnboardingOverlay.tsx` steps or keep it modal-only — since it's contextual info rather than a core gameplay step, it fits best in the modal only.
 
-No other files affected.
+Single insertion, one file (`src/pages/Index.tsx`).
 
