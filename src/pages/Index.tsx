@@ -6,7 +6,7 @@ import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Spar
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
-import { CircularTimer } from '@/components/CircularTimer';
+
 import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
@@ -696,13 +696,6 @@ const Index = () => {
         </div>
         {statusText && (
           <div className="flex items-center justify-center gap-2 mt-1.5">
-            {phase === 'observation' && (
-              <CircularTimer
-                progress={timerProgress}
-                totalSeconds={Math.round(timerDuration / 1000)}
-                size={28}
-              />
-            )}
             <p className="text-xs text-muted-foreground">{statusText}</p>
           </div>
         )}
