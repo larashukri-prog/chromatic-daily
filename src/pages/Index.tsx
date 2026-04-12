@@ -232,25 +232,7 @@ const Index = () => {
     setSelectedColor(null);
   }, [phase, activeColors.length, baseColorCount, a11y]);
 
-  const startGame = useCallback(() => {
-    if (alreadyFinished && !isFreeplay) return;
-    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
-
-    // New vs returning user: new users get 3-2-1 countdown, returning users get direct start
-    const hasPlayed = localStorage.getItem('chromatic-has-played');
-    localStorage.setItem('chromatic-has-played', 'true');
-
-    if (!hasPlayed) {
-      // New user: 3-2-1 countdown then observation
-      startCountdown(() => startObservation());
-    } else {
-      // Returning user: direct start (observation has its own fade-in via AnimatePresence)
-      startObservation();
-    }
-  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
-
-  // --- Free Play callbacks ---
-  /** Start a 3-2-1 countdown, then call `onComplete` */
+  // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
     if (countdownRef.current) clearInterval(countdownRef.current);
     setCountdown(3);
@@ -267,6 +249,22 @@ const Index = () => {
       }
     }, 1000);
   }, []);
+
+  const startGame = useCallback(() => {
+    if (alreadyFinished && !isFreeplay) return;
+    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
+
+    const hasPlayed = localStorage.getItem('chromatic-has-played');
+    localStorage.setItem('chromatic-has-played', 'true');
+
+    if (!hasPlayed) {
+      startCountdown(() => startObservation());
+    } else {
+      startObservation();
+    }
+  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
+
+  // --- Free Play callbacks ---
 
   const startFreePlayObservation = useCallback((puzzle: { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number }) => {
     const duration = getObservationDuration(puzzle.colorCount, a11y);
