@@ -235,8 +235,19 @@ const Index = () => {
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
     posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
-    startObservation();
-  }, [alreadyFinished, isFreeplay, startObservation, roundIndex, dayNum, difficultyName, mode]);
+
+    // New vs returning user: new users get 3-2-1 countdown, returning users get direct start
+    const hasPlayed = localStorage.getItem('chromatic-has-played');
+    localStorage.setItem('chromatic-has-played', 'true');
+
+    if (!hasPlayed) {
+      // New user: 3-2-1 countdown then observation
+      startCountdown(() => startObservation());
+    } else {
+      // Returning user: direct start (observation has its own fade-in via AnimatePresence)
+      startObservation();
+    }
+  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
 
   // --- Free Play callbacks ---
   /** Start a 3-2-1 countdown, then call `onComplete` */
@@ -262,6 +273,8 @@ const Index = () => {
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
+    setIsSpeedRound(false);
+    observationStartTime.current = Date.now();
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -270,8 +283,7 @@ const Index = () => {
       setTimerProgress(remaining);
       if (elapsed >= duration) {
         clearInterval(timerRef.current!);
-        setPhase('recall');
-        setSelectedColor(null);
+        // Do NOT auto-transition — user must click "I am ready"
       }
     }, 30);
   }, [a11y]);
@@ -536,6 +548,8 @@ const Index = () => {
       setTimerDuration(duration);
       setPhase('observation');
       setTimerProgress(100);
+      setIsSpeedRound(false);
+      observationStartTime.current = Date.now();
 
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
@@ -544,8 +558,7 @@ const Index = () => {
         setTimerProgress(remaining);
         if (elapsed >= duration) {
           clearInterval(timerRef.current!);
-          setPhase('recall');
-          setSelectedColor(null);
+          // Do NOT auto-transition — user must click "I am ready"
         }
       }, 30);
     }, 50);
