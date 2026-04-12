@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, Brain, Palette, CheckCircle2 } from 'lucide-react';
+import { Eye, CheckCircle2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const ONBOARDING_KEY = 'hueday_onboarded';
 
-const steps: { icon: typeof Eye; label: string; desc: string; badge?: string }[] = [
-  { icon: Eye, label: 'Watch', desc: 'Hit Start to see a color pattern for a few seconds.' },
-  { icon: Brain, label: 'Memorize', desc: 'Study the colors and their positions.' },
-  { icon: Palette, label: 'Recreate', desc: 'Select a color below, then tap the grid to place it.', badge: '1 ➔ 2' },
-  { icon: CheckCircle2, label: 'Verify', desc: 'Check your accuracy.' },
+const steps: { icon: typeof Eye; label: string; desc: string }[] = [
+  { icon: Eye, label: 'Analyze the Colors', desc: 'Take your time studying the color shades shown to you.' },
+  { icon: CheckCircle2, label: 'Start the Challenge', desc: "Tap the 'I am Ready' button once you've memorized the colors. The target colors will disappear once pressed." },
+  { icon: Star, label: 'Earn a Speed Star ⭐️', desc: "If you hit 'Ready' fast, you'll earn a Speed Star when you win the round!" },
 ];
 
 export function useOnboarding() {
@@ -55,7 +54,7 @@ export function OnboardingOverlay({ show, onDismiss }: { show: boolean; onDismis
               How to Play
             </h2>
             <p className="text-xs text-center text-muted-foreground uppercase tracking-widest mb-6">
-              A daily color memory puzzle
+              Take your time. Precision over panic.
             </p>
 
             <div className="space-y-4">
@@ -71,14 +70,7 @@ export function OnboardingOverlay({ show, onDismiss }: { show: boolean; onDismis
                     <step.icon className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">{step.label}</p>
-                      {step.badge && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-[10px] font-bold text-primary tracking-wide">
-                          {step.badge}
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-sm font-semibold text-foreground">{step.label}</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
                   </div>
                 </motion.div>

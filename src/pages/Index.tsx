@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles } from 'lucide-react';
+import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
@@ -940,21 +940,46 @@ const Index = () => {
             <DialogDescription className="sr-only">Instructions for Hue Day</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-            <p>A new color memory puzzle every day.</p>
-            <div className="space-y-2">
-              <p>
-                <strong className="text-foreground">1.</strong> Press <strong className="text-foreground">Start</strong> — a pattern of colored circles
-                appears for a few seconds (duration scales with difficulty).
-              </p>
-              <p>
-                <strong className="text-foreground">2.</strong> Memorize the colors and positions.
-              </p>
-              <p>
-                <strong className="text-foreground">3.</strong> Recreate the pattern from memory using the color picker.
-              </p>
-              <p>
-                <strong className="text-foreground">4.</strong> Hit <strong className="text-foreground">Verify</strong> to check your answer.
-              </p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center mt-0.5">
+                  <Eye className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Analyze the Colors</p>
+                  <p className="text-xs text-muted-foreground">Take your time studying the color shades shown to you.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center mt-0.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Start the Challenge</p>
+                  <p className="text-xs text-muted-foreground">Tap the 'I am Ready' button once you've memorized the colors. The target colors will disappear once pressed.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center mt-0.5">
+                  <Star className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Earn a Speed Star ⭐️</p>
+                  <p className="text-xs text-muted-foreground">If you hit 'Ready' fast, you'll earn a Speed Star when you win the round!</p>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">Relaxed Mode</p>
+              <p>Play at your own pace. There is no time limit for studying the colors, making it the perfect way to relax while honing your visual perception skills.</p>
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">The Transition Tip</p>
+              <p>On your first game, we'll show a quick 3-2-1 countdown after you tap 'Ready' to help you transition. For all future games, the colors will fade smoothly and instantly.</p>
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">The Speed Star ⭐️</p>
+              <p>The Speed Star is a mark of visual mastery. It proves you have both a sharp eye and a fast memory. Try to collect a star in every round of the Daily Challenge!</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The 3-Round Rule</p>
@@ -974,9 +999,6 @@ const Index = () => {
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
               <p>Monday starts with 2 colors (Minimalist). Each day adds more, reaching all 9 (Master) by Sunday.</p>
-            </div>
-            <div className="border-t border-border pt-4">
-              <p className="text-muted-foreground text-xs">Come back tomorrow for a new puzzle!</p>
             </div>
           </div>
         </DialogContent>
