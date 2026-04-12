@@ -768,9 +768,9 @@ const Index = () => {
                 )}
               </AnimatePresence>
 
-              {/* Countdown overlay for Practice Mode */}
+              {/* Countdown overlay (works for both daily new users and freeplay) */}
               <AnimatePresence>
-                {countdown !== null && isFreeplay && (
+                {countdown !== null && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -789,6 +789,20 @@ const Index = () => {
                     >
                       {countdown}
                     </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Star Pop animation */}
+              <AnimatePresence>
+                {showStarPop && (
+                  <motion.div
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                  >
+                    <span className="text-6xl">⭐️</span>
                   </motion.div>
                 )}
               </AnimatePresence>
