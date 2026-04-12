@@ -75,8 +75,6 @@ const Index = () => {
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
-  const [cheatDetected, setCheatDetected] = useState(false);
-  const [cheatMessage, setCheatMessage] = useState('');
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -150,41 +148,6 @@ const Index = () => {
     }
   }, []);
 
-  const CHEAT_MESSAGES = [
-    'Nice try, Sherlock! 🕵️‍♂️ No screenshots allowed.',
-    'Your memory is better than your camera roll. Trust it! 🧠',
-    'Caught in 4K! 📸 Eyes on the screen, not the buttons.',
-    'Cheaters never prosper (and they miss the best colors). 🌈',
-  ];
-
-  const triggerCheatOverlay = useCallback(() => {
-    setCheatDetected(true);
-    setCheatMessage(CHEAT_MESSAGES[Math.floor(Math.random() * CHEAT_MESSAGES.length)]);
-  }, []);
-
-  useEffect(() => {
-    if (phase !== 'observation') {
-      setCheatDetected(false);
-      return;
-    }
-
-    const isMobile = window.innerWidth < 768;
-
-    const onVisibilityChange = () => {
-      if (document.hidden) triggerCheatOverlay();
-    };
-    const onBlur = () => triggerCheatOverlay();
-
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    if (!isMobile) {
-      window.addEventListener('blur', onBlur);
-    }
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('blur', onBlur);
-    };
-  }, [phase, triggerCheatOverlay]);
 
   const startObservation = useCallback(() => {
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
@@ -195,7 +158,6 @@ const Index = () => {
     setResult(null);
     setSelectedColor(null);
     setVerifying(false);
-    setCheatDetected(false);
     setActiveSlot(null);
     setIsSpeedRound(false);
     observationStartTime.current = Date.now();
@@ -744,23 +706,6 @@ const Index = () => {
                 </motion.div>
               </AnimatePresence>
 
-              {/* Anti-cheat overlay */}
-              <AnimatePresence>
-                {cheatDetected && phase === 'observation' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-md rounded-xl"
-                  >
-                    <p className="text-3xl mb-3">🚫</p>
-                    <p className="text-sm font-semibold text-foreground text-center px-6 leading-relaxed">
-                      {cheatMessage}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Countdown overlay (works for both daily new users and freeplay) */}
               <AnimatePresence>
@@ -870,7 +815,7 @@ const Index = () => {
                 </Button>
               )}
               {/* "I am ready" button during observation */}
-              {phase === 'observation' && !cheatDetected && (
+              {phase === 'observation' && (
                 <Button
                   onClick={handleReady}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
