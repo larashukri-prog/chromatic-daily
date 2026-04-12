@@ -33,6 +33,25 @@ function getObservationDuration(colorCount: number, isA11y: boolean): number {
 
 type GameMode = 'daily' | 'freeplay';
 
+/** Play a short success chime using Web Audio API */
+function playSuccessChime() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880; // A5
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // Audio not available — fail silently
+  }
+}
+
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
@@ -59,6 +78,11 @@ const Index = () => {
   const [cheatMessage, setCheatMessage] = useState('');
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Speed Star state
+  const [isSpeedRound, setIsSpeedRound] = useState(false);
+  const [showStarPop, setShowStarPop] = useState(false);
+  const observationStartTime = useRef<number>(0);
 
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
