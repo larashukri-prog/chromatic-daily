@@ -1,20 +1,20 @@
 
 
-## Fix: "Daily Summary" title hidden on mobile
+## Hide subtitle on small screens during Daily Summary
 
-**Problem**: The h1 title gets `hidden sm:block` when `phase === 'result'`, which also applies when `showDailySummary` is true. This hides "Daily Summary" on smaller screens.
+**Problem**: The "Monday · #834 · Level: Minimalist" subtitle takes up space on small screens, pushing the "Start Practice Mode" button below the fold.
 
 **Fix** (1 file, 1 line):
 
-In `src/pages/Index.tsx` line 607, change the conditional class so it only hides during active gameplay result phase, not during the summary:
+In `src/pages/Index.tsx` line 612, add `hidden sm:block` when showing the daily summary:
 
 ```tsx
 // Before
-className={`... ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
+<p className="text-sm text-muted-foreground tracking-wide uppercase">
 
-// After  
-className={`... ${!showDailySummary && (phase === 'recall' || phase === 'result') ? 'hidden sm:block' : ''}`}
+// After
+<p className={`text-sm text-muted-foreground tracking-wide uppercase ${showDailySummary ? 'hidden sm:block' : ''}`}>
 ```
 
-This ensures the "Daily Summary" title is always visible on the summary screen regardless of viewport size.
+This hides the day/number/level line on mobile only when viewing the summary, keeping the Practice Mode button above the fold.
 
