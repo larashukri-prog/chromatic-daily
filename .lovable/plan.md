@@ -1,21 +1,20 @@
-## Summary Screen Overhaul & Conditional Messaging
 
-### What Changes
 
-**File 1: `src/pages/Index.tsx**`
+## Fix: "Daily Summary" title hidden on mobile
 
-- Hide the status bar (lines 620-665) when `showDailySummary` is true — wrap it in `{!showDailySummary && (...)}`
-- Pass two new props to `DailySummary`: `dayName` (already available) and `colorCount` (use `baseColorCount`)
+**Problem**: The h1 title gets `hidden sm:block` when `phase === 'result'`, which also applies when `showDailySummary` is true. This hides "Daily Summary" on smaller screens.
 
-**File 2: `src/components/DailySummary.tsx**`
+**Fix** (1 file, 1 line):
 
-- Add `dayName: string` and `colorCount: number` to the props interface
-- Add a `getDifficultyName` helper (same logic: ≤2 Minimalist, ≤4 Standard, ≤6 Complex, else Master)
-- **Keep header** (lines 56-68): Instead of "Daily Summary" + solved count, show:
-- **Add conditional rest section** between the carousel dots and share buttons (after line 137):
-  - Primary: "Daily Challenge Complete."
-  - Secondary (conditional): If today is Sunday → "Master Challenge Complete! A fresh start begins tomorrow." Otherwise → "Rest your eyes. Tomorrow will be even more challenging..."
+In `src/pages/Index.tsx` line 607, change the conditional class so it only hides during active gameplay result phase, not during the summary:
 
-### Technical Details
+```tsx
+// Before
+className={`... ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
 
-All game logic, attempt tracking, scoring, and state variables remain untouched. The status bar still renders during active gameplay — only hidden on the summary screen. The `dayName` is derived from the existing `getDayInfo()` call in Index.tsx and simply passed through as a prop.
+// After  
+className={`... ${!showDailySummary && (phase === 'recall' || phase === 'result') ? 'hidden sm:block' : ''}`}
+```
+
+This ensures the "Daily Summary" title is always visible on the summary screen regardless of viewport size.
+
