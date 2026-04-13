@@ -63,13 +63,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
     <div className="w-full max-w-sm mx-auto">
       {/* Summary header */}
       <div className="text-center mb-4">
-        <h2
-          className="text-2xl font-bold text-foreground uppercase tracking-tight leading-none"
-          style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
-        >
-          {dayName}
-        </h2>
-        <p className="text-[10px] font-bold text-muted-foreground mt-1.5 tracking-[0.2em] uppercase">
+        <p className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">
           LEVEL: {getDifficultyName(colorCount)}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
