@@ -138,7 +138,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
           <p className="text-sm text-muted-foreground mt-1">
             {dayName === 'Sunday'
               ? 'Master Challenge Complete! A fresh start begins tomorrow.'
-              : 'Tomorrow will be even more challenging...'}
+              : 'Tomorrow will be even more challenging!'}
           </p>
         </div>
 
