@@ -62,13 +62,6 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
   return (
     <div className="w-full max-w-sm mx-auto">
       {/* Summary header */}
-      <div className="text-center mb-4">
-        <p className="text-xs text-muted-foreground mt-1">
-          {solvedCount > 0
-            ? `Solved ${solvedCount} puzzle${solvedCount > 1 ? 's' : ''} in ${totalAttempts} attempt${totalAttempts > 1 ? 's' : ''}`
-            : 'Better luck tomorrow!'}
-        </p>
-      </div>
 
       {/* Carousel */}
       <div className="bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
