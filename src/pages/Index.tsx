@@ -609,7 +609,7 @@ const Index = () => {
             >
               {showDailySummary ? 'Daily Summary' : 'Chromatic Daily'}
             </h1>
-            <p className="text-sm text-muted-foreground tracking-wide uppercase">
+            <p className={`text-sm text-muted-foreground tracking-wide uppercase ${showDailySummary ? 'hidden sm:block' : ''}`}>
               {dayName} · #{dayNum} · Level: {difficultyName}
             </p>
           </>
