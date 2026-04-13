@@ -14,6 +14,15 @@ interface DailySummaryProps {
   onShareWhatsApp: () => void;
   copied: boolean;
   onStartFreePlay?: () => void;
+  dayName: string;
+  colorCount: number;
+}
+
+function getDifficultyName(colorCount: number): string {
+  if (colorCount <= 2) return 'MINIMALIST';
+  if (colorCount <= 4) return 'STANDARD';
+  if (colorCount <= 6) return 'COMPLEX';
+  return 'MASTER';
 }
 
 interface AttemptSlide {
@@ -23,7 +32,7 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
   // Flatten all attempts across rounds into individual slides
@@ -55,12 +64,15 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
       {/* Summary header */}
       <div className="text-center mb-4">
         <h2
-          className="text-xl font-bold text-foreground mb-1"
+          className="text-2xl font-bold text-foreground uppercase tracking-tight leading-none"
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
         >
-          Daily Summary
+          {dayName}
         </h2>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider">
+        <p className="text-[10px] font-bold text-muted-foreground mt-1.5 tracking-[0.2em] uppercase">
+          LEVEL: {getDifficultyName(colorCount)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
           {solvedCount > 0
             ? `Solved ${solvedCount} puzzle${solvedCount > 1 ? 's' : ''} in ${totalAttempts} attempt${totalAttempts > 1 ? 's' : ''}`
             : 'Better luck tomorrow!'}
@@ -135,6 +147,16 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
             ))}
           </div>
         )}
+
+        {/* Rest indicator */}
+        <div className="px-6 py-4 text-center border-t border-border">
+          <p className="text-sm font-semibold text-foreground">Daily Challenge Complete.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {dayName === 'Sunday'
+              ? 'Master Challenge Complete! A fresh start begins tomorrow.'
+              : 'Rest your eyes. Tomorrow will be even more challenging...'}
+          </p>
+        </div>
 
         {/* Share buttons */}
         <div className="px-6 pb-4 flex justify-center gap-3">

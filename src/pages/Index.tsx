@@ -617,6 +617,7 @@ const Index = () => {
       </div>
 
       {/* Status Bar */}
+      {!showDailySummary && (
       <div className="w-full max-w-sm mb-4">
         <div className="flex items-center justify-between bg-card rounded-xl border border-border px-4 py-2.5 shadow-sm">
           {isFreeplay ? (
@@ -663,6 +664,7 @@ const Index = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Daily Summary (replaces game when finished, daily only) */}
       {showDailySummary ? (
@@ -674,6 +676,8 @@ const Index = () => {
           onShareWhatsApp={shareWhatsApp}
           copied={copied}
           onStartFreePlay={startFreePlay}
+          dayName={dayName}
+          colorCount={baseColorCount}
         />
       ) : (
         <>
