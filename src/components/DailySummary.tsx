@@ -134,7 +134,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
         {/* Rest indicator */}
         <div className="px-6 py-4 text-center border-t border-border">
-          <p className="text-sm font-semibold text-foreground">Daily Challenge Complete!</p>
+          <p className="text-sm font-semibold text-foreground">Daily Challenge Complete</p>
           <p className="text-sm text-muted-foreground mt-1">
             {dayName === 'Sunday'
               ? 'Master Challenge Complete! A fresh start begins tomorrow.'
