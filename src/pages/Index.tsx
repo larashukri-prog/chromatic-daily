@@ -607,7 +607,7 @@ const Index = () => {
               className={`text-3xl sm:text-4xl tracking-tight mb-1 text-foreground ${phase === 'recall' || phase === 'result' ? 'hidden sm:block' : ''}`}
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontWeight: 700 }}
             >
-              Chromatic Daily
+              {showDailySummary ? 'Daily Summary' : 'Chromatic Daily'}
             </h1>
             <p className="text-sm text-muted-foreground tracking-wide uppercase">
               {dayName} · #{dayNum} · Level: {difficultyName}
