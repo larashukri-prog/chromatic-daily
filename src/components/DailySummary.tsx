@@ -145,6 +145,16 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
           </div>
         )}
 
+        {/* Rest indicator */}
+        <div className="px-6 py-4 text-center border-t border-border">
+          <p className="text-sm font-semibold text-foreground">Daily Challenge Complete.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {dayName === 'Sunday'
+              ? 'Master Challenge Complete! A fresh start begins tomorrow.'
+              : 'Rest your eyes. Tomorrow will be even more challenging...'}
+          </p>
+        </div>
+
         {/* Share buttons */}
         <div className="px-6 pb-4 flex justify-center gap-3">
           <Button onClick={onShare} variant="outline" className="rounded-xl gap-2">
