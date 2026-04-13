@@ -64,12 +64,15 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
       {/* Summary header */}
       <div className="text-center mb-4">
         <h2
-          className="text-xl font-bold text-foreground mb-1"
+          className="text-2xl font-bold text-foreground uppercase tracking-tight leading-none"
           style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
         >
-          Daily Summary
+          {dayName}
         </h2>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider">
+        <p className="text-[10px] font-bold text-muted-foreground mt-1.5 tracking-[0.2em] uppercase">
+          LEVEL: {getDifficultyName(colorCount)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
           {solvedCount > 0
             ? `Solved ${solvedCount} puzzle${solvedCount > 1 ? 's' : ''} in ${totalAttempts} attempt${totalAttempts > 1 ? 's' : ''}`
             : 'Better luck tomorrow!'}
