@@ -14,6 +14,15 @@ interface DailySummaryProps {
   onShareWhatsApp: () => void;
   copied: boolean;
   onStartFreePlay?: () => void;
+  dayName: string;
+  colorCount: number;
+}
+
+function getDifficultyName(colorCount: number): string {
+  if (colorCount <= 2) return 'MINIMALIST';
+  if (colorCount <= 4) return 'STANDARD';
+  if (colorCount <= 6) return 'COMPLEX';
+  return 'MASTER';
 }
 
 interface AttemptSlide {
