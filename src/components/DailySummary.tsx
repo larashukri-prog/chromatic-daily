@@ -63,9 +63,6 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
     <div className="w-full max-w-sm mx-auto">
       {/* Summary header */}
       <div className="text-center mb-4">
-        <p className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">
-          LEVEL: {getDifficultyName(colorCount)}
-        </p>
         <p className="text-xs text-muted-foreground mt-1">
           {solvedCount > 0
             ? `Solved ${solvedCount} puzzle${solvedCount > 1 ? 's' : ''} in ${totalAttempts} attempt${totalAttempts > 1 ? 's' : ''}`
