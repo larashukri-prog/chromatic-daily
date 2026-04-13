@@ -674,6 +674,8 @@ const Index = () => {
           onShareWhatsApp={shareWhatsApp}
           copied={copied}
           onStartFreePlay={startFreePlay}
+          dayName={dayName}
+          colorCount={baseColorCount}
         />
       ) : (
         <>
