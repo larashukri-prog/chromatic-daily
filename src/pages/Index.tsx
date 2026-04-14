@@ -77,6 +77,7 @@ const Index = () => {
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [ddaLevel, setDdaLevel] = useState<DDALevel>('standard');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasStartedPlaying = useRef(false);
 
   // Speed Star state
   const [isSpeedRound, setIsSpeedRound] = useState(false);
@@ -180,6 +181,7 @@ const Index = () => {
   const handleReady = useCallback(() => {
     if (phase !== 'observation') return;
     if (timerRef.current) clearInterval(timerRef.current);
+    hasStartedPlaying.current = true;
 
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
     const elapsed = Date.now() - observationStartTime.current;
@@ -589,6 +591,24 @@ const Index = () => {
       });
     }
   }, [showDailySummary]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'hidden' &&
+        hasStartedPlaying.current &&
+        !alreadyFinished &&
+        posthog.__loaded
+      ) {
+        posthog.capture('game_abandoned', {
+          current_round: roundIndex + 1,
+          attempts_remaining: MAX_ROUNDS - totalAttemptsUsed,
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [alreadyFinished, roundIndex, totalAttemptsUsed]);
 
   return (
     <div
