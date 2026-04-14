@@ -1,47 +1,47 @@
 
 
-## PostHog `game_completed` Event Tracking
+## PostHog `game_abandoned` Event Tracking
 
-### Problem
-No analytics event fires when a player finishes all 3 daily attempts. We need to capture `game_completed` with day, difficulty, result, and stars earned.
-
-### Challenge: Stars Earned
-Speed stars are tracked only in transient component state (`isSpeedRound`) and are not persisted. We need to add a counter that accumulates stars across the session.
+### Overview
+Add a `visibilitychange` listener that fires a `game_abandoned` PostHog event when the user hides/closes the tab, but only if they've started playing (clicked "I'm Ready" at least once) and haven't yet reached the Daily Summary.
 
 ### Plan
 
-**File: `src/pages/Index.tsx`** (3 changes)
+**File: `src/pages/Index.tsx`** (2 changes)
 
-1. **Add a `starsEarned` state variable** (~line 82, near existing speed star state):
+1. **Track whether the user has started playing** — add a `hasStartedPlaying` ref (not state, to avoid stale closures in the event listener):
    ```tsx
-   const [starsEarned, setStarsEarned] = useState(0);
+   const hasStartedPlaying = useRef(false);
    ```
-   Reset it to 0 when starting a new daily session (alongside other resets ~line 116).
-
-2. **Increment `starsEarned` on correct + speed round** (~line 425, in the verification callback where `posthog.capture('Round Verified', ...)` already fires):
+   Set it to `true` inside `handleReady` (the "I am ready" callback, ~line 180):
    ```tsx
-   if (correct && isSpeedRound) {
-     setStarsEarned(prev => prev + 1);
-   }
+   hasStartedPlaying.current = true;
    ```
 
-3. **Fire `game_completed` event when `showDailySummary` becomes true** — add a `useEffect` after line 574:
+2. **Add a `useEffect` for the `visibilitychange` listener** — fires `game_abandoned` when the document becomes hidden, only if the player has started and the game isn't complete:
    ```tsx
    useEffect(() => {
-     if (showDailySummary && posthog.__loaded) {
-       posthog.capture('game_completed', {
-         day: dayName,
-         difficulty: difficultyName,
-         result: solvedRounds > 0 ? 'won' : 'lost',
-         stars_earned: starsEarned,
-       });
-     }
-   }, [showDailySummary]);
+     const handleVisibilityChange = () => {
+       if (
+         document.visibilityState === 'hidden' &&
+         hasStartedPlaying.current &&
+         !alreadyFinished &&
+         posthog.__loaded
+       ) {
+         posthog.capture('game_abandoned', {
+           current_round: roundIndex + 1,
+           attempts_remaining: MAX_ROUNDS - totalAttemptsUsed,
+         });
+       }
+     };
+     document.addEventListener('visibilitychange', handleVisibilityChange);
+     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+   }, [alreadyFinished, roundIndex, totalAttemptsUsed]);
    ```
-   The `posthog.__loaded` check ensures no errors if PostHog failed to initialize. The dependency on only `showDailySummary` ensures it fires exactly once when the summary appears.
 
-### Result
-- Event fires once per daily session completion
-- Includes all 4 requested properties
-- Safe against PostHog initialization failures
+### Details
+- Uses a `ref` for `hasStartedPlaying` so the event listener always has the current value without needing it as a dependency.
+- `alreadyFinished`, `roundIndex`, and `totalAttemptsUsed` are state values passed as dependencies so the listener always has fresh values.
+- The `posthog.__loaded` guard prevents errors if PostHog failed to initialize.
+- The event fires on tab switch or window close — standard `visibilitychange` behavior.
 
