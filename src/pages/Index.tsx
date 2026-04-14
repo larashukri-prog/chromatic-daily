@@ -115,6 +115,7 @@ const Index = () => {
       setPhase('idle');
       setAlreadyFinished(false);
       setTotalAttemptsUsed(0);
+      setStarsEarned(0);
       setSavedRounds([]);
       setRoundIndex(0);
       setAttemptInRound(1);
