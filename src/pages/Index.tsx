@@ -582,20 +582,22 @@ const Index = () => {
   const showDailySummary = !isFreeplay && alreadyFinished && (phase === 'idle' || phase === 'result');
 
   useEffect(() => {
-    if (showDailySummary && posthog.__loaded) {
+   if (showDailySummary && posthog.__loaded) {
       posthog.capture('game_completed', {
         day: dayName,
         difficulty: difficultyName,
         result: solvedRounds > 0 ? 'won' : 'lost',
         stars_earned: starsEarned,
       });
+      hasStartedPlaying.current = false;
     }
   }, [showDailySummary]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = (e: Event) => {
+      const isLeaving = e.type === 'pagehide' || document.visibilityState === 'hidden';
       if (
-        document.visibilityState === 'hidden' &&
+        isLeaving &&
         hasStartedPlaying.current &&
         !alreadyFinished &&
         posthog.__loaded
@@ -603,11 +605,16 @@ const Index = () => {
         posthog.capture('game_abandoned', {
           current_round: roundIndex + 1,
           attempts_remaining: MAX_ROUNDS - totalAttemptsUsed,
-        });
+        }, { transport: 'sendBeacon' });
+        hasStartedPlaying.current = false;
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('pagehide', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('pagehide', handleVisibilityChange);
+    };
   }, [alreadyFinished, roundIndex, totalAttemptsUsed]);
 
   return (
