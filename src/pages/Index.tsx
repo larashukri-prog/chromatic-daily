@@ -80,6 +80,7 @@ const Index = () => {
 
   // Speed Star state
   const [isSpeedRound, setIsSpeedRound] = useState(false);
+  const [starsEarned, setStarsEarned] = useState(0);
   const [showStarPop, setShowStarPop] = useState(false);
   const observationStartTime = useRef<number>(0);
 
@@ -114,6 +115,7 @@ const Index = () => {
       setPhase('idle');
       setAlreadyFinished(false);
       setTotalAttemptsUsed(0);
+      setStarsEarned(0);
       setSavedRounds([]);
       setRoundIndex(0);
       setAttemptInRound(1);
@@ -424,6 +426,10 @@ const Index = () => {
 
       posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct, speed_bonus: isSpeedRound });
 
+      if (correct && isSpeedRound) {
+        setStarsEarned(prev => prev + 1);
+      }
+
       if (roundIndex === 0 && correct && attemptInRound === 1) {
         setDdaLevel('hard');
         const tier = getDayDifficultyTier(baseColorCount);
@@ -572,6 +578,17 @@ const Index = () => {
 
   // Show daily summary only in daily mode when finished
   const showDailySummary = !isFreeplay && alreadyFinished && (phase === 'idle' || phase === 'result');
+
+  useEffect(() => {
+    if (showDailySummary && posthog.__loaded) {
+      posthog.capture('game_completed', {
+        day: dayName,
+        difficulty: difficultyName,
+        result: solvedRounds > 0 ? 'won' : 'lost',
+        stars_earned: starsEarned,
+      });
+    }
+  }, [showDailySummary]);
 
   return (
     <div
