@@ -1,46 +1,34 @@
 
 
-## Reorder Focus Stats Card in Daily Summary
+## Always Show Grey Border Around White Swatch
 
-Move the "Focus + Stars" stat card from above the action buttons to below them, so the layout flows as:
-1. Daily Challenge Complete message
-2. Share buttons (Share Result, WhatsApp)
-3. Start Practice Mode button
-4. Focus + Stars stat card (moved to bottom)
+The black border the user sees in Practice Mode comes from the **color picker swatch** in `src/pages/Index.tsx` (line ~848-854). White swatches get the dark `hsl(var(--primary))` outline when selected, which reads as black against the white background.
 
-**File: `src/components/DailySummary.tsx`**
+### Change
 
-Relocate lines 148-165 (the Focus + Stars stat card div) to after line 186 (closing of Free Play button div), just before the closing `</div>` of the main card container at line 187.
+**File: `src/pages/Index.tsx`** (color picker swatch, ~line 848)
 
-The JSX structure changes from:
+Add a per-swatch override so that when `c.hex === '#FFFFFF'`:
+- The static `border` stays `#6B7280` (explicit hex, not the muted-foreground token).
+- The selected `outline` also uses `#6B7280` instead of `hsl(var(--primary))`, so the white tile never gets a dark ring.
+
 ```tsx
-{/* Rest indicator */}
-<div className="px-6 py-4 text-center border-t border-border">...</div>
-
-{/* Focus + Stars stat card */}
-<div className="px-6 pt-4 pb-2">...</div>
-
-{/* Share buttons */}
-<div className="px-6 pb-4 flex justify-center gap-3">...</div>
-
-{/* Free Play button */}
-<div className="px-6 pb-6 flex justify-center">...</div>
+const isWhite = c.hex.toUpperCase() === '#FFFFFF';
+// ...
+style={{
+  backgroundColor: c.hex,
+  border: isWhite ? '2px solid #6B7280' : undefined, // overrides className border for white
+  outline: selectedColor === c.hex
+    ? (isWhite ? '3px solid #6B7280' : '3px solid hsl(var(--primary))')
+    : '2px solid transparent',
+  outlineOffset: '2px',
+  transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
+}}
 ```
 
-To:
-```tsx
-{/* Rest indicator */}
-<div className="px-6 py-4 text-center border-t border-border">...</div>
+### Verification of GameGrid
+`src/components/GameGrid.tsx` already returns `'2px solid #6B7280'` for white tiles before the activeSlot check, so grid tiles are already correct. No change needed there.
 
-{/* Share buttons */}
-<div className="px-6 pb-4 flex justify-center gap-3">...</div>
-
-{/* Free Play button */}
-<div className="px-6 pb-6 flex justify-center">...</div>
-
-{/* Focus + Stars stat card - moved to bottom */}
-<div className="px-6 pt-4 pb-6">...</div>
-```
-
-Also update the stat card's bottom padding from `pb-2` to `pb-6` so it has consistent spacing at the bottom of the card.
+### Result
+White swatches in the picker (Sunday + Practice Mode) always show a `#6B7280` grey border — both in the resting state and when selected — matching the grid tile behavior.
 
