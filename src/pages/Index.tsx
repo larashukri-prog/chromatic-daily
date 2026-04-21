@@ -986,25 +986,38 @@ const Index = () => {
               </div>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">The Neural Match</p>
-               <p>Focus Tracking monitors your sustained attention. This isn’t about speed; it’s about the time you spend in deep concentration. Watch your focus duration grow as you strengthen your mental endurance.</p>
+              <p className="font-semibold text-foreground mb-2 text-base">Performance Metrics</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium text-foreground mb-1">Neural Match (Accuracy)</p>
+                  <p>This measures your retention precision. Unlike a simple pass/fail, it tracks how perfectly you recreated the chromatic spectrum. Achieve a 100% match to reach the Mastered State.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Speed Star ⭐️ (Reflexes)</p>
+                  <p>Awarded for rapid encoding. If you hit 'Ready' before the internal threshold and win the round, you earn a star. It proves you can capture a complex visual field in an instant.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Deep Focus Tracking (Stamina)</p>
+                  <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
+                </div>
+              </div>
             </div>
             <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
-              <p>We now monitor your total focus duration per session. This is not a race; it is a measure of sustained attention. Watch your daily focus time grow as your concentration strengthens.</p>
-            </div>
-            <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
-              <p><span className="font-semibold text-foreground">Persistence:</span> If you miss, you can use your next attempt to try the same puzzle again.</p>
-              <p><span className="font-semibold text-foreground">Success:</span> Solving a puzzle unlocks a brand-new, harder configuration!</p>
-            </div>
-            <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">Daily Difficulty</p>
-              <p>The challenge scales! We start with 2 colors on Monday and build up to a 9-color Master challenge by Sunday.</p>
-            </div>
-            <div className="border-t border-border pt-4">
-              <p className="font-medium text-foreground mb-1">Practice Makes Perfect</p>
-              <p>Finished your Daily Challenge? Practice Mode unlocks once you've used your daily attempts. Dive in for unlimited rounds to sharpen your eye and master the mix!</p>
+              <p className="font-semibold text-foreground mb-2 text-base">The Journey</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
+                  <p>You have three chances to master the day's configuration. Success unlocks a new, harder challenge.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Daily Scaling</p>
+                  <p>The difficulty increases throughout the week, starting with 2 colors on Monday and peaking with the 9-color Master Grid on Sunday.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Practice Mode</p>
+                  <p>Unlocked once your daily attempts are used. Dive in for unlimited rounds to sharpen your eye and master the mix.</p>
+                </div>
+              </div>
             </div>
           </div>
           </ScrollArea>
