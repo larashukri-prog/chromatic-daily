@@ -999,6 +999,14 @@ const Index = () => {
               <p>The Speed Star is a mark of visual mastery. It proves you have both a sharp eye and a fast memory. Try to collect a star in every round of the Daily Challenge!</p>
             </div>
             <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">The Neural Match</p>
+              <p>Neural Match represents the precision of your visual memory. Unlike a simple pass/fail, this measures how closely your brain mapped the chromatic spectrum. Aim for 100% Neural Match to reach the Mastered State.</p>
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
+              <p>We now monitor your total focus duration per session. This is not a race; it is a measure of sustained attention. Watch your daily focus time grow as your concentration strengthens.</p>
+            </div>
+            <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
               <p><span className="font-semibold text-foreground">Persistence:</span> If you miss, you can use your next attempt to try the same puzzle again.</p>
               <p><span className="font-semibold text-foreground">Success:</span> Solving a puzzle unlocks a brand-new, harder configuration!</p>
