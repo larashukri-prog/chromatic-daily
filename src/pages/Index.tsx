@@ -845,7 +845,7 @@ const Index = () => {
                           setSelectedColor(c.hex);
                         }
                       }}
-                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-border"
+                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-muted-foreground/50"
                       style={{
                         backgroundColor: c.hex,
                         outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
