@@ -738,6 +738,8 @@ const Index = () => {
           onStartFreePlay={startFreePlay}
           dayName={dayName}
           colorCount={baseColorCount}
+          starsEarned={starsEarned}
+          totalFocusSeconds={totalFocusSeconds}
         />
       ) : (
         <>
