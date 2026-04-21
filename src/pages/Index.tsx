@@ -67,6 +67,7 @@ const Index = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showMetricsInfo, setShowMetricsInfo] = useState(false);
   const [shake, setShake] = useState(false);
   const [alreadyFinished, setAlreadyFinished] = useState(false);
   const [copied, setCopied] = useState(false);
