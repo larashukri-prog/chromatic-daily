@@ -827,7 +827,9 @@ const Index = () => {
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  {pickerColors.map((c) => (
+                  {pickerColors.map((c) => {
+                    const isWhite = c.hex.toUpperCase() === '#FFFFFF';
+                    return (
                     <button
                       key={c.hex}
                       onClick={() => {
@@ -848,7 +850,10 @@ const Index = () => {
                       className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-muted-foreground/50"
                       style={{
                         backgroundColor: c.hex,
-                        outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
+                        border: isWhite ? '2px solid #6B7280' : undefined,
+                        outline: selectedColor === c.hex
+                          ? (isWhite ? '3px solid #6B7280' : '3px solid hsl(var(--primary))')
+                          : '2px solid transparent',
                         outlineOffset: '2px',
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
                       }}
@@ -856,7 +861,8 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
