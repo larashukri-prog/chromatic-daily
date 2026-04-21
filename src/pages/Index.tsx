@@ -847,7 +847,11 @@ const Index = () => {
                           setSelectedColor(c.hex);
                         }
                       }}
-                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-muted-foreground/50"
+                      className={cn(
+                        "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
+                        "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
+                        !isWhite && "border border-muted-foreground/50"
+                      )}
                       style={{
                         backgroundColor: c.hex,
                         border: isWhite ? '2px solid #6B7280' : undefined,
