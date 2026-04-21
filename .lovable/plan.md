@@ -1,36 +1,23 @@
 
 
-## Adjust White Border: Resting Softer, Active Matches Other Colors
+## Add Grey Border to White Tiles in Result Modal's "Correct Pattern" Grid
 
-Currently white tiles and swatches use `#D1D5DB` resting / `#9CA3AF` active. The user wants:
-- **Resting**: bump up slightly to `#9CA3AF` (still soft, but a touch more defined)
-- **Active/selected**: use the same dark treatment as every other color, so white doesn't look like a special case
+The result modal's "Correct Pattern" preview renders white tiles with no border, making them blend into the white card background. We'll add a `#D1D5DB` border so white tiles are visible.
 
-### Changes
+### Investigation needed
+The "Correct Pattern" grid in the result modal is a separate render from the main `GameGrid`. I need to locate it (likely in `src/pages/Index.tsx` inside the result dialog) and add a conditional border for white tiles.
 
-**File: `src/components/GameGrid.tsx`** — `getCircleBorder`
+### Change
 
-```tsx
-if (color === '#FFFFFF' || color === '#FFF') {
-  if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
-  return '2px solid #9CA3AF';
-}
-```
-
-This makes the white tile fall through to the same `3px solid #000000` active-slot treatment used by every other color.
-
-**File: `src/pages/Index.tsx`** — color picker swatch inline style
+In the result modal's "Correct Pattern" 3x3 preview, update the tile style so any tile whose color is `#FFFFFF` gets a `1px solid #D1D5DB` border. Neutral grey tiles (`#D1D5DB` background) and colored tiles remain unchanged.
 
 ```tsx
-border: isWhite ? '2px solid #9CA3AF' : undefined,
-outline: selectedColor === c.hex
-  ? '3px solid hsl(var(--primary))'
-  : '2px solid transparent',
+style={{
+  backgroundColor: color,
+  border: color?.toUpperCase() === '#FFFFFF' ? '1px solid #D1D5DB' : undefined,
+}}
 ```
-
-Drop the white-specific selected outline so the white swatch uses the same dark `hsl(var(--primary))` selection ring as all other swatches.
 
 ### Result
-- Resting white tile/swatch: soft `#9CA3AF` border — visible but not jarring.
-- Active/selected white tile/swatch: same dark ring as red, blue, yellow, etc. — consistent with the rest of the palette.
+The white tile in the "Correct Pattern" preview gets a soft `#D1D5DB` outline, making it clearly visible against the white modal background — consistent with the resting white-tile treatment elsewhere in the app (which uses `#9CA3AF`, but the modal preview is smaller and a lighter `#D1D5DB` keeps it subtle, matching the user's spec).
 
