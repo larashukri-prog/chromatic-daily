@@ -21,6 +21,7 @@ import {
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 /** Dynamic timer durations in ms based on color count */
 function getObservationDuration(colorCount: number, isA11y: boolean): number {
@@ -847,7 +848,11 @@ const Index = () => {
                           setSelectedColor(c.hex);
                         }
                       }}
-                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-muted-foreground/50"
+                      className={cn(
+                        "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
+                        "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
+                        !isWhite && "border border-muted-foreground/50"
+                      )}
                       style={{
                         backgroundColor: c.hex,
                         border: isWhite ? '2px solid #6B7280' : undefined,
