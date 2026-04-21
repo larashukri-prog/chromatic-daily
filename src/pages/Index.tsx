@@ -996,7 +996,7 @@ const Index = () => {
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Speed Star ⭐️</p>
-              <p>The Speed Star is a mark of visual mastery. It proves you have both a sharp eye and a fast memory. Try to collect a star in every round of the Daily Challenge!</p>
+               <p>The Speed Star is awarded for rapid encoding. It proves you can capture a complex visual field in an instant. Aim for a star in every round to prove your mental agility.</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Neural Match</p>
