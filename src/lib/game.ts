@@ -433,7 +433,11 @@ export function getResultMessage(roundIndex: number, attemptInRound: number, isC
   return "That's all 3 attempts used. Better luck tomorrow!";
 }
 
-export function generateShareText(rounds: RoundData[]): string {
+export function generateShareText(
+  rounds: RoundData[],
+  starsEarned: number = 0,
+  totalFocusSeconds: number = 0,
+): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
   const anySolved = rounds.some(r => r.solved);
@@ -499,6 +503,9 @@ export function generateShareText(rounds: RoundData[]): string {
   } else {
     lines.push('Better luck tomorrow!');
   }
+
+  lines.push(`⭐️ Speed Stars: ${starsEarned}`);
+  lines.push(`🧠 Focus: ${Math.round(totalFocusSeconds)}s`);
 
   lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');
