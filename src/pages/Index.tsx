@@ -855,9 +855,9 @@ const Index = () => {
                       )}
                       style={{
                         backgroundColor: c.hex,
-                        border: isWhite ? '2px solid #9CA3AF' : undefined,
+                        border: isWhite ? '2px solid #6B7280' : undefined,
                         outline: selectedColor === c.hex
-                          ? '3px solid hsl(var(--primary))'
+                          ? (isWhite ? '3px solid #6B7280' : '3px solid hsl(var(--primary))')
                           : '2px solid transparent',
                         outlineOffset: '2px',
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
@@ -1081,11 +1081,7 @@ const Index = () => {
                     <div
                       key={i}
                       className="aspect-square rounded-full relative overflow-hidden"
-                      style={{
-                        backgroundColor: c || NEUTRAL,
-                        width: '100%',
-                        border: c?.toUpperCase() === '#FFFFFF' ? '1px solid #D1D5DB' : undefined,
-                      }}
+                      style={{ backgroundColor: c || NEUTRAL, width: '100%' }}
                     >
                       {a11y && <PatternOverlay colorHex={c} size="100%" />}
                     </div>
