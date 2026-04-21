@@ -1030,6 +1030,20 @@ const Index = () => {
               <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             )}
 
+            {!isCorrect && result && (
+              <div className="mb-4 px-4 max-w-[240px] mx-auto">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Neural Match
+                  </span>
+                  <span className="text-[10px] font-semibold text-foreground">
+                    {Math.round((result.filter(Boolean).length / 9) * 100)}%
+                  </span>
+                </div>
+                <Progress value={Math.round((result.filter(Boolean).length / 9) * 100)} className="h-1.5" />
+              </div>
+            )}
+
             {resultMessage && (
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
             )}
