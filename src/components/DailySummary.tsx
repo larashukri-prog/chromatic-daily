@@ -147,7 +147,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
         {/* Focus + Stars stat card */}
         <div className="px-6 pt-4 pb-2">
-          <div className="rounded-xl border border-border bg-muted/30 px-4 py-4 text-center flex flex-col items-center justify-center min-h-[120px]">
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
             <p className="text-sm text-foreground">
               You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
             </p>
