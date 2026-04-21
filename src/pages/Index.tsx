@@ -1000,7 +1000,7 @@ const Index = () => {
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Neural Match</p>
-               <p>Focus Tracking monitors your sustained attention. This isn’t about speed; it’s about the time you spend in deep concentration. Watch your focus duration grow as your concentration strengthens.</p>
+               <p>Focus Tracking monitors your sustained attention. This isn’t about speed; it’s about the time you spend in deep concentration. Watch your focus duration grow as you strengthen your mental endurance.</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
