@@ -43,7 +43,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
     if (phase === 'recall' && selectedColor && !playerGrid[index]) return '2px dashed #9CA3AF';
     const color = getCircleColor(index).toUpperCase();
-    if (color === '#FFFFFF' || color === '#FFF') return '2px solid #D1D5DB';
+    if (color === '#FFFFFF' || color === '#FFF') return '2px solid #6B7280';
     return '2px solid transparent';
   };
 
