@@ -826,7 +826,7 @@ const Index = () => {
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  {COLORS.map((c) => (
+                  {pickerColors.map((c) => (
                     <button
                       key={c.hex}
                       onClick={() => {
@@ -844,7 +844,7 @@ const Index = () => {
                           setSelectedColor(c.hex);
                         }
                       }}
-                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden"
+                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-border"
                       style={{
                         backgroundColor: c.hex,
                         outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
