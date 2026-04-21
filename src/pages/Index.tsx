@@ -855,9 +855,9 @@ const Index = () => {
                       )}
                       style={{
                         backgroundColor: c.hex,
-                        border: isWhite ? '2px solid #D1D5DB' : undefined,
+                        border: isWhite ? '2px solid #9CA3AF' : undefined,
                         outline: selectedColor === c.hex
-                          ? (isWhite ? '3px solid #9CA3AF' : '3px solid hsl(var(--primary))')
+                          ? '3px solid hsl(var(--primary))'
                           : '2px solid transparent',
                         outlineOffset: '2px',
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
