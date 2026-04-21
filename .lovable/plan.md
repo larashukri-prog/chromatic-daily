@@ -1,27 +1,31 @@
 
 
-## Add Two New Sections to "How to Play" Modal
+## Remove "Earn a Speed Star" Step from Info Modal
 
-Insert two new sections in the "How to Play" dialog in `src/pages/Index.tsx`, immediately after the existing "The Speed Star ⭐️" block (line 1000) and before the "3 Daily Attempts" block (line 1001).
+The info modal (the "How to Play" dialog opened from the info icon in `src/pages/Index.tsx`) still shows the third onboarding step with the Star icon and "Earn a Speed Star ⭐️" heading. Remove it so only the first two steps remain before the "The Neural Match" section.
 
 ### Change
 
-**File: `src/pages/Index.tsx`** — insert after line 1000:
+**File: `src/pages/Index.tsx`**
 
-```tsx
-<div className="border-t border-border pt-4">
-  <p className="font-medium text-foreground mb-1">The Neural Match</p>
-  <p>Neural Match represents the precision of your visual memory. Unlike a simple pass/fail, this measures how closely your brain mapped the chromatic spectrum. Aim for 100% Neural Match to reach the Mastered State.</p>
-</div>
-<div className="border-t border-border pt-4">
-  <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
-  <p>We now monitor your total focus duration per session. This is not a race; it is a measure of sustained attention. Watch your daily focus time grow as your concentration strengthens.</p>
-</div>
-```
+In the info modal's "How to Play" content, remove the third step block:
+- The `Star` icon container
+- The heading "Earn a Speed Star ⭐️"
+- The description sentence about clicking "Ready" fast
 
-Styling matches the existing sibling sections (same border-top divider, heading weight, and body copy treatment) so the new content blends seamlessly into the scrollable modal.
+Keep:
+1. Eye icon → "Analyze the Colors" + sentence
+2. CheckCircle2 icon → "Start the Challenge" + sentence
+
+The "The Neural Match" section (and everything after it) remains untouched and now follows directly after step 2.
+
+If the `Star` icon import from `lucide-react` becomes unused after removal, also drop it from the import statement to keep the file clean.
+
+### Note
+
+This change only affects the info modal in `src/pages/Index.tsx`. The separate first-visit `OnboardingOverlay.tsx` component is not modified — its three-step intro (including the Speed Star step) stays as-is.
 
 ### Result
 
-The "How to Play" modal now reads in this order: Speed Star → **Neural Match** → **Deep Focus Tracking** → 3 Daily Attempts → Daily Difficulty → Practice Makes Perfect.
+The info modal opens to a tighter two-step intro (Analyze → Start), flowing directly into the "The Neural Match" and "Focus Tracking" explanatory sections below.
 
