@@ -1,45 +1,27 @@
 
 
-## Align White Tile Border Colors with Other Tiles
+## Add Two New Sections to "How to Play" Modal
 
-The white tile should behave like the other colors: a visible resting border that darkens to black when active/selected.
+Insert two new sections in the "How to Play" dialog in `src/pages/Index.tsx`, immediately after the existing "The Speed Star ⭐️" block (line 1000) and before the "3 Daily Attempts" block (line 1001).
 
 ### Change
 
-**File: `src/components/GameGrid.tsx`** — `getCircleBorder`
-
-- Resting white tile: `#6B7280` (slate-500) — visible but not jarring
-- Active white tile (when `activeSlot === index`): `#000000` (black) — same as other colors
+**File: `src/pages/Index.tsx`** — insert after line 1000:
 
 ```tsx
-const getCircleBorder = (index: number): string => {
-  const color = getCircleColor(index).toUpperCase();
-  if (color === '#FFFFFF' || color === '#FFF') {
-    if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
-    return '2px solid #6B7280';
-  }
-  // ... rest unchanged
-};
+<div className="border-t border-border pt-4">
+  <p className="font-medium text-foreground mb-1">The Neural Match</p>
+  <p>Neural Match represents the precision of your visual memory. Unlike a simple pass/fail, this measures how closely your brain mapped the chromatic spectrum. Aim for 100% Neural Match to reach the Mastered State.</p>
+</div>
+<div className="border-t border-border pt-4">
+  <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
+  <p>We now monitor your total focus duration per session. This is not a race; it is a measure of sustained attention. Watch your daily focus time grow as your concentration strengthens.</p>
+</div>
 ```
 
-**File: `src/pages/Index.tsx`** — color picker swatch
-
-- Resting white swatch border: `#6B7280`
-- Selected white swatch outline: black (matching other color swatches which use `hsl(var(--primary))` for selection — but since white needs black when selected to match the grid behavior, use `3px solid #000000`)
-
-```tsx
-style={{
-  backgroundColor: c.hex,
-  border: isWhite ? '2px solid #6B7280' : undefined,
-  outline: selectedColor === c.hex
-    ? (isWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
-    : '2px solid transparent',
-  outlineOffset: '2px',
-  transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
-}}
-```
+Styling matches the existing sibling sections (same border-top divider, heading weight, and body copy treatment) so the new content blends seamlessly into the scrollable modal.
 
 ### Result
 
-White tiles and swatches now match the behavior of other colors: grey outline at rest (`#6B7280`), black outline when active/selected, creating consistent visual hierarchy across the palette.
+The "How to Play" modal now reads in this order: Speed Star → **Neural Match** → **Deep Focus Tracking** → 3 Daily Attempts → Daily Difficulty → Practice Makes Perfect.
 
