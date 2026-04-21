@@ -984,15 +984,6 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground">Tap the 'I'm Ready' button once you've memorized the colors. The target colors will disappear once pressed.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center mt-0.5">
-                  <Star className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Earn a Speed Star ⭐️</p>
-                  <p className="text-xs text-muted-foreground">If you hit 'Ready' fast, you'll earn a Speed Star when you win the round!</p>
-                </div>
-              </div>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Neural Match</p>
