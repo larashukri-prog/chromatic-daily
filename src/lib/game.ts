@@ -76,13 +76,20 @@ function generateFallbackSolution(): { solution: (string | null)[]; activeColors
 
 export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const { colorCount } = getDayInfo();
+    const { colorCount, dayOfWeek } = getDayInfo();
     const baseSeed = getDateSeed();
     const seed = baseSeed + roundIndex * 7919;
     const rand = seededRandom(seed);
 
-    const shuffled = [...COLORS].sort(() => rand() - 0.5);
-    const chosen = shuffled.slice(0, colorCount);
+    let chosen: { name: string; hex: string; hue: number }[];
+    if (dayOfWeek === 0) {
+      // Sunday: 7 chromatic + 2 anchors (black & white) = 9 total
+      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+      chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
+    } else {
+      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+      chosen = shuffled.slice(0, colorCount);
+    }
 
     const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
     const coloredPositions = positions.slice(0, colorCount);
