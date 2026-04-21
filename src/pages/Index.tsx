@@ -1000,7 +1000,7 @@ const Index = () => {
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">The Neural Match</p>
-              <p>Neural Match represents the precision of your visual memory. Unlike a simple pass/fail, this measures how closely your brain mapped the chromatic spectrum. Aim for 100% Neural Match to reach the Mastered State.</p>
+              <p>Neural Match measures your retention precision. Unlike a simple pass/fail, it tracks how perfectly you recreated the chromatic spectrum. Achieve a 100% match to reach the Mastered State.</p>
             </div>
             <div className="border-t border-border pt-4">
               <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
