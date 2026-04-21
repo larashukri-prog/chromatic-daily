@@ -145,6 +145,25 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
           </p>
         </div>
 
+        {/* Focus + Stars stat card */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
+            <p className="text-sm text-foreground">
+              You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Your neural pathways are strengthening.
+            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className="text-base">⭐️</span>
+              <span className="text-xs font-semibold text-foreground">× {starsEarned}</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider ml-1">
+                Speed Stars Earned
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Share buttons */}
         <div className="px-6 pb-4 flex justify-center gap-3">
           <Button onClick={onShare} variant="outline" className="rounded-xl gap-2">
