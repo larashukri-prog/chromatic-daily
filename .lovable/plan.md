@@ -1,33 +1,36 @@
 
 
-## Soften the White Tile Border
+## Adjust White Border: Resting Softer, Active Matches Other Colors
 
-The white tile border in the grid is currently `#6B7280` (slate-500), which at 2–3px weight reads as near-black against a white fill. We'll lighten it to a softer grey so it defines the edge without the jarring contrast.
+Currently white tiles and swatches use `#D1D5DB` resting / `#9CA3AF` active. The user wants:
+- **Resting**: bump up slightly to `#9CA3AF` (still soft, but a touch more defined)
+- **Active/selected**: use the same dark treatment as every other color, so white doesn't look like a special case
 
-### Change
+### Changes
 
 **File: `src/components/GameGrid.tsx`** — `getCircleBorder`
 
-Replace the white-tile branch to use a lighter grey (`#D1D5DB`, Tailwind slate-300) for resting state and a medium grey (`#9CA3AF`, slate-400) for the active slot — still visible, but no longer "black-looking".
-
 ```tsx
 if (color === '#FFFFFF' || color === '#FFF') {
-  if (phase === 'recall' && activeSlot === index) return '3px solid #9CA3AF';
-  return '2px solid #D1D5DB';
+  if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
+  return '2px solid #9CA3AF';
 }
 ```
 
-### Also update the picker swatch in `src/pages/Index.tsx`
+This makes the white tile fall through to the same `3px solid #000000` active-slot treatment used by every other color.
 
-So resting and selected white swatches match the grid:
+**File: `src/pages/Index.tsx`** — color picker swatch inline style
 
 ```tsx
-border: isWhite ? '2px solid #D1D5DB' : undefined,
+border: isWhite ? '2px solid #9CA3AF' : undefined,
 outline: selectedColor === c.hex
-  ? (isWhite ? '3px solid #9CA3AF' : '3px solid hsl(var(--primary))')
+  ? '3px solid hsl(var(--primary))'
   : '2px solid transparent',
 ```
 
+Drop the white-specific selected outline so the white swatch uses the same dark `hsl(var(--primary))` selection ring as all other swatches.
+
 ### Result
-White tiles and swatches get a soft `#D1D5DB` edge at rest and a slightly firmer `#9CA3AF` edge when active/selected — visible but no longer contrasty enough to read as black.
+- Resting white tile/swatch: soft `#9CA3AF` border — visible but not jarring.
+- Active/selected white tile/swatch: same dark ring as red, blue, yellow, etc. — consistent with the rest of the palette.
 
