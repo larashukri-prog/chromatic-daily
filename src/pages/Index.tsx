@@ -21,6 +21,7 @@ import {
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 /** Dynamic timer durations in ms based on color count */
 function getObservationDuration(colorCount: number, isA11y: boolean): number {
