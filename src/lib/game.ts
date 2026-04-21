@@ -27,6 +27,11 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
 
 const NEUTRAL = '#D1D5DB';
 
+const ANCHORS = [
+  { name: 'Black', hex: '#000000', hue: -1 },
+  { name: 'White', hex: '#FFFFFF', hue: -2 },
+];
+
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
@@ -71,13 +76,20 @@ function generateFallbackSolution(): { solution: (string | null)[]; activeColors
 
 export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const { colorCount } = getDayInfo();
+    const { colorCount, dayOfWeek } = getDayInfo();
     const baseSeed = getDateSeed();
     const seed = baseSeed + roundIndex * 7919;
     const rand = seededRandom(seed);
 
-    const shuffled = [...COLORS].sort(() => rand() - 0.5);
-    const chosen = shuffled.slice(0, colorCount);
+    let chosen: { name: string; hex: string; hue: number }[];
+    if (dayOfWeek === 0) {
+      // Sunday: 7 chromatic + 2 anchors (black & white) = 9 total
+      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+      chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
+    } else {
+      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+      chosen = shuffled.slice(0, colorCount);
+    }
 
     const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
     const coloredPositions = positions.slice(0, colorCount);
@@ -173,7 +185,7 @@ export function generateSolutionDDA(
       return generateSolution(roundIndex);
     }
 
-    const { colorCount: baseCount } = getDayInfo();
+    const { colorCount: baseCount, dayOfWeek } = getDayInfo();
     const tier = getDayDifficultyTier(baseCount);
     const baseSeed = getDateSeed();
     const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
@@ -182,8 +194,14 @@ export function generateSolutionDDA(
 
     if (tier === 'hard') {
       const colorCount = baseCount;
-      const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-      const chosen = shuffled.slice(0, colorCount);
+      let chosen: { name: string; hex: string; hue: number }[];
+      if (dayOfWeek === 0) {
+        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+        chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
+      } else {
+        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+        chosen = shuffled.slice(0, colorCount);
+      }
       const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
 
       const solution: (string | null)[] = Array(9).fill(null);
@@ -415,7 +433,11 @@ export function getResultMessage(roundIndex: number, attemptInRound: number, isC
   return "That's all 3 attempts used. Better luck tomorrow!";
 }
 
-export function generateShareText(rounds: RoundData[]): string {
+export function generateShareText(
+  rounds: RoundData[],
+  starsEarned: number = 0,
+  totalFocusSeconds: number = 0,
+): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
   const anySolved = rounds.some(r => r.solved);
@@ -481,6 +503,9 @@ export function generateShareText(rounds: RoundData[]): string {
   } else {
     lines.push('Better luck tomorrow!');
   }
+
+  lines.push(`⭐️ Speed Stars: ${starsEarned}`);
+  lines.push(`🧠 Focus: ${Math.round(totalFocusSeconds)}s`);
 
   lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');

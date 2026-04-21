@@ -1,7 +1,13 @@
 import { COLORS } from '@/lib/game';
 
+const ANCHORS = [
+  { name: 'Black', hex: '#000000' },
+  { name: 'White', hex: '#FFFFFF' },
+];
+
 /**
- * Generate a random free-play puzzle with 2-5 colors.
+ * Generate a random free-play puzzle with 3-5 colors,
+ * always including 2 anchors (Black & White).
  * Uses Math.random() — no seeding, no persistence.
  */
 export function generateFreePlayPuzzle(): {
@@ -9,11 +15,12 @@ export function generateFreePlayPuzzle(): {
   activeColors: { name: string; hex: string }[];
   colorCount: number;
 } {
-  const colorCount = Math.floor(Math.random() * 4) + 2; // 2–5
+  const colorCount = Math.floor(Math.random() * 3) + 3; // 3–5 (incl. 2 anchors)
 
-  // Shuffle and pick colors
+  // Pick chromatic colors and append the 2 anchors
   const shuffled = [...COLORS].sort(() => Math.random() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
+  const chromaticCount = Math.max(1, colorCount - 2);
+  const chosen = [...shuffled.slice(0, chromaticCount), ...ANCHORS];
 
   // Shuffle positions and pick slots
   const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => Math.random() - 0.5);

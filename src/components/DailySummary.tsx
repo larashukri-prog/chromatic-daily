@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
@@ -16,6 +17,8 @@ interface DailySummaryProps {
   onStartFreePlay?: () => void;
   dayName: string;
   colorCount: number;
+  starsEarned: number;
+  totalFocusSeconds: number;
 }
 
 function getDifficultyName(colorCount: number): string {
@@ -32,7 +35,7 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
 
   // Flatten all attempts across rounds into individual slides
@@ -142,6 +145,25 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
           </p>
         </div>
 
+        {/* Focus + Stars stat card */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
+            <p className="text-sm text-foreground">
+              You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Your neural pathways are strengthening.
+            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className="text-base">⭐️</span>
+              <span className="text-xs font-semibold text-foreground">× {starsEarned}</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider ml-1">
+                Speed Stars Earned
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Share buttons */}
         <div className="px-6 pb-4 flex justify-center gap-3">
           <Button onClick={onShare} variant="outline" className="rounded-xl gap-2">
@@ -177,6 +199,8 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
     if (c === null) return playerGrid[i] === null;
     return playerGrid[i] === c;
   });
+  const correctTiles = result.filter(Boolean).length;
+  const neuralMatch = Math.round((correctTiles / 9) * 100);
 
   return (
     <div className="text-center">
@@ -191,9 +215,19 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
           Attempt {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
-      <p className={`text-xs mb-5 ${slide.isCorrect ? 'text-emerald-500' : 'text-destructive'}`}>
-        {slide.isCorrect ? 'Solved' : 'Incorrect'}
-      </p>
+      {slide.isCorrect ? (
+        <p className="text-xs mb-5 text-emerald-500">Solved · 100% Neural Match</p>
+      ) : (
+        <div className="mb-5 px-4 max-w-[220px] mx-auto">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Neural Match
+            </span>
+            <span className="text-[10px] font-semibold text-foreground">{neuralMatch}%</span>
+          </div>
+          <Progress value={neuralMatch} className="h-1.5" />
+        </div>
+      )}
 
       {/* 3x3 grid */}
       <div className="relative">

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
@@ -85,6 +86,9 @@ const Index = () => {
   const [showStarPop, setShowStarPop] = useState(false);
   const observationStartTime = useRef<number>(0);
 
+  // Focus stat (invisible timer — total seconds spent observing in daily mode)
+  const [totalFocusSeconds, setTotalFocusSeconds] = useState(0);
+
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
@@ -109,6 +113,13 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
+  // Anchor-aware color picker: include Black & White on Sunday or in Practice Mode
+  const isSunday = new Date().getDay() === 0;
+  const includeAnchors = isSunday || isFreeplay;
+  const pickerColors = includeAnchors
+    ? [...COLORS, { name: 'Black', hex: '#000000' }, { name: 'White', hex: '#FFFFFF' }]
+    : COLORS;
+
   useEffect(() => {
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
@@ -117,6 +128,7 @@ const Index = () => {
       setAlreadyFinished(false);
       setTotalAttemptsUsed(0);
       setStarsEarned(0);
+      setTotalFocusSeconds(0);
       setSavedRounds([]);
       setRoundIndex(0);
       setAttemptInRound(1);
@@ -186,6 +198,11 @@ const Index = () => {
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
     const elapsed = Date.now() - observationStartTime.current;
 
+    // Accumulate focus seconds (daily mode only)
+    if (!isFreeplay) {
+      setTotalFocusSeconds((prev) => prev + elapsed / 1000);
+    }
+
     if (elapsed < duration) {
       // Earned a Speed Star!
       setIsSpeedRound(true);
@@ -197,7 +214,7 @@ const Index = () => {
 
     setPhase('recall');
     setSelectedColor(null);
-  }, [phase, activeColors.length, baseColorCount, a11y]);
+  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
@@ -536,7 +553,7 @@ const Index = () => {
   const share = async () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
     console.log('[Chromatic] Share text preview:\n' + text);
     try {
       await navigator.clipboard.writeText(text);
@@ -550,7 +567,7 @@ const Index = () => {
   const shareWhatsApp = () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -722,6 +739,8 @@ const Index = () => {
           onStartFreePlay={startFreePlay}
           dayName={dayName}
           colorCount={baseColorCount}
+          starsEarned={starsEarned}
+          totalFocusSeconds={totalFocusSeconds}
         />
       ) : (
         <>
@@ -808,7 +827,7 @@ const Index = () => {
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  {COLORS.map((c) => (
+                  {pickerColors.map((c) => (
                     <button
                       key={c.hex}
                       onClick={() => {
@@ -826,7 +845,7 @@ const Index = () => {
                           setSelectedColor(c.hex);
                         }
                       }}
-                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden"
+                      className="w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden border border-border"
                       style={{
                         backgroundColor: c.hex,
                         outline: selectedColor === c.hex ? '3px solid hsl(var(--primary))' : '2px solid transparent',
@@ -1009,6 +1028,20 @@ const Index = () => {
               </div>
             ) : (
               <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            )}
+
+            {!isCorrect && result && (
+              <div className="mb-4 px-4 max-w-[240px] mx-auto">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Neural Match
+                  </span>
+                  <span className="text-[10px] font-semibold text-foreground">
+                    {Math.round((result.filter(Boolean).length / 9) * 100)}%
+                  </span>
+                </div>
+                <Progress value={Math.round((result.filter(Boolean).length / 9) * 100)} className="h-1.5" />
+              </div>
             )}
 
             {resultMessage && (
