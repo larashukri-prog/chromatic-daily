@@ -120,6 +120,7 @@ const Index = () => {
       setAlreadyFinished(false);
       setTotalAttemptsUsed(0);
       setStarsEarned(0);
+      setTotalFocusSeconds(0);
       setSavedRounds([]);
       setRoundIndex(0);
       setAttemptInRound(1);
