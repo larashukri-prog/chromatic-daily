@@ -185,7 +185,7 @@ export function generateSolutionDDA(
       return generateSolution(roundIndex);
     }
 
-    const { colorCount: baseCount } = getDayInfo();
+    const { colorCount: baseCount, dayOfWeek } = getDayInfo();
     const tier = getDayDifficultyTier(baseCount);
     const baseSeed = getDateSeed();
     const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
@@ -194,8 +194,14 @@ export function generateSolutionDDA(
 
     if (tier === 'hard') {
       const colorCount = baseCount;
-      const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-      const chosen = shuffled.slice(0, colorCount);
+      let chosen: { name: string; hex: string; hue: number }[];
+      if (dayOfWeek === 0) {
+        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+        chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
+      } else {
+        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
+        chosen = shuffled.slice(0, colorCount);
+      }
       const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
 
       const solution: (string | null)[] = Array(9).fill(null);
