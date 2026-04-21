@@ -180,6 +180,8 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
     if (c === null) return playerGrid[i] === null;
     return playerGrid[i] === c;
   });
+  const correctTiles = result.filter(Boolean).length;
+  const neuralMatch = Math.round((correctTiles / 9) * 100);
 
   return (
     <div className="text-center">
@@ -194,9 +196,19 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
           Attempt {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
-      <p className={`text-xs mb-5 ${slide.isCorrect ? 'text-emerald-500' : 'text-destructive'}`}>
-        {slide.isCorrect ? 'Solved' : 'Incorrect'}
-      </p>
+      {slide.isCorrect ? (
+        <p className="text-xs mb-5 text-emerald-500">Solved · 100% Neural Match</p>
+      ) : (
+        <div className="mb-5 px-4 max-w-[220px] mx-auto">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Neural Match
+            </span>
+            <span className="text-[10px] font-semibold text-foreground">{neuralMatch}%</span>
+          </div>
+          <Progress value={neuralMatch} className="h-1.5" />
+        </div>
+      )}
 
       {/* 3x3 grid */}
       <div className="relative">
