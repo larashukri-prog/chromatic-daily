@@ -1017,6 +1017,30 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Game Metrics Info Modal */}
+      <Dialog open={showMetricsInfo} onOpenChange={setShowMetricsInfo}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>
+              Game Metrics
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              How Neural Match and Deep Focus tracking work
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+            <div>
+              <p className="font-medium text-foreground mb-1">The Neural Match</p>
+              <p>Neural Match represents the precision of your visual memory. Unlike a simple pass/fail, this measures how closely your brain mapped the chromatic spectrum. Aim for 100% Neural Match to reach the Mastered State.</p>
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="font-medium text-foreground mb-1">Deep Focus Tracking</p>
+              <p>We now monitor your total focus duration per session. This is not a race; it is a measure of sustained attention. Watch your daily focus time grow as your concentration strengthens.</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Result Modal */}
       <Dialog open={showResult} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
