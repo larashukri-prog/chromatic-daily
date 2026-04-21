@@ -940,7 +940,7 @@ const Index = () => {
 
       {/* Info & Reset buttons */}
       <div className="mt-6 flex items-center gap-4">
-        <button onClick={() => setShowHowTo(true)} className="text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={() => setShowMetricsInfo(true)} className="text-muted-foreground hover:text-foreground transition-colors">
           <Info className="w-5 h-5" />
         </button>
         {!isFreeplay && (
