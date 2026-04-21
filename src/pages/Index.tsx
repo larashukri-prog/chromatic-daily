@@ -85,6 +85,9 @@ const Index = () => {
   const [showStarPop, setShowStarPop] = useState(false);
   const observationStartTime = useRef<number>(0);
 
+  // Focus stat (invisible timer — total seconds spent observing in daily mode)
+  const [totalFocusSeconds, setTotalFocusSeconds] = useState(0);
+
   // Free Play state
   const [mode, setMode] = useState<GameMode>('daily');
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
