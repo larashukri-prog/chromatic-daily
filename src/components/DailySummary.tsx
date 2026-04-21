@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
@@ -16,6 +17,8 @@ interface DailySummaryProps {
   onStartFreePlay?: () => void;
   dayName: string;
   colorCount: number;
+  starsEarned: number;
+  totalFocusSeconds: number;
 }
 
 function getDifficultyName(colorCount: number): string {
