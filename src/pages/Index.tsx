@@ -545,7 +545,7 @@ const Index = () => {
   const share = async () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
     console.log('[Chromatic] Share text preview:\n' + text);
     try {
       await navigator.clipboard.writeText(text);
@@ -559,7 +559,7 @@ const Index = () => {
   const shareWhatsApp = () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
