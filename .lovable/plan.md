@@ -1,23 +1,26 @@
 
 
-## Always Show Grey Border Around White Swatch
+## Remove Dark Focus Ring on White Swatch
 
-The black border the user sees in Practice Mode comes from the **color picker swatch** in `src/pages/Index.tsx` (line ~848-854). White swatches get the dark `hsl(var(--primary))` outline when selected, which reads as black against the white background.
+The dark "border" the user sees on a selected white swatch is the browser focus-visible ring inherited from the button base class (`focus-visible:ring-2 focus-visible:ring-ring`). The `--ring` token is `hsl(222.2 84% 4.9%)` — almost black — which reads as a hard black ring on the white swatch the moment it's clicked.
+
+The previous changes (`outline: 3px solid #6B7280`) work, but the focus ring sits on top of them and dominates visually.
 
 ### Change
 
-**File: `src/pages/Index.tsx`** (color picker swatch, ~line 848)
+**File: `src/pages/Index.tsx`** — color picker swatch (~line 850)
 
-Add a per-swatch override so that when `c.hex === '#FFFFFF'`:
-- The static `border` stays `#6B7280` (explicit hex, not the muted-foreground token).
-- The selected `outline` also uses `#6B7280` instead of `hsl(var(--primary))`, so the white tile never gets a dark ring.
+Update the swatch's `className` to suppress the default focus-visible ring on every swatch (we already provide our own `outline`-based selection feedback, so the focus ring is redundant). Also slim down the resting border for white so it sits at the same `#6B7280` weight without doubling up on Tailwind's `border-muted-foreground/50` className.
 
 ```tsx
-const isWhite = c.hex.toUpperCase() === '#FFFFFF';
-// ...
+className={cn(
+  "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
+  "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
+  !isWhite && "border border-muted-foreground/50"
+)}
 style={{
   backgroundColor: c.hex,
-  border: isWhite ? '2px solid #6B7280' : undefined, // overrides className border for white
+  border: isWhite ? '2px solid #6B7280' : undefined,
   outline: selectedColor === c.hex
     ? (isWhite ? '3px solid #6B7280' : '3px solid hsl(var(--primary))')
     : '2px solid transparent',
@@ -26,9 +29,12 @@ style={{
 }}
 ```
 
-### Verification of GameGrid
-`src/components/GameGrid.tsx` already returns `'2px solid #6B7280'` for white tiles before the activeSlot check, so grid tiles are already correct. No change needed there.
+### Why this fixes it
+- `focus-visible:ring-0` removes the near-black browser focus ring that appears the instant a swatch is clicked — the actual source of the "black border" on the white swatch.
+- For white, both the resting `border` and the selected `outline` resolve to `#6B7280` (the muted grey).
+- For non-white swatches, the selected `outline` keeps the existing dark `primary` ring, so coloured tiles still look the same as before.
+- We keep our custom `outline`-based selection cue (3px grey for white, 3px primary for the rest), so the user still gets clear visual feedback when a colour is picked — just without the jarring black focus ring.
 
 ### Result
-White swatches in the picker (Sunday + Practice Mode) always show a `#6B7280` grey border — both in the resting state and when selected — matching the grid tile behavior.
+Clicking the white swatch now shows a single muted `#6B7280` ring in both resting and selected states. No black border, no focus halo, on any swatch.
 
