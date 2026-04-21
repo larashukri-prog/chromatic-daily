@@ -190,6 +190,11 @@ const Index = () => {
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
     const elapsed = Date.now() - observationStartTime.current;
 
+    // Accumulate focus seconds (daily mode only)
+    if (!isFreeplay) {
+      setTotalFocusSeconds((prev) => prev + elapsed / 1000);
+    }
+
     if (elapsed < duration) {
       // Earned a Speed Star!
       setIsSpeedRound(true);
@@ -201,7 +206,7 @@ const Index = () => {
 
     setPhase('recall');
     setSelectedColor(null);
-  }, [phase, activeColors.length, baseColorCount, a11y]);
+  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
