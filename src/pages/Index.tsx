@@ -112,6 +112,13 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
+  // Anchor-aware color picker: include Black & White on Sunday or in Practice Mode
+  const isSunday = new Date().getDay() === 0;
+  const includeAnchors = isSunday || isFreeplay;
+  const pickerColors = includeAnchors
+    ? [...COLORS, { name: 'Black', hex: '#000000' }, { name: 'White', hex: '#FFFFFF' }]
+    : COLORS;
+
   useEffect(() => {
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
