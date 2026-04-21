@@ -27,6 +27,11 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
 
 const NEUTRAL = '#D1D5DB';
 
+const ANCHORS = [
+  { name: 'Black', hex: '#000000', hue: -1 },
+  { name: 'White', hex: '#FFFFFF', hue: -2 },
+];
+
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
