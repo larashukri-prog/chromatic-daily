@@ -1081,7 +1081,11 @@ const Index = () => {
                     <div
                       key={i}
                       className="aspect-square rounded-full relative overflow-hidden"
-                      style={{ backgroundColor: c || NEUTRAL, width: '100%' }}
+                      style={{
+                        backgroundColor: c || NEUTRAL,
+                        width: '100%',
+                        border: c?.toUpperCase() === '#FFFFFF' ? '1px solid #D1D5DB' : undefined,
+                      }}
                     >
                       {a11y && <PatternOverlay colorHex={c} size="100%" />}
                     </div>
