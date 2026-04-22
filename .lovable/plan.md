@@ -1,31 +1,41 @@
 
 
-## Remove "Earn a Speed Star" Step from Info Modal
+## Practice Mode: Progressive Difficulty Ramp
 
-The info modal (the "How to Play" dialog opened from the info icon in `src/pages/Index.tsx`) still shows the third onboarding step with the Star icon and "Earn a Speed Star ⭐️" heading. Remove it so only the first two steps remain before the "The Neural Match" section.
+Rewrite `src/lib/freeplay.ts` so Practice Mode ramps difficulty based on the session's round count instead of pure randomness. Anchors (Black & White) only appear once color count exceeds 4.
 
-### Change
+### Difficulty Tiers
+
+| Round # | Color Count | Anchors (B&W) |
+|---------|-------------|---------------|
+| 1–2     | 2–3 colors  | No (chromatic only) |
+| 3–6     | 4 colors    | No (chromatic only) |
+| 7–20    | 5 colors    | Yes (B&W included) |
+| 21–30   | 6 colors    | Yes |
+| 31–40   | 7 colors    | Yes |
+| 41+     | 8–9 colors  | Yes (full Master Grid) |
+
+Within each tier, color selection and grid positions remain randomized for variety.
+
+### Implementation
+
+**File: `src/lib/freeplay.ts`**
+
+1. Change `generateFreePlayPuzzle` signature to accept a `roundCount: number` argument (1-based session round counter).
+2. Compute `colorCount` from the tier table above based on `roundCount`.
+3. Only include the two anchors when `colorCount > 4`. Below that, pick purely from the chromatic `COLORS` palette.
+4. Shuffle and place colors on the 3×3 grid as today.
 
 **File: `src/pages/Index.tsx`**
 
-In the info modal's "How to Play" content, remove the third step block:
-- The `Star` icon container
-- The heading "Earn a Speed Star ⭐️"
-- The description sentence about clicking "Ready" fast
+1. Add a session-only counter (e.g. `practiceRoundCount`, starts at 1, increments after each completed practice round).
+2. Pass the counter into `generateFreePlayPuzzle(practiceRoundCount)`.
+3. Reset the counter to 1 whenever the user enters Practice Mode fresh (not on every internal round).
 
-Keep:
-1. Eye icon → "Analyze the Colors" + sentence
-2. CheckCircle2 icon → "Start the Challenge" + sentence
+### Notes
 
-The "The Neural Match" section (and everything after it) remains untouched and now follows directly after step 2.
-
-If the `Star` icon import from `lucide-react` becomes unused after removal, also drop it from the import statement to keep the file clean.
-
-### Note
-
-This change only affects the info modal in `src/pages/Index.tsx`. The separate first-visit `OnboardingOverlay.tsx` component is not modified — its three-step intro (including the Speed Star step) stays as-is.
-
-### Result
-
-The info modal opens to a tighter two-step intro (Analyze → Start), flowing directly into the "The Neural Match" and "Focus Tracking" explanatory sections below.
+- Persistence: counter lives in React state only — resets when leaving Practice Mode or refreshing the page (matches existing "session-only" rule for Practice Mode).
+- DDA/daily storage: still bypassed.
+- The visual countdown timer in `CircularTimer` already scales by color count, so it will automatically adapt as the ramp progresses.
+- Memory update: refresh `mem://features/practice-mode` to record the new progressive ramp + anchor rule.
 
