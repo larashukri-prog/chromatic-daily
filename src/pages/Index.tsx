@@ -273,7 +273,7 @@ const Index = () => {
 
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const puzzle = generateFreePlayPuzzle();
+    const puzzle = generateFreePlayPuzzle(1);
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSolution(puzzle.solution);
