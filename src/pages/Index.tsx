@@ -273,7 +273,7 @@ const Index = () => {
 
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const puzzle = generateFreePlayPuzzle();
+    const puzzle = generateFreePlayPuzzle(1);
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSolution(puzzle.solution);
@@ -505,8 +505,9 @@ const Index = () => {
   // Freeplay: next level or retry
   const freeplayNext = useCallback(() => {
     setShowResult(false);
-    const puzzle = generateFreePlayPuzzle();
-    setFreeplayRoundNum(prev => prev + 1);
+    const nextRound = freeplayRoundNum + 1;
+    const puzzle = generateFreePlayPuzzle(nextRound);
+    setFreeplayRoundNum(nextRound);
     posthog.capture('practice_mode_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
