@@ -4,10 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye } from 'lucide-react';
+import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye, BarChart3 } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
+import { SessionReport, type SessionStats } from '@/components/SessionReport';
+import confetti from 'canvas-confetti';
 
 import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
@@ -95,6 +97,39 @@ const Index = () => {
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // --- Practice Mode Session Stats ---
+  const initialStats: SessionStats = {
+    roundsPlayed: 0, bestSpeed: 0, totalCorrect: 0, totalAttempts: 0, currentStreak: 0, longestStreak: 0,
+  };
+  const [sessionStats, setSessionStats] = useState<SessionStats>(initialStats);
+  const [showSessionReport, setShowSessionReport] = useState(false);
+  const [sessionCopied, setSessionCopied] = useState(false);
+  const recallStartTime = useRef<number>(0);
+  const milestoneAudio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const a = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_d1718ab41b.mp3');
+      a.preload = 'auto';
+      a.volume = 0.5;
+      milestoneAudio.current = a;
+    } catch { /* noop */ }
+  }, []);
+
+  const triggerMilestone = useCallback(() => {
+    try {
+      const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+      confetti({ particleCount: 60, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors });
+      confetti({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors });
+    } catch { /* noop */ }
+    try {
+      if (milestoneAudio.current) {
+        milestoneAudio.current.currentTime = 0;
+        milestoneAudio.current.play().catch(() => {});
+      }
+    } catch { /* noop */ }
+  }, []);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
@@ -215,6 +250,7 @@ const Index = () => {
 
     setPhase('recall');
     setSelectedColor(null);
+    recallStartTime.current = Date.now();
   }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
@@ -276,6 +312,8 @@ const Index = () => {
     const puzzle = generateFreePlayPuzzle(1);
     setMode('freeplay');
     setFreeplayRoundNum(1);
+    setSessionStats(initialStats);
+    setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
     setPlayerGrid(Array(9).fill(null));
