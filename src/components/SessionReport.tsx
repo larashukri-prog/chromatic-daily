@@ -53,26 +53,35 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
 
       onShare?.();
 
-      if (
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const peak = stats.bestSpeed > 0 ? `${stats.bestSpeed.toFixed(2)}s` : '—';
+      const caption = `My Chromatic Practice Stats ⚡️\nRounds: ${stats.roundsPlayed} · Streak: ${stats.longestStreak} · Peak: ${peak}\n\nhttps://chromatic-daily.lovable.app`;
+
+      const canShareFiles =
         typeof navigator !== 'undefined' &&
         typeof navigator.canShare === 'function' &&
-        navigator.canShare({ files: [file] })
-      ) {
+        navigator.canShare({ files: [file] });
+
+      if (isMobile && canShareFiles) {
+        // Mobile: native share sheet — WhatsApp accepts the PNG file + caption directly.
         try {
           await navigator.share({
             files: [file],
             title: 'My Chromatic Practice Stats',
+            text: caption,
           });
         } catch (err: any) {
           if (err?.name !== 'AbortError') throw err;
         }
       } else {
+        // Desktop fallback: download PNG, then open WhatsApp Web with caption so user can attach the saved image.
         const a = document.createElement('a');
         a.href = dataUrl;
         a.download = 'Chromatic_Practice_Results.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, '_blank');
       }
     } catch (err) {
       console.error('[Chromatic] Share card failed:', err);
