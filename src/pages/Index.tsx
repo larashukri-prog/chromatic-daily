@@ -470,27 +470,31 @@ const Index = () => {
     if (isFreeplay) {
       // Track session stats
       const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
-      const newRoundsPlayed = sessionStats.roundsPlayed + 1;
-      const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
-      setSessionStats({
-        roundsPlayed: newRoundsPlayed,
-        bestSpeed: correct
-          ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
-          : sessionStats.bestSpeed,
-        totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
-        totalAttempts: sessionStats.totalAttempts + 1,
-        currentStreak: newCurrentStreak,
-        longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
+      let milestoneHit = false;
+      setSessionStats((prev) => {
+        const newRoundsPlayed = prev.roundsPlayed + 1;
+        const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
+        if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) milestoneHit = true;
+        return {
+          roundsPlayed: newRoundsPlayed,
+          bestSpeed: correct
+            ? (prev.bestSpeed === 0 ? recallSeconds : Math.min(prev.bestSpeed, recallSeconds))
+            : prev.bestSpeed,
+          totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
+          totalAttempts: prev.totalAttempts + 1,
+          currentStreak: newCurrentStreak,
+          longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
+        };
       });
-      if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
-        triggerMilestone();
-      }
 
       // Freeplay: no save, no DDA, no localStorage
       setTimeout(() => {
         setVerifying(false);
         setPhase('result');
         setResultMessage(correct ? 'Great memory! Ready for the next one?' : 'Not quite — give it another shot!');
+        // Fire milestone after the verify animation settles so the celebration
+        // is visible at the same time the result modal appears (mobile-friendly).
+        if (milestoneHit) triggerMilestone();
         if (!correct) {
           setShake(true);
           setTimeout(() => setShake(false), 600);
