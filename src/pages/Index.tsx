@@ -120,8 +120,38 @@ const Index = () => {
   const triggerMilestone = useCallback(() => {
     try {
       const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
-      confetti({ particleCount: 60, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors });
-      confetti({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors });
+      // Mobile-safe: build a dedicated full-screen, high-z canvas so bursts
+      // are visible above dialogs/overlays and not clipped by parent stacks.
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'fixed';
+      canvas.style.inset = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '2147483647';
+      document.body.appendChild(canvas);
+      const myConfetti = (confetti as any).create(canvas, {
+        resize: true,
+        useWorker: true,
+      });
+      const burst = (origin: { x: number; y: number }, angle: number) =>
+        myConfetti({
+          particleCount: 80,
+          angle,
+          spread: 75,
+          startVelocity: 55,
+          scalar: 1.05,
+          origin,
+          colors,
+          disableForReducedMotion: false,
+        });
+      burst({ x: 0.05, y: 0.8 }, 60);
+      burst({ x: 0.95, y: 0.8 }, 120);
+      burst({ x: 0.5, y: 0.4 }, 90);
+      // Clean up the canvas after the animation completes.
+      setTimeout(() => {
+        try { canvas.remove(); } catch { /* noop */ }
+      }, 4000);
     } catch { /* noop */ }
     try {
       if (milestoneAudio.current) {
