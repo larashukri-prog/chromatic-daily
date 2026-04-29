@@ -440,7 +440,7 @@ const Index = () => {
     if (isFreeplay) {
       // Track session stats
       const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
-      const newRoundsPlayed = sessionStats.roundsPlayed + (correct ? 1 : 0);
+      const newRoundsPlayed = sessionStats.roundsPlayed + 1;
       const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
       setSessionStats({
         roundsPlayed: newRoundsPlayed,
@@ -452,7 +452,7 @@ const Index = () => {
         currentStreak: newCurrentStreak,
         longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
       });
-      if (correct && newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
+      if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
         triggerMilestone();
       }
 

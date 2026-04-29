@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Target, Zap, Eye, Flame, Share2, Check } from 'lucide-react';
+import { Target, Zap, Eye, Trophy, Share2, Check } from 'lucide-react';
 
 export type SessionStats = {
   roundsPlayed: number;
@@ -68,8 +68,8 @@ export function SessionReport({ stats, copied, onResume, onShare, onRestart, onM
         <div className="grid grid-cols-2 gap-2 mb-5">
           <StatCard icon={Target} label="Rounds" value={stats.roundsPlayed} />
           <StatCard icon={Zap} label="Top Speed" value={speedLabel} />
+          <StatCard icon={Trophy} label="Wins" value={stats.totalCorrect} />
           <StatCard icon={Eye} label="Focus" value={`${accuracy}%`} />
-          <StatCard icon={Flame} label="Streak" value={stats.longestStreak} />
         </div>
 
         <div className="flex flex-col gap-2 mb-4">

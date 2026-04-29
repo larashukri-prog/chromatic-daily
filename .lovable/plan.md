@@ -1,94 +1,73 @@
-## Practice Mode: Session Report Overlay
+## Fix Practice Mode counter mismatch & broken confetti
 
-Add a session-stats system, milestone celebrations every 10 rounds, and a full-screen Session Report overlay for Practice Mode only. Daily Challenge logic, GameLoop, and brand styling stay untouched.
+### Root cause
 
-### 1. Dependency
+Two counters drift apart:
+- **Header `freeplayRoundNum`** increments on every puzzle generated (attempts).
+- **`sessionStats.roundsPlayed`** only increments on correct answers (wins).
 
-Install `canvas-confetti` (and `@types/canvas-confetti`) — used only inside Practice Mode milestone trigger.
+So "Round 11" header + "Rounds: 5" report means 11 puzzles played, 5 won. Confetti at "round 10" never fires unless the user has 10 *wins*, because the milestone check uses the wins counter.
 
-### 2. New file: `src/components/SessionReport.tsx`
+### Changes (all in `src/pages/Index.tsx`)
 
-Full-screen frosted-glass overlay component. Props: `stats`, `onResume`, `onShare`, `onRestart`, `onMainMenu`, `copied`.
+**1. Make `roundsPlayed` count attempts, not wins**
 
-Layout (centered card, inset-0 fixed, `bg-white/40 backdrop-blur-xl` over a `bg-black/20` scrim, z-index above header):
-- Header: "Session Complete" — Playfair serif (matches brand).
-- Subhead: dynamic Insight line (rules below).
-- 2×2 stats grid with lucide icons:
-  - `Target` — Rounds Played
-  - `Zap` — Top Speed (`bestSpeed.toFixed(2)s` or `—`)
-  - `Eye` — Focus % (`totalAccuracy`)
-  - `Flame` — Longest Streak
-- Primary button: "Resume Practice" (full-width, `bg-primary`).
-- Secondary button: "Share Results" (outline). Shows "Copied!" state for 2s.
-- Footer row: two small text-muted-foreground links — "Restart Session" · "Main Menu".
-
-Insight priority (first matching wins):
-1. `bestSpeed > 0 && bestSpeed < 1.0` → "Elite reflexes. You're ready for the Daily Challenge."
-2. `totalAccuracy > 95` → "Incredible focus. You're in the zone."
-3. `longestStreak > 10` → "Great rhythm! Your consistency is improving."
-4. else → "You're getting faster! Your reaction time is peaking."
-
-### 3. Stats tracking in `src/pages/Index.tsx`
-
-Add Practice-only state:
+In the `verify` freeplay branch (~line 443):
 ```ts
-type SessionStats = {
-  roundsPlayed: number;       // successful (correct) rounds
-  bestSpeed: number;          // lowest recall time in seconds (0 = none yet)
-  totalCorrect: number;
-  totalAttempts: number;      // verifies in practice
-  currentStreak: number;
-  longestStreak: number;
-};
+const newRoundsPlayed = sessionStats.roundsPlayed + 1; // every verify counts
+const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
+setSessionStats({
+  roundsPlayed: newRoundsPlayed,
+  bestSpeed: correct
+    ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
+    : sessionStats.bestSpeed,
+  totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
+  totalAttempts: sessionStats.totalAttempts + 1,
+  currentStreak: newCurrentStreak,
+  longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
+});
+if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
+  triggerMilestone(); // fires on every 10th puzzle, win or lose
+}
 ```
-- Derived: `totalAccuracy = totalAttempts ? round(totalCorrect/totalAttempts*100) : 0`.
-- New ref `recallStartTime` set when entering `phase==='recall'` in freeplay (in `handleReady` when `isFreeplay`).
-- New state `showSessionReport: boolean`.
 
-Update points (all gated by `isFreeplay`):
-- **`startFreePlay`** (entry to Practice Mode): reset `sessionStats` to zeros, `showSessionReport=false`.
-- **`verify`** in the freeplay branch: when `correct === true`, compute `recallSeconds = (Date.now() - recallStartTime)/1000`; bump `roundsPlayed`, update `bestSpeed = min(prev||∞, recallSeconds)`, `totalCorrect++`, `currentStreak++`, `longestStreak = max(...)`. On incorrect: `currentStreak = 0`. Always `totalAttempts++`.
-- After updating, if `roundsPlayed > 0 && roundsPlayed % 10 === 0` → call `triggerMilestone()`.
+This makes the header (`freeplayRoundNum`) and the report's "Rounds" stay in lockstep, and confetti fires reliably at puzzle #10, #20, #30…
 
-### 4. Milestone "juice"
+**2. Add a "Wins" stat to the Session Report**
 
-New helper inside Index (or `src/lib/milestone.ts`):
-- `triggerMilestone()`:
-  - Fires `canvas-confetti` two bursts (left + right origins, ~120 particles total, brand-aligned color array drawn from existing `COLORS`).
-  - Plays a preloaded `HTMLAudioElement` (royalty-free cheer, e.g. `https://cdn.pixabay.com/audio/2022/03/15/audio_d1718ab41b.mp3` or similar short success cue). Audio element created once via `useRef` + `useEffect` on mount with `audio.preload='auto'` and `audio.volume=0.5`. Wrapped in try/catch (autoplay may be blocked — fail silently).
+Update `src/components/SessionReport.tsx`:
+- Change grid from 2×2 to 2×3 (or keep 2×2 and swap one tile).
+- Recommended: keep 2×2 by replacing **Streak** with **Wins** (longest streak is less informative than win count once "Rounds" means attempts). Show `totalCorrect` with `Trophy` icon labeled "Wins".
+- Or: 2×3 grid → Rounds, Wins, Top Speed, Focus %, Streak, (empty / insight).
 
-### 5. "Results" button
+Going with **2×2 swap** for visual cleanliness:
+```
+Rounds (attempts)   |  Top Speed
+Wins (totalCorrect) |  Focus %
+```
+Longest streak still tracked internally and surfaced in the insight line ("Great rhythm!" trigger).
 
-Inside the Practice Mode header block (the `isFreeplay` branch around line 651), add a top-right button:
-- Position: absolute top-right of the page header area (use a relative wrapper or fixed positioning at `top-4 right-4` matching existing `AccessibilityToggle` placement).
-- Visible only when `isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport`.
-- Style: `text-xs text-muted-foreground hover:text-foreground bg-card/60 backdrop-blur border border-border rounded-full px-3 py-1.5` with `BarChart3` icon.
-- onClick: pause game (clear `timerRef`/`countdownRef`), set `showSessionReport=true`. Game state preserved as-is so Resume continues the current phase.
+**3. Update insight thresholds**
 
-### 6. Overlay actions wiring
+`accuracy > 95` insight will now be more meaningful (real attempts denominator). No code change needed beyond step 1, but verify the thresholds still feel right after testing.
 
-- **Resume Practice**: `setShowSessionReport(false)`. If the paused phase was `observation`, restart the observation timer for the current `activeColors` (reuse `freeplayRetry`'s timer-restart pattern but keep grid/solution). If `recall` or `result`, just close — user keeps interacting.
-- **Share Results**: copy to clipboard:
-  ```
-  Chromatic Lab Session ⚡️
-  Peak Speed: {bestSpeed.toFixed(2)}s
-  Rounds: {roundsPlayed}
-  Can you beat my speed? https://chromatic-daily.lovable.app
-  ```
-  Set `copied=true` for 2s.
-- **Restart Session**: reset `sessionStats`, close overlay, call `startFreePlay()` to begin a fresh round 1.
-- **Main Menu**: call existing `backToDaily()`.
+**4. Sync `freeplayRoundNum` initialization**
 
-### 7. Render
+Currently `freeplayRoundNum` starts at 0 and is bumped on first observation entry. Verify after change that header "Round 1" appears at the same time the user attempts puzzle 1, so the report's first attempt also shows "Rounds: 1". (Likely already correct — just confirm during implementation.)
 
-Render `<SessionReport ... />` inside the Index return tree, after the main card, gated by `showSessionReport && isFreeplay`. Use `AnimatePresence` + fade for entry/exit.
+### What stays the same
 
-### 8. Memory update
+- `bestSpeed` logic (still wins-only, since failed rounds shouldn't set a record).
+- Confetti visuals + audio cue.
+- Share text format.
+- Freeplay puzzle generation, DDA bypass, persistence rules.
 
-Refresh `mem://features/practice-mode` to record: session stats tracking, milestone confetti every 10 wins, Session Report overlay with Resume/Share/Restart/Main Menu actions.
+### Memory update
 
-### Notes
+Refresh `mem://features/practice-mode` to note: "Rounds" stat = puzzles attempted (matches header), "Wins" = correct answers, milestone confetti fires every 10 attempts.
 
-- All changes are additive; no edits to `game.ts`, `freeplay.ts` puzzle logic, or daily flow.
-- No new colors or fonts; uses existing `bg-card`, `border-border`, `Playfair Display`, `Inter`, primary/muted tokens.
-- Audio + confetti are no-ops if blocked or unavailable — never throw.
+### Files touched
+
+- `src/pages/Index.tsx` — verify branch logic.
+- `src/components/SessionReport.tsx` — swap Streak tile for Wins tile.
+- `mem://features/practice-mode` — updated description.
