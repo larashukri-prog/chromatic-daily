@@ -1,40 +1,57 @@
-## Practice Mode: Share via WhatsApp
+## Visual Image Sharing for Practice Results
 
-Update the "Share Results" button in the Practice session report so it opens WhatsApp with the prefilled session summary, matching how the daily-mode WhatsApp share already works.
+Replace the "Share on WhatsApp" button in the Session Report modal with a "Share Card" button that captures the modal as a high-res PNG and either shares it via the Web Share API (mobile) or downloads it (desktop).
+
+### Asset needed from user
+
+Upload a logo image (PNG with transparency preferred, square or wide format). It will be placed in `public/share-logo.png`. Until provided, a text wordmark "Chromatic" in Playfair Display will render as a placeholder so the feature still works.
 
 ### Changes
 
-**`src/pages/Index.tsx`**
+**1. Install dependency**
 
-Rewrite `shareSession` (line 769) to open WhatsApp instead of writing to clipboard:
+Add `html-to-image` to the project.
 
-```ts
-const shareSession = useCallback(() => {
-  const peak = sessionStats.bestSpeed > 0 ? `${sessionStats.bestSpeed.toFixed(2)}s` : '—';
-  const text = `Chromatic Practice Results ⚡️\nTotal Rounds: ${sessionStats.roundsPlayed}\nLongest Streak: ${sessionStats.longestStreak}\nPeak Speed: ${peak}\n\nHow many rounds can you handle? https://chromatic-daily.lovable.app`;
-  const encoded = encodeURIComponent(text);
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
-  window.open(url, '_blank');
-}, [sessionStats]);
-```
+**2. `src/components/SessionReport.tsx`**
 
-Drop the `setSessionCopied` calls — no clipboard step anymore. The `sessionCopied` state and `copied` prop pass-through to `SessionReport` can stay (harmless) or be removed; simplest is to leave them but always pass `copied={false}` so the button label stays "Share Results".
+- Add a `ref` (forwarded via `useRef` inside the component) to the modal card container — this is the capture target.
+- Add `isCapturing` local state.
+- Add a hidden-during-capture branding footer inside the card (only visible when `isCapturing` is true): logo image (`/share-logo.png`) + URL text `chromatic-daily.lovable.app`.
+- Apply a CSS class that hides the action buttons (Resume Practice, Restart, Main Menu) and the Share Card button itself while `isCapturing` is true, using a conditional `data-capturing` attribute + Tailwind `[data-capturing=true]_.hide-on-capture { display: none }` style, or simpler: conditional class on each button (`isCapturing && 'hidden'`).
+- Replace the existing "Share on WhatsApp" button with a single "Share Card" button:
+  - Default label: `Share Card` with `Share2` icon.
+  - While generating: show `Generating…` with a spinning `Loader2` icon and `disabled`.
+- Capture flow on click:
+  1. Set `isCapturing(true)`.
+  2. `await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))` so DOM reflects hidden buttons + visible footer.
+  3. Call `htmlToImage.toPng(cardRef.current, { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' })`.
+  4. Convert dataURL to a `File` (`Chromatic_Practice_Results.png`, `image/png`).
+  5. If `navigator.canShare?.({ files: [file] })`, call `navigator.share({ files: [file], title: 'My Chromatic Practice Stats' })`.
+  6. Else create an `<a download="Chromatic_Practice_Results.png">` and click it.
+  7. `finally { setIsCapturing(false); }`.
+- Wrap the share logic in try/catch; ignore `AbortError` from share dialog cancellation.
+- Remove the now-unused `copied` prop and `onShare` becomes optional/unused (or rename to `onShareTriggered` for analytics, see below).
 
-**`src/components/SessionReport.tsx`**
+**3. `src/pages/Index.tsx`**
 
-Swap the WhatsApp-style label/icon on the share button. Replace the copied/Share toggle:
+- Remove the `shareSession` callback and `sessionCopied` state (no longer needed for clipboard/WhatsApp text flow).
+- Pass an `onShare` callback that fires the existing PostHog `practice_results_viewed`-style analytics — add a new event `practice_card_shared` with `{ rounds_played, best_speed, longest_streak }`. The component calls `onShare()` after a successful capture (before share/download dispatch is fine).
+- Remove the `copied` prop from the `<SessionReport />` JSX.
 
-```tsx
-<Button onClick={onShare} variant="outline" className="w-full rounded-xl h-10 text-sm gap-2">
-  <Share2 className="w-4 h-4" /> Share on WhatsApp
-</Button>
-```
+**4. `public/share-logo.png`**
 
-The `copied` prop and `Check` import become unused and can be removed.
+User-uploaded logo asset. The footer renders `<img src="/share-logo.png" />` at ~32px height with the URL beside it. If the file is missing, the `<img>` will broken-icon — acceptable until upload.
 
-### Notes
+### Technical notes
 
-- Reuses the exact mobile-vs-desktop URL pattern from `shareWhatsApp` (line 659) for consistency.
-- Text content stays identical to the previously approved practice share format.
-- No game-state, layout, or analytics changes.
+- `html-to-image` works fully client-side, supports `pixelRatio` for retina output, and handles the modal's backdrop-blur/glassmorphism better than `html2canvas`.
+- The capture target is the inner card (`max-w-sm` div), not the full overlay — that way the dark backdrop and outer blur layer aren't included.
+- Web Share API file sharing requires HTTPS and user gesture — both satisfied (button click on the deployed app).
+- During capture the modal still appears unchanged to the user (~100–300ms), since the hidden buttons + visible footer render only inside the captured snapshot frame, but visually the user sees them swap briefly. Acceptable; alternative (offscreen clone) is more complex and not requested.
+- No changes to game state, persistence, or DDA logic.
+
+### Out of scope
+
+- WhatsApp-specific deep linking (Web Share API on mobile already surfaces WhatsApp as a target).
+- Server-side image generation.
+- Custom card design distinct from the modal — the modal IS the card.

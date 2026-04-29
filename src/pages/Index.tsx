@@ -104,7 +104,6 @@ const Index = () => {
   };
   const [sessionStats, setSessionStats] = useState<SessionStats>(initialStats);
   const [showSessionReport, setShowSessionReport] = useState(false);
-  const [sessionCopied, setSessionCopied] = useState(false);
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
 
@@ -767,12 +766,13 @@ const Index = () => {
   }, [phase, activeColors.length, a11y]);
 
   const shareSession = useCallback(() => {
-    const peak = sessionStats.bestSpeed > 0 ? `${sessionStats.bestSpeed.toFixed(2)}s` : '—';
-    const text = `Chromatic Practice Results ⚡️\nTotal Rounds: ${sessionStats.roundsPlayed}\nLongest Streak: ${sessionStats.longestStreak}\nPeak Speed: ${peak}\n\nHow many rounds can you handle? https://chromatic-daily.lovable.app`;
-    const encoded = encodeURIComponent(text);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
-    window.open(url, '_blank');
+    if (posthog.__loaded) {
+      posthog.capture('practice_card_shared', {
+        rounds_played: sessionStats.roundsPlayed,
+        best_speed: sessionStats.bestSpeed,
+        longest_streak: sessionStats.longestStreak,
+      });
+    }
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {
@@ -1303,7 +1303,6 @@ const Index = () => {
         {showSessionReport && isFreeplay && (
           <SessionReport
             stats={sessionStats}
-            copied={sessionCopied}
             onResume={resumePractice}
             onShare={shareSession}
             onRestart={restartSession}
