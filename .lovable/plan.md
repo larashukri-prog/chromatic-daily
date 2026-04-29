@@ -1,73 +1,86 @@
-## Fix Practice Mode counter mismatch & broken confetti
+## Plan to fix Practice Mode rounds and mobile confetti
 
-### Root cause
+I found two likely causes in the current Practice Mode code:
 
-Two counters drift apart:
-- **Header `freeplayRoundNum`** increments on every puzzle generated (attempts).
-- **`sessionStats.roundsPlayed`** only increments on correct answers (wins).
+1. The top-right/header counter (`freeplayRoundNum`) is still being advanced only when the player gets a correct answer and presses “Next Level”. Failed attempts use “Try Again” and keep the same header round, while the Session Report increments `roundsPlayed` on every verify. This can still create mismatches depending on whether the user is counting shown puzzle number or total attempts.
+2. `canvas-confetti` is fired immediately during `verify`, while the result dialog opens shortly after. On mobile this can be easy to miss or be hidden/competed with by the dialog transition. The current burst also uses only side origins and no mobile-specific full-screen/fixed-canvas configuration.
 
-So "Round 11" header + "Rounds: 5" report means 11 puzzles played, 5 won. Confetti at "round 10" never fires unless the user has 10 *wins*, because the milestone check uses the wins counter.
+## What I will change
 
-### Changes (all in `src/pages/Index.tsx`)
+### 1. Make one source of truth for Practice Mode round attempts
 
-**1. Make `roundsPlayed` count attempts, not wins**
+Use `sessionStats.roundsPlayed` as the authoritative “puzzles attempted” count.
 
-In the `verify` freeplay branch (~line 443):
-```ts
-const newRoundsPlayed = sessionStats.roundsPlayed + 1; // every verify counts
-const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
-setSessionStats({
-  roundsPlayed: newRoundsPlayed,
-  bestSpeed: correct
-    ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
-    : sessionStats.bestSpeed,
-  totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
-  totalAttempts: sessionStats.totalAttempts + 1,
-  currentStreak: newCurrentStreak,
-  longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
-});
-if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
-  triggerMilestone(); // fires on every 10th puzzle, win or lose
-}
+- Increment it exactly once per Verify click in Practice Mode.
+- Display the header counter from the same attempt-based value, not from the separate progression-only `freeplayRoundNum` state.
+- Keep `freeplayRoundNum` only for puzzle difficulty generation / next-puzzle progression if needed, or replace it with a separate internal `practicePuzzleLevel` name so the UI no longer depends on the wrong counter.
+
+Expected result:
+
+```text
+After 1 verified puzzle: header Round 1, modal Rounds 1
+After 10 verified puzzles: header Round 10, modal Rounds 10
+Failed attempts count too, because the chosen behavior is “Rounds = puzzles attempted”.
 ```
 
-This makes the header (`freeplayRoundNum`) and the report's "Rounds" stay in lockstep, and confetti fires reliably at puzzle #10, #20, #30…
+### 2. Fix the off-by-one feel in the header
 
-**2. Add a "Wins" stat to the Session Report**
+Right now the header can show the puzzle being served rather than the number of completed attempts. I’ll adjust the label so it matches the modal exactly:
 
-Update `src/components/SessionReport.tsx`:
-- Change grid from 2×2 to 2×3 (or keep 2×2 and swap one tile).
-- Recommended: keep 2×2 by replacing **Streak** with **Wins** (longest streak is less informative than win count once "Rounds" means attempts). Show `totalCorrect` with `Trophy` icon labeled "Wins".
-- Or: 2×3 grid → Rounds, Wins, Top Speed, Focus %, Streak, (empty / insight).
+- Before the first Verify, Practice Mode can show `Round 1` as the current puzzle prompt.
+- After a Verify, the report and visible counter will both reflect total attempts.
+- Once moving to the next puzzle, the displayed number will remain consistent with the same attempt-count model.
 
-Going with **2×2 swap** for visual cleanliness:
+If needed, I’ll label the header as `Round {Math.max(1, sessionStats.roundsPlayed || freeplayRoundNum)}` during the first unverified puzzle, then switch to the stats value once attempts exist.
+
+### 3. Make milestone confetti reliable on mobile
+
+Replace the current milestone trigger with a mobile-safe celebration:
+
+- Fire after the verify animation completes / when result is visible, not only immediately during state update.
+- Use `canvas-confetti` with a fixed full-screen canvas configuration where possible:
+  - `resize: true`
+  - `useWorker: true` when supported
+  - `zIndex` above dialogs/overlays
+  - center + side bursts for mobile visibility
+- Add a lightweight in-app visual fallback using the existing UI style, such as a short “Milestone” sparkle burst/banner inside the result modal, so mobile users get feedback even if the browser blocks canvas animation.
+
+Expected result:
+
+```text
+On rounds 10, 20, 30... confetti/sparkle feedback is visibly triggered on mobile and desktop.
 ```
-Rounds (attempts)   |  Top Speed
-Wins (totalCorrect) |  Focus %
-```
-Longest streak still tracked internally and surfaced in the insight line ("Great rhythm!" trigger).
 
-**3. Update insight thresholds**
+### 4. Avoid touching restricted areas
 
-`accuracy > 95` insight will now be more meaningful (real attempts denominator). No code change needed beyond step 1, but verify the thresholds still feel right after testing.
+I will keep the strict constraint:
 
-**4. Sync `freeplayRoundNum` initialization**
+- No changes to DailyChallenge logic.
+- No changes to the existing daily GameLoop behavior.
+- No changes to the overall branding/color palette.
 
-Currently `freeplayRoundNum` starts at 0 and is bumped on first observation entry. Verify after change that header "Round 1" appears at the same time the user attempts puzzle 1, so the report's first attempt also shows "Rounds: 1". (Likely already correct — just confirm during implementation.)
+The work stays scoped to Practice Mode state/display and the existing Session Report overlay.
 
-### What stays the same
+## Technical files to update
 
-- `bestSpeed` logic (still wins-only, since failed rounds shouldn't set a record).
-- Confetti visuals + audio cue.
-- Share text format.
-- Freeplay puzzle generation, DDA bypass, persistence rules.
+- `src/pages/Index.tsx`
+  - Align displayed Practice Mode round counter with `sessionStats.roundsPlayed`.
+  - Ensure attempt stats are updated using functional state updates to avoid stale React state.
+  - Trigger milestone celebration from the confirmed new stats value.
+  - Add mobile-safe celebration/fallback state.
 
-### Memory update
+- `src/components/SessionReport.tsx`
+  - No major UI change expected, but I’ll verify the stat label/value remains consistent with the new counter source.
 
-Refresh `mem://features/practice-mode` to note: "Rounds" stat = puzzles attempted (matches header), "Wins" = correct answers, milestone confetti fires every 10 attempts.
+- `mem://features/practice-mode`
+  - Update the Practice Mode memory if the implementation wording changes, so future edits preserve the corrected rule.
 
-### Files touched
+## Verification plan
 
-- `src/pages/Index.tsx` — verify branch logic.
-- `src/components/SessionReport.tsx` — swap Streak tile for Wins tile.
-- `mem://features/practice-mode` — updated description.
+After implementation, I will verify in the preview at mobile size:
+
+1. Start Practice Mode.
+2. Complete multiple Verify attempts, including a failed attempt if possible.
+3. Confirm header “Round” and Session Report “Rounds” show the same number.
+4. Confirm milestone visual feedback appears on round 10.
+5. Check browser console logs for runtime errors.

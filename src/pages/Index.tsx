@@ -120,8 +120,38 @@ const Index = () => {
   const triggerMilestone = useCallback(() => {
     try {
       const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
-      confetti({ particleCount: 60, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors });
-      confetti({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors });
+      // Mobile-safe: build a dedicated full-screen, high-z canvas so bursts
+      // are visible above dialogs/overlays and not clipped by parent stacks.
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'fixed';
+      canvas.style.inset = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '2147483647';
+      document.body.appendChild(canvas);
+      const myConfetti = (confetti as any).create(canvas, {
+        resize: true,
+        useWorker: true,
+      });
+      const burst = (origin: { x: number; y: number }, angle: number) =>
+        myConfetti({
+          particleCount: 80,
+          angle,
+          spread: 75,
+          startVelocity: 55,
+          scalar: 1.05,
+          origin,
+          colors,
+          disableForReducedMotion: false,
+        });
+      burst({ x: 0.05, y: 0.8 }, 60);
+      burst({ x: 0.95, y: 0.8 }, 120);
+      burst({ x: 0.5, y: 0.4 }, 90);
+      // Clean up the canvas after the animation completes.
+      setTimeout(() => {
+        try { canvas.remove(); } catch { /* noop */ }
+      }, 4000);
     } catch { /* noop */ }
     try {
       if (milestoneAudio.current) {
@@ -440,27 +470,31 @@ const Index = () => {
     if (isFreeplay) {
       // Track session stats
       const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
-      const newRoundsPlayed = sessionStats.roundsPlayed + 1;
-      const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
-      setSessionStats({
-        roundsPlayed: newRoundsPlayed,
-        bestSpeed: correct
-          ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
-          : sessionStats.bestSpeed,
-        totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
-        totalAttempts: sessionStats.totalAttempts + 1,
-        currentStreak: newCurrentStreak,
-        longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
+      let milestoneHit = false;
+      setSessionStats((prev) => {
+        const newRoundsPlayed = prev.roundsPlayed + 1;
+        const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
+        if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) milestoneHit = true;
+        return {
+          roundsPlayed: newRoundsPlayed,
+          bestSpeed: correct
+            ? (prev.bestSpeed === 0 ? recallSeconds : Math.min(prev.bestSpeed, recallSeconds))
+            : prev.bestSpeed,
+          totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
+          totalAttempts: prev.totalAttempts + 1,
+          currentStreak: newCurrentStreak,
+          longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
+        };
       });
-      if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
-        triggerMilestone();
-      }
 
       // Freeplay: no save, no DDA, no localStorage
       setTimeout(() => {
         setVerifying(false);
         setPhase('result');
         setResultMessage(correct ? 'Great memory! Ready for the next one?' : 'Not quite — give it another shot!');
+        // Fire milestone after the verify animation settles so the celebration
+        // is visible at the same time the result modal appears (mobile-friendly).
+        if (milestoneHit) triggerMilestone();
         if (!correct) {
           setShake(true);
           setTimeout(() => setShake(false), 600);
@@ -802,7 +836,7 @@ const Index = () => {
               </div>
               {freeplayRoundNum > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  Round {freeplayRoundNum}
+                  Round {Math.max(1, sessionStats.roundsPlayed + (phase === 'observation' || phase === 'recall' ? 1 : 0))}
                 </span>
               )}
             </>
