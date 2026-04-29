@@ -440,24 +440,20 @@ const Index = () => {
     if (isFreeplay) {
       // Track session stats
       const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
-      let didMilestone = false;
-      setSessionStats((prev) => {
-        const totalAttempts = prev.totalAttempts + 1;
-        const totalCorrect = prev.totalCorrect + (correct ? 1 : 0);
-        const currentStreak = correct ? prev.currentStreak + 1 : 0;
-        const longestStreak = Math.max(prev.longestStreak, currentStreak);
-        const roundsPlayed = correct ? prev.roundsPlayed + 1 : prev.roundsPlayed;
-        const bestSpeed = correct
-          ? (prev.bestSpeed === 0 ? recallSeconds : Math.min(prev.bestSpeed, recallSeconds))
-          : prev.bestSpeed;
-        if (correct && roundsPlayed > 0 && roundsPlayed % 10 === 0 && roundsPlayed !== prev.roundsPlayed) {
-          didMilestone = true;
-        }
-        return { roundsPlayed, bestSpeed, totalCorrect, totalAttempts, currentStreak, longestStreak };
+      const newRoundsPlayed = sessionStats.roundsPlayed + (correct ? 1 : 0);
+      const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
+      setSessionStats({
+        roundsPlayed: newRoundsPlayed,
+        bestSpeed: correct
+          ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
+          : sessionStats.bestSpeed,
+        totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
+        totalAttempts: sessionStats.totalAttempts + 1,
+        currentStreak: newCurrentStreak,
+        longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
       });
-      if (correct) {
-        // Defer milestone trigger until after state update
-        setTimeout(() => { if (didMilestone) triggerMilestone(); }, 100);
+      if (correct && newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
+        triggerMilestone();
       }
 
       // Freeplay: no save, no DDA, no localStorage
