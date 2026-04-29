@@ -766,14 +766,13 @@ const Index = () => {
     }
   }, [phase, activeColors.length, a11y]);
 
-  const shareSession = useCallback(async () => {
+  const shareSession = useCallback(() => {
     const peak = sessionStats.bestSpeed > 0 ? `${sessionStats.bestSpeed.toFixed(2)}s` : '—';
     const text = `Chromatic Practice Results ⚡️\nTotal Rounds: ${sessionStats.roundsPlayed}\nLongest Streak: ${sessionStats.longestStreak}\nPeak Speed: ${peak}\n\nHow many rounds can you handle? https://chromatic-daily.lovable.app`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setSessionCopied(true);
-      setTimeout(() => setSessionCopied(false), 2000);
-    } catch { /* noop */ }
+    const encoded = encodeURIComponent(text);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    window.open(url, '_blank');
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Target, Zap, Eye, Trophy, Share2, Check } from 'lucide-react';
+import { Target, Zap, Eye, Trophy, Share2 } from 'lucide-react';
 
 export type SessionStats = {
   roundsPlayed: number;
@@ -84,7 +84,7 @@ export function SessionReport({ stats, copied, onResume, onShare, onRestart, onM
             variant="outline"
             className="w-full rounded-xl h-10 text-sm gap-2"
           >
-            {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Share2 className="w-4 h-4" /> Share Results</>}
+            <Share2 className="w-4 h-4" /> Share on WhatsApp
           </Button>
         </div>
 
