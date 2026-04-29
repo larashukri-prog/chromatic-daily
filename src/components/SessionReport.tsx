@@ -119,7 +119,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
             className="text-2xl tracking-tight text-foreground mb-1.5"
             style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}
           >
-            Session Complete
+            Practice Session Complete
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed px-2">{getInsight(stats)}</p>
         </div>
