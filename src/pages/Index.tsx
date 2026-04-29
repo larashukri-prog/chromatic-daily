@@ -781,7 +781,7 @@ const Index = () => {
       {isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport && (
         <button
           onClick={openSessionReport}
-          className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-card/70 backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors"
+          className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 text-xs backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors bg-primary text-destructive-foreground"
           aria-label="View session results"
         >
           <BarChart3 className="w-3.5 h-3.5" />
