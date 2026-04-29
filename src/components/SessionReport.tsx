@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { useRef, useState } from 'react';
+import * as htmlToImage from 'html-to-image';
 import { Button } from '@/components/ui/button';
-import { Target, Zap, Eye, Trophy, Share2 } from 'lucide-react';
+import { Target, Zap, Eye, Trophy, Share2, Loader2 } from 'lucide-react';
 
 export type SessionStats = {
   roundsPlayed: number;
@@ -13,9 +15,8 @@ export type SessionStats = {
 
 interface SessionReportProps {
   stats: SessionStats;
-  copied: boolean;
   onResume: () => void;
-  onShare: () => void;
+  onShare?: () => void;
   onRestart: () => void;
   onMainMenu: () => void;
 }
@@ -28,9 +29,57 @@ function getInsight(s: SessionStats): string {
   return "You're getting faster! Your reaction time is peaking.";
 }
 
-export function SessionReport({ stats, copied, onResume, onShare, onRestart, onMainMenu }: SessionReportProps) {
+export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu }: SessionReportProps) {
   const accuracy = stats.totalAttempts ? Math.round((stats.totalCorrect / stats.totalAttempts) * 100) : 0;
   const speedLabel = stats.bestSpeed > 0 ? `${stats.bestSpeed.toFixed(2)}s` : '—';
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  const handleShareCard = async () => {
+    if (!cardRef.current || isCapturing) return;
+    setIsCapturing(true);
+    try {
+      // Wait two frames so DOM reflects hidden buttons + visible footer.
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'Chromatic_Practice_Results.png', { type: 'image/png' });
+
+      onShare?.();
+
+      if (
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'My Chromatic Practice Stats',
+          });
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') throw err;
+        }
+      } else {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'Chromatic_Practice_Results.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('[Chromatic] Share card failed:', err);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   const StatCard = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) => (
     <div className="bg-card/70 border border-border rounded-xl p-3 flex flex-col items-center gap-1">
@@ -50,6 +99,7 @@ export function SessionReport({ stats, copied, onResume, onShare, onRestart, onM
     >
       <div className="absolute inset-0 backdrop-blur-xl bg-white/40" />
       <motion.div
+        ref={cardRef}
         initial={{ scale: 0.96, opacity: 0, y: 8 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -75,20 +125,29 @@ export function SessionReport({ stats, copied, onResume, onShare, onRestart, onM
         <div className="flex flex-col gap-2 mb-4">
           <Button
             onClick={onResume}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11 text-sm tracking-wide"
+            className={`w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11 text-sm tracking-wide ${isCapturing ? 'hidden' : ''}`}
           >
             Resume Practice
           </Button>
           <Button
-            onClick={onShare}
+            onClick={handleShareCard}
             variant="outline"
-            className="w-full rounded-xl h-10 text-sm gap-2"
+            disabled={isCapturing}
+            className={`w-full rounded-xl h-10 text-sm gap-2 ${isCapturing ? 'hidden' : ''}`}
           >
-            <Share2 className="w-4 h-4" /> Share on WhatsApp
+            {isCapturing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Generating…
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4" /> Share Card
+              </>
+            )}
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+        <div className={`flex items-center justify-center gap-3 text-xs text-muted-foreground ${isCapturing ? 'hidden' : ''}`}>
           <button onClick={onRestart} className="hover:text-foreground transition-colors underline-offset-2 hover:underline">
             Restart Session
           </button>
@@ -97,6 +156,26 @@ export function SessionReport({ stats, copied, onResume, onShare, onRestart, onM
             Main Menu
           </button>
         </div>
+
+        {isCapturing && (
+          <div className="flex items-center justify-center gap-2 pt-2 mt-2 border-t border-border">
+            <img
+              src="/share-logo.png"
+              alt="Chromatic"
+              className="h-6 w-auto"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <span
+              className="text-foreground text-sm"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}
+            >
+              Chromatic
+            </span>
+            <span className="text-muted-foreground text-xs">· chromatic-daily.lovable.app</span>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
