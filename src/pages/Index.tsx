@@ -692,6 +692,47 @@ const Index = () => {
     };
   }, [alreadyFinished, roundIndex, totalAttemptsUsed]);
 
+  // --- Session Report handlers (Practice Mode) ---
+  const openSessionReport = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setCountdown(null);
+    setShowSessionReport(true);
+  }, []);
+
+  const resumePractice = useCallback(() => {
+    setShowSessionReport(false);
+    if (phase === 'observation') {
+      // Restart observation timer for current puzzle
+      const duration = getObservationDuration(activeColors.length, a11y);
+      setTimerDuration(duration);
+      setTimerProgress(100);
+      observationStartTime.current = Date.now();
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setTimerProgress(remaining);
+        if (elapsed >= duration) clearInterval(timerRef.current!);
+      }, 30);
+    }
+  }, [phase, activeColors.length, a11y]);
+
+  const shareSession = useCallback(async () => {
+    const text = `Chromatic Lab Session ⚡️\nPeak Speed: ${sessionStats.bestSpeed > 0 ? sessionStats.bestSpeed.toFixed(2) : '—'}s\nRounds: ${sessionStats.roundsPlayed}\nCan you beat my speed? https://chromatic-daily.lovable.app`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    } catch { /* noop */ }
+  }, [sessionStats]);
+
+  const restartSession = useCallback(() => {
+    setSessionStats(initialStats);
+    setShowSessionReport(false);
+    startFreePlay();
+  }, [startFreePlay]);
+
   return (
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
