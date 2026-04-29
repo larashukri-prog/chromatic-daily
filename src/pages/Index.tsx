@@ -731,8 +731,22 @@ const Index = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setCountdown(null);
+
+    const accuracy = sessionStats.totalAttempts
+      ? Math.round((sessionStats.totalCorrect / sessionStats.totalAttempts) * 100)
+      : 0;
+
+    if (posthog.__loaded) {
+      posthog.capture('practice_results_viewed', {
+        rounds_played: sessionStats.roundsPlayed,
+        best_speed: sessionStats.bestSpeed,
+        accuracy,
+        longest_streak: sessionStats.longestStreak,
+      });
+    }
+
     setShowSessionReport(true);
-  }, []);
+  }, [sessionStats]);
 
   const resumePractice = useCallback(() => {
     setShowSessionReport(false);
