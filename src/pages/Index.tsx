@@ -1250,6 +1250,20 @@ const Index = () => {
         rel="stylesheet"
       />
 
+      {/* Practice Mode Session Report Overlay */}
+      <AnimatePresence>
+        {showSessionReport && isFreeplay && (
+          <SessionReport
+            stats={sessionStats}
+            copied={sessionCopied}
+            onResume={resumePractice}
+            onShare={shareSession}
+            onRestart={restartSession}
+            onMainMenu={backToDaily}
+          />
+        )}
+      </AnimatePresence>
+
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
