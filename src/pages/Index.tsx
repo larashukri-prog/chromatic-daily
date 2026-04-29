@@ -4,10 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye } from 'lucide-react';
+import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye, BarChart3 } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
+import { SessionReport, type SessionStats } from '@/components/SessionReport';
+import confetti from 'canvas-confetti';
 
 import { AccessibilityToggle } from '@/components/AccessibilityToggle';
 import { useAccessibility } from '@/hooks/useAccessibility';
@@ -95,6 +97,39 @@ const Index = () => {
   const [freeplayRoundNum, setFreeplayRoundNum] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // --- Practice Mode Session Stats ---
+  const initialStats: SessionStats = {
+    roundsPlayed: 0, bestSpeed: 0, totalCorrect: 0, totalAttempts: 0, currentStreak: 0, longestStreak: 0,
+  };
+  const [sessionStats, setSessionStats] = useState<SessionStats>(initialStats);
+  const [showSessionReport, setShowSessionReport] = useState(false);
+  const [sessionCopied, setSessionCopied] = useState(false);
+  const recallStartTime = useRef<number>(0);
+  const milestoneAudio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const a = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_d1718ab41b.mp3');
+      a.preload = 'auto';
+      a.volume = 0.5;
+      milestoneAudio.current = a;
+    } catch { /* noop */ }
+  }, []);
+
+  const triggerMilestone = useCallback(() => {
+    try {
+      const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+      confetti({ particleCount: 60, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors });
+      confetti({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors });
+    } catch { /* noop */ }
+    try {
+      if (milestoneAudio.current) {
+        milestoneAudio.current.currentTime = 0;
+        milestoneAudio.current.play().catch(() => {});
+      }
+    } catch { /* noop */ }
+  }, []);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
@@ -215,6 +250,7 @@ const Index = () => {
 
     setPhase('recall');
     setSelectedColor(null);
+    recallStartTime.current = Date.now();
   }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
@@ -276,6 +312,8 @@ const Index = () => {
     const puzzle = generateFreePlayPuzzle(1);
     setMode('freeplay');
     setFreeplayRoundNum(1);
+    setSessionStats(initialStats);
+    setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
     setPlayerGrid(Array(9).fill(null));
@@ -400,6 +438,24 @@ const Index = () => {
     setVerifying(true);
 
     if (isFreeplay) {
+      // Track session stats
+      const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
+      const newRoundsPlayed = sessionStats.roundsPlayed + (correct ? 1 : 0);
+      const newCurrentStreak = correct ? sessionStats.currentStreak + 1 : 0;
+      setSessionStats({
+        roundsPlayed: newRoundsPlayed,
+        bestSpeed: correct
+          ? (sessionStats.bestSpeed === 0 ? recallSeconds : Math.min(sessionStats.bestSpeed, recallSeconds))
+          : sessionStats.bestSpeed,
+        totalCorrect: sessionStats.totalCorrect + (correct ? 1 : 0),
+        totalAttempts: sessionStats.totalAttempts + 1,
+        currentStreak: newCurrentStreak,
+        longestStreak: Math.max(sessionStats.longestStreak, newCurrentStreak),
+      });
+      if (correct && newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) {
+        triggerMilestone();
+      }
+
       // Freeplay: no save, no DDA, no localStorage
       setTimeout(() => {
         setVerifying(false);
@@ -636,6 +692,47 @@ const Index = () => {
     };
   }, [alreadyFinished, roundIndex, totalAttemptsUsed]);
 
+  // --- Session Report handlers (Practice Mode) ---
+  const openSessionReport = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setCountdown(null);
+    setShowSessionReport(true);
+  }, []);
+
+  const resumePractice = useCallback(() => {
+    setShowSessionReport(false);
+    if (phase === 'observation') {
+      // Restart observation timer for current puzzle
+      const duration = getObservationDuration(activeColors.length, a11y);
+      setTimerDuration(duration);
+      setTimerProgress(100);
+      observationStartTime.current = Date.now();
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setTimerProgress(remaining);
+        if (elapsed >= duration) clearInterval(timerRef.current!);
+      }, 30);
+    }
+  }, [phase, activeColors.length, a11y]);
+
+  const shareSession = useCallback(async () => {
+    const text = `Chromatic Lab Session ⚡️\nPeak Speed: ${sessionStats.bestSpeed > 0 ? sessionStats.bestSpeed.toFixed(2) : '—'}s\nRounds: ${sessionStats.roundsPlayed}\nCan you beat my speed? https://chromatic-daily.lovable.app`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    } catch { /* noop */ }
+  }, [sessionStats]);
+
+  const restartSession = useCallback(() => {
+    setSessionStats(initialStats);
+    setShowSessionReport(false);
+    startFreePlay();
+  }, [startFreePlay]);
+
   return (
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
@@ -645,6 +742,18 @@ const Index = () => {
     >
       {/* Onboarding overlay (first-time only) */}
       <OnboardingOverlay show={showOnboarding} onDismiss={dismissOnboarding} />
+
+      {/* Practice Mode: Results button (top-right) */}
+      {isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport && (
+        <button
+          onClick={openSessionReport}
+          className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-card/70 backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors"
+          aria-label="View session results"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Results
+        </button>
+      )}
 
       {/* Header */}
       <div className="text-center mb-4">
@@ -1140,6 +1249,20 @@ const Index = () => {
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
+
+      {/* Practice Mode Session Report Overlay */}
+      <AnimatePresence>
+        {showSessionReport && isFreeplay && (
+          <SessionReport
+            stats={sessionStats}
+            copied={sessionCopied}
+            onResume={resumePractice}
+            onShare={shareSession}
+            onRestart={restartSession}
+            onMainMenu={backToDaily}
+          />
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes shake {
