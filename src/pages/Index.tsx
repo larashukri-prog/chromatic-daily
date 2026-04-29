@@ -743,6 +743,18 @@ const Index = () => {
       {/* Onboarding overlay (first-time only) */}
       <OnboardingOverlay show={showOnboarding} onDismiss={dismissOnboarding} />
 
+      {/* Practice Mode: Results button (top-right) */}
+      {isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport && (
+        <button
+          onClick={openSessionReport}
+          className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-card/70 backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors"
+          aria-label="View session results"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Results
+        </button>
+      )}
+
       {/* Header */}
       <div className="text-center mb-4">
         {isFreeplay ? (
