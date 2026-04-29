@@ -753,7 +753,8 @@ const Index = () => {
   }, [phase, activeColors.length, a11y]);
 
   const shareSession = useCallback(async () => {
-    const text = `Chromatic Lab Session ⚡️\nPeak Speed: ${sessionStats.bestSpeed > 0 ? sessionStats.bestSpeed.toFixed(2) : '—'}s\nRounds: ${sessionStats.roundsPlayed}\nCan you beat my speed? https://chromatic-daily.lovable.app`;
+    const peak = sessionStats.bestSpeed > 0 ? `${sessionStats.bestSpeed.toFixed(2)}s` : '—';
+    const text = `Chromatic Practice Results ⚡️\nTotal Rounds: ${sessionStats.roundsPlayed}\nLongest Streak: ${sessionStats.longestStreak}\nPeak Speed: ${peak}\n\nHow many rounds can you handle? https://chromatic-daily.lovable.app`;
     try {
       await navigator.clipboard.writeText(text);
       setSessionCopied(true);
