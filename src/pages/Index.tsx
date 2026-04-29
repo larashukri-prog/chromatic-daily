@@ -836,7 +836,7 @@ const Index = () => {
               </div>
               {freeplayRoundNum > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  Round {freeplayRoundNum}
+                  Round {Math.max(1, sessionStats.roundsPlayed + (phase === 'observation' || phase === 'recall' ? 1 : 0))}
                 </span>
               )}
             </>
