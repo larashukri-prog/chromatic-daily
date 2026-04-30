@@ -42,7 +42,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     // Save originals so we can restore after capture.
     const prevWidth = cardEl.style.width;
     const prevMaxWidth = cardEl.style.maxWidth;
-    const prevWebkitSmoothing = cardEl.style.webkitFontSmoothing;
+    const prevWebkitSmoothing = (cardEl.style as any).webkitFontSmoothing as string;
     const prevMozSmoothing = (cardEl.style as any).MozOsxFontSmoothing as string;
     try {
       // Yield once so React commits the spinner/disabled state before heavy work runs.
@@ -51,7 +51,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
       // Lock card to a fixed width so the snapshot doesn't reflow at higher pixel ratios.
       cardEl.style.width = '420px';
       cardEl.style.maxWidth = '420px';
-      cardEl.style.webkitFontSmoothing = 'antialiased';
+      (cardEl.style as any).webkitFontSmoothing = 'antialiased';
       (cardEl.style as any).MozOsxFontSmoothing = 'grayscale';
 
       // Wait two frames so DOM reflects hidden buttons + visible footer.
@@ -124,7 +124,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
       // Restore card styles regardless of success/failure.
       cardEl.style.width = prevWidth;
       cardEl.style.maxWidth = prevMaxWidth;
-      cardEl.style.webkitFontSmoothing = prevWebkitSmoothing;
+      (cardEl.style as any).webkitFontSmoothing = prevWebkitSmoothing ?? '';
       (cardEl.style as any).MozOsxFontSmoothing = prevMozSmoothing ?? '';
       setIsCapturing(false);
     }
