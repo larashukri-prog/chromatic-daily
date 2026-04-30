@@ -38,16 +38,51 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
   const handleShareCard = async () => {
     if (!cardRef.current || isCapturing) return;
     setIsCapturing(true);
+    const cardEl = cardRef.current;
+    // Save originals so we can restore after capture.
+    const prevWidth = cardEl.style.width;
+    const prevMaxWidth = cardEl.style.maxWidth;
+    const prevWebkitSmoothing = (cardEl.style as any).webkitFontSmoothing as string;
+    const prevMozSmoothing = (cardEl.style as any).MozOsxFontSmoothing as string;
     try {
+      // Yield once so React commits the spinner/disabled state before heavy work runs.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      // Lock card to a fixed width so the snapshot doesn't reflow at higher pixel ratios.
+      cardEl.style.width = '420px';
+      cardEl.style.maxWidth = '420px';
+      (cardEl.style as any).webkitFontSmoothing = 'antialiased';
+      (cardEl.style as any).MozOsxFontSmoothing = 'grayscale';
+
       // Wait two frames so DOM reflects hidden buttons + visible footer.
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       );
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
-        pixelRatio: 2,
+
+      // Default to 3x for crisp retina output; downshift to 2x on lower-end devices
+      // or after we've recorded a slow capture in this session.
+      const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const lowMemory =
+        ((navigator as any).deviceMemory ?? 8) <= 4 ||
+        (navigator.hardwareConcurrency ?? 8) <= 4;
+      const lowResFlag =
+        typeof sessionStorage !== 'undefined' &&
+        sessionStorage.getItem('chromatic:lowResShare') === '1';
+      const pixelRatio = lowResFlag || (isMobileUA && lowMemory) ? 2 : 3;
+
+      const t0 = performance.now();
+      const dataUrl = await htmlToImage.toPng(cardEl, {
+        pixelRatio,
         cacheBust: true,
         backgroundColor: '#ffffff',
       });
+      const elapsed = performance.now() - t0;
+      if (pixelRatio === 3 && elapsed > 1500) {
+        try {
+          sessionStorage.setItem('chromatic:lowResShare', '1');
+        } catch {}
+        console.info(`[Chromatic] Share capture ${elapsed.toFixed(0)}ms — downshifting to 2x next time.`);
+      }
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'Chromatic_Practice_Results.png', { type: 'image/png' });
 
@@ -86,6 +121,11 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     } catch (err) {
       console.error('[Chromatic] Share card failed:', err);
     } finally {
+      // Restore card styles regardless of success/failure.
+      cardEl.style.width = prevWidth;
+      cardEl.style.maxWidth = prevMaxWidth;
+      (cardEl.style as any).webkitFontSmoothing = prevWebkitSmoothing ?? '';
+      (cardEl.style as any).MozOsxFontSmoothing = prevMozSmoothing ?? '';
       setIsCapturing(false);
     }
   };
