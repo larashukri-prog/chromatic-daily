@@ -220,7 +220,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
               className="text-foreground text-sm"
               style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}
             >
-              Chromatic
+              ChromaticDaily
             </span>
             <span className="text-muted-foreground text-xs">· chromatic-daily.lovable.app</span>
           </div>
