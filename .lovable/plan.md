@@ -1,57 +1,43 @@
-## Visual Image Sharing for Practice Results
+# Optimize Practice Results Share Card
 
-Replace the "Share on WhatsApp" button in the Session Report modal with a "Share Card" button that captures the modal as a high-res PNG and either shares it via the Web Share API (mobile) or downloads it (desktop).
+Refine the `html-to-image` capture in `src/components/SessionReport.tsx` for sharper output on retina mobile displays, plus tighter loading-state UX.
 
-### Asset needed from user
+## Changes — `src/components/SessionReport.tsx`
 
-Upload a logo image (PNG with transparency preferred, square or wide format). It will be placed in `public/share-logo.png`. Until provided, a text wordmark "Chromatic" in Playfair Display will render as a placeholder so the feature still works.
+### 1. Capture container
 
-### Changes
+- Add a fixed pixel width to the captured card during snapshot so the layout doesn't reflow at higher pixel ratios.
+  - Current: `max-w-sm` (responsive). Target: temporarily lock width to `420px` while `isCapturing` is true via inline style applied to `cardRef.current` (set before capture, cleared in `finally`).
+- Apply `-webkit-font-smoothing: antialiased` and `-moz-osx-font-smoothing: grayscale` inline on the cardRef during capture for crisper glyphs.
 
-**1. Install dependency**
+### 2. Pixel ratio with perf fallback
 
-Add `html-to-image` to the project.
+- Default `pixelRatio: 3`.
+- Detect mobile (`/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)`) and a low-memory hint (`(navigator as any).deviceMemory <= 4` or `hardwareConcurrency <= 4`) → in that case start at `pixelRatio: 2`.
+- Wrap the `htmlToImage.toPng` call with `performance.now()` timing. If a first attempt at 3x exceeds 1500ms (logged), set a `sessionStorage` flag `chromatic:lowResShare=1` so subsequent shares in the session use 2x immediately. (Cannot abort in-flight, but next click is fast.)
+- Keep `toPng` (lossless). Pass `{ pixelRatio, cacheBust: true, backgroundColor: '#ffffff', skipFonts: false }`. No `quality` param needed (PNG).
 
-**2. `src/components/SessionReport.tsx`**
+### 3. Loading state
 
-- Add a `ref` (forwarded via `useRef` inside the component) to the modal card container — this is the capture target.
-- Add `isCapturing` local state.
-- Add a hidden-during-capture branding footer inside the card (only visible when `isCapturing` is true): logo image (`/share-logo.png`) + URL text `chromatic-daily.lovable.app`.
-- Apply a CSS class that hides the action buttons (Resume Practice, Restart, Main Menu) and the Share Card button itself while `isCapturing` is true, using a conditional `data-capturing` attribute + Tailwind `[data-capturing=true]_.hide-on-capture { display: none }` style, or simpler: conditional class on each button (`isCapturing && 'hidden'`).
-- Replace the existing "Share on WhatsApp" button with a single "Share Card" button:
-  - Default label: `Share Card` with `Share2` icon.
-  - While generating: show `Generating…` with a spinning `Loader2` icon and `disabled`.
-- Capture flow on click:
-  1. Set `isCapturing(true)`.
-  2. `await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))` so DOM reflects hidden buttons + visible footer.
-  3. Call `htmlToImage.toPng(cardRef.current, { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' })`.
-  4. Convert dataURL to a `File` (`Chromatic_Practice_Results.png`, `image/png`).
-  5. If `navigator.canShare?.({ files: [file] })`, call `navigator.share({ files: [file], title: 'My Chromatic Practice Stats' })`.
-  6. Else create an `<a download="Chromatic_Practice_Results.png">` and click it.
-  7. `finally { setIsCapturing(false); }`.
-- Wrap the share logic in try/catch; ignore `AbortError` from share dialog cancellation.
-- Remove the now-unused `copied` prop and `onShare` becomes optional/unused (or rename to `onShareTriggered` for analytics, see below).
+- Existing `isCapturing` already disables the button and swaps label → `Generating…` with `Loader2` spinner. Reinforce by:
+  - Setting `isCapturing(true)` synchronously as the very first line of `handleShareCard` (already true).
+  - Wrapping the heavy work in `await new Promise(r => setTimeout(r, 0))` after state set, so React paints the spinner before the main-thread-heavy `toPng` runs.
+  - Keep the existing two `requestAnimationFrame` waits afterward so the hidden buttons / visible footer reflect in the snapshot.
 
-**3. `src/pages/Index.tsx`**
+### 4. Async execution
 
-- Remove the `shareSession` callback and `sessionCopied` state (no longer needed for clipboard/WhatsApp text flow).
-- Pass an `onShare` callback that fires the existing PostHog `practice_results_viewed`-style analytics — add a new event `practice_card_shared` with `{ rounds_played, best_speed, longest_streak }`. The component calls `onShare()` after a successful capture (before share/download dispatch is fine).
-- Remove the `copied` prop from the `<SessionReport />` JSX.
+- `toPng` is already async. Add the `setTimeout(0)` yield above so the spinner UI commits before serialization begins; this prevents the visible "frozen button" feeling on lower-end devices.
 
-**4. `public/share-logo.png`**
+## Technical notes
 
-User-uploaded logo asset. The footer renders `<img src="/share-logo.png" />` at ~32px height with the URL beside it. If the file is missing, the `<img>` will broken-icon — acceptable until upload.
+- `pixelRatio: 3` with a 420px-wide card → ~1260px output, ideal for WhatsApp/IG status.
+- Fixed width via inline style avoids `max-w-sm` collapsing on tiny viewports during capture, which currently can produce a narrow, stretched-looking PNG.
+- `-webkit-font-smoothing` only affects WebKit/Blink; harmless elsewhere. Pairs with `-moz-osx-font-smoothing` for completeness.
+- Perf gate uses `sessionStorage` so the user gets one slow share max per tab session, then auto-downshifts.
+- No new dependencies. No changes to `Index.tsx`, analytics, or game state.
 
-### Technical notes
+## Out of scope
 
-- `html-to-image` works fully client-side, supports `pixelRatio` for retina output, and handles the modal's backdrop-blur/glassmorphism better than `html2canvas`.
-- The capture target is the inner card (`max-w-sm` div), not the full overlay — that way the dark backdrop and outer blur layer aren't included.
-- Web Share API file sharing requires HTTPS and user gesture — both satisfied (button click on the deployed app).
-- During capture the modal still appears unchanged to the user (~100–300ms), since the hidden buttons + visible footer render only inside the captured snapshot frame, but visually the user sees them swap briefly. Acceptable; alternative (offscreen clone) is more complex and not requested.
-- No changes to game state, persistence, or DDA logic.
-
-### Out of scope
-
-- WhatsApp-specific deep linking (Web Share API on mobile already surfaces WhatsApp as a target).
-- Server-side image generation.
-- Custom card design distinct from the modal — the modal IS the card.
+- Switching to `toJpeg` (PNG preserves crisp text/borders better for this card).
+- Server-side rendering or offscreen-canvas rasterization.
+- Custom share-only card layout distinct from the modal.
