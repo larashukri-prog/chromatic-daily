@@ -11,9 +11,10 @@ import { GameGrid } from '@/components/GameGrid';
 import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
-import { AccessibilityToggle } from '@/components/AccessibilityToggle';
-import { useAccessibility } from '@/hooks/useAccessibility';
+import { VisualThemeToggle } from '@/components/VisualThemeToggle';
+import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
+import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -162,6 +163,8 @@ const Index = () => {
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
+  const { theme: visualTheme } = useVisualTheme();
+  const shapesMode = visualTheme === 'shapes';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
