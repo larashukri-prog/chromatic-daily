@@ -1,5 +1,5 @@
 import {
-  FaHeart, FaStar, FaBolt, FaCloud, FaMoon, FaCircle, FaSquare,
+  FaHeart, FaStar, FaCat, FaCloud, FaMoon, FaCircle, FaSquare,
   FaPlay, FaGhost, FaDroplet, FaSnowflake,
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
@@ -10,7 +10,7 @@ import type { IconType } from 'react-icons';
 export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#EF4444': FaHeart,      // Red
   '#FDE047': FaStar,       // Yellow
-  '#2DD4D4': FaBolt,       // Teal
+  '#2DD4D4': FaCat,        // Teal
   '#FD9349': FaCloud,      // Orange
   '#8B5CF6': FaMoon,       // Purple
   '#7AC00F': FaPlay,       // Lime (triangle)
