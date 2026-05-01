@@ -991,6 +991,7 @@ const Index = () => {
                 <div className="flex justify-center gap-2 flex-wrap">
                   {pickerColors.map((c) => {
                     const isWhite = c.hex.toUpperCase() === '#FFFFFF';
+                    const showAsWhite = shapesMode || isWhite;
                     return (
                     <button
                       key={c.hex}
@@ -1012,13 +1013,13 @@ const Index = () => {
                       className={cn(
                         "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
                         "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
-                        !isWhite && "border border-muted-foreground/50"
+                        !showAsWhite && "border border-muted-foreground/50"
                       )}
                       style={{
-                        backgroundColor: c.hex,
-                        border: isWhite ? '2px solid #6B7280' : undefined,
+                        backgroundColor: shapesMode ? '#FFFFFF' : c.hex,
+                        border: showAsWhite ? '2px solid #6B7280' : undefined,
                         outline: selectedColor === c.hex
-                          ? (isWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
+                          ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
                           : '2px solid transparent',
                         outlineOffset: '2px',
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
@@ -1026,6 +1027,7 @@ const Index = () => {
                       title={c.name}
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
+                      {shapesMode && <ShapeOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
