@@ -13,8 +13,23 @@ export function VisualThemeToggle() {
 
   const handleChange = (next: VisualTheme) => {
     if (next === theme) return;
+    const previous = theme;
     setTheme(next);
-    posthog.capture('visual_theme_changed', { theme: next });
+    posthog.capture('visual_theme_changed', {
+      theme: next,
+      previous_theme: previous,
+    });
+
+    try {
+      const TOUCHED_KEY = 'chromatic-visual-theme-touched';
+      if (!localStorage.getItem(TOUCHED_KEY)) {
+        localStorage.setItem(TOUCHED_KEY, '1');
+        posthog.capture('visual_style_first_set', {
+          theme: next,
+          previous_theme: previous,
+        });
+      }
+    } catch {}
   };
 
   return (

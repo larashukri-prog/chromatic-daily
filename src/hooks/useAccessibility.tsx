@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { posthog } from '@/lib/posthog';
 
 export type VisualTheme = 'colors' | 'patterns' | 'shapes';
 
@@ -39,6 +40,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(THEME_KEY, theme);
+    } catch {}
+    try {
+      posthog.register({ visual_style: theme });
     } catch {}
   }, [theme]);
 
