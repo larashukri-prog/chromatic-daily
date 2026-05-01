@@ -193,6 +193,8 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
   const { enabled: a11y } = useAccessibility();
+  const { theme: visualTheme } = useVisualTheme();
+  const shapesMode = visualTheme === 'shapes';
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
