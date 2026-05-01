@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { GamePhase, NEUTRAL } from '@/lib/game';
-import { useAccessibility } from '@/hooks/useAccessibility';
+import { useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
+import { ShapeOverlay } from '@/components/ShapeOverlay';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -15,7 +16,9 @@ interface GameGridProps {
 }
 
 export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, activeSlot, onCircleClick }: GameGridProps) {
-  const { enabled: a11y } = useAccessibility();
+  const { theme } = useVisualTheme();
+  const a11y = theme === 'patterns';
+  const shapes = theme === 'shapes';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -26,6 +29,16 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     }
     if (phase === 'recall') return playerGrid[index] || NEUTRAL;
     return NEUTRAL;
+  };
+
+  // In shapes mode, the slot background is always white when the slot has a value;
+  // empty slots stay neutral so the player can still see what's filled in.
+  const getDisplayBackground = (index: number): string => {
+    const c = getCircleColor(index);
+    if (!shapes) return c;
+    if (c === NEUTRAL) return NEUTRAL;
+    if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
+    return '#FFFFFF';
   };
 
   const getPatternColor = (index: number): string | null => {
@@ -40,7 +53,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
 
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
-    if (color === '#FFFFFF' || color === '#FFF') {
+    const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
+    if (color === '#FFFFFF' || color === '#FFF' || displayWhite) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #6B7280';
     }
@@ -81,12 +95,13 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           whileTap={phase === 'recall' ? { scale: 0.95 } : {}}
           className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
           style={{
-            backgroundColor: getCircleColor(i),
+          backgroundColor: getDisplayBackground(i),
             border: getCircleBorder(i),
             ...getGlowStyle(i),
           }}
         >
           {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
+          {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>
