@@ -1,42 +1,59 @@
-# PostHog Tracking: Game Start by Visual Style
+# Track Visual Style Across All PostHog Events
 
-Add two new PostHog events that include the user's current `visual_style` (`'colors' | 'patterns' | 'shapes'`), so you can compare style popularity across competitive (Daily) vs casual (Practice) play.
+Make `visual_style` available on every PostHog event (not just `game_started` / `practice_started`), and distinguish users who **kept the default `colors`** from users who **actively chose `colors`**.
 
 ## Changes
 
-All edits are in `src/pages/Index.tsx`. The `visualTheme` value is already available via `useVisualTheme()` (line 166).
+### 1. `src/lib/posthog.ts` — register super property on init
 
-### 1. `game_started` — fired on Standard (Daily) game start
-
-In `startGame` (line 306), alongside the existing `'Game Start'` capture:
+Read the stored theme from localStorage at init time and register it as a super property so it auto-attaches to every event:
 
 ```ts
-posthog.capture('game_started', {
-  visual_style: visualTheme,
-  round_number: roundIndex + 1,
-  day_number: dayNum,
-  difficulty: difficultyName,
+const stored = localStorage.getItem('chromatic-visual-theme');
+const initialTheme = stored === 'patterns' || stored === 'shapes' ? stored : 'colors';
+
+posthog.register({
+  project_language: 'English',
+  ui_direction: 'LTR',
+  visual_style: initialTheme,
 });
 ```
 
-Add `visualTheme` to the `useCallback` dependency array.
+### 2. `src/hooks/useAccessibility.tsx` — keep super property in sync
 
-The existing `'Game Start'` event is left intact so historical dashboards keep working.
+In the `useEffect` that persists `theme`, also call `posthog.register({ visual_style: theme })` so the super property updates whenever the theme changes (from any source).
 
-### 2. `practice_started` — fired on Practice Session start
+### 3. `src/components/VisualThemeToggle.tsx` — richer change event + first-set tracking
 
-In `startFreePlay` (line 342), update the existing `practice_mode_started` capture (or add a new one) so the new event name is emitted:
+Update `handleChange`:
 
 ```ts
-posthog.capture('practice_started', {
-  visual_style: visualTheme,
-  difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
-  color_count: puzzle.colorCount,
+posthog.capture('visual_theme_changed', {
+  theme: next,
+  previous_theme: theme,
 });
+
+// One-time event the first time a user actively picks a style
+const TOUCHED_KEY = 'chromatic-visual-theme-touched';
+if (!localStorage.getItem(TOUCHED_KEY)) {
+  localStorage.setItem(TOUCHED_KEY, '1');
+  posthog.capture('visual_style_first_set', {
+    theme: next,
+    previous_theme: theme, // tells you what the default was for that user
+  });
+}
 ```
 
-Keep the existing `practice_mode_started` event for back-compat with current funnels. Add `visualTheme` to the dependency array.
+## Result in PostHog
 
-## Result
+- **Every event** (pageviews, autocaptured clicks, game events) now carries `visual_style` → breakdown any insight by visual style.
+- **`visual_theme_changed`** now includes `previous_theme` → see migration patterns (e.g. `colors → shapes`).
+- **`visual_style_first_set`** fires once per user → cohort of "users who actively chose a style" vs everyone else (defaulters).
+  - Users with `visual_style = 'colors'` AND no `visual_style_first_set` event → kept the default.
+  - Users with `visual_style = 'colors'` AND `visual_style_first_set { theme: 'colors' }` → actively chose colors after trying another.
 
-In PostHog you'll get two clean events that share a `visual_style` property, letting you build a single insight broken down by `visual_style` and filtered by event name to compare Daily vs Practice popularity per style.
+## Files edited
+
+- `src/lib/posthog.ts`
+- `src/hooks/useAccessibility.tsx`
+- `src/components/VisualThemeToggle.tsx`
