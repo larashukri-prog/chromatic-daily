@@ -4,8 +4,9 @@ import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
-import { useAccessibility } from '@/hooks/useAccessibility';
+import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
+import { ShapeOverlay } from '@/components/ShapeOverlay';
 
 interface DailySummaryProps {
   rounds: RoundData[];
