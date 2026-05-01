@@ -258,7 +258,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       backgroundColor: shapesMode && solution[i] ? '#FFFFFF' : color,
                       border:
                         shapesMode && solution[i]
-                          ? '2px solid #6B7280'
+                          ? '2px solid #D1D5DB'
                           : '2px solid transparent',
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
@@ -295,7 +295,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                     border: !result[i] && solution[i]
                       ? '2px solid #DC2626'
                       : shapesMode && playerGrid[i]
-                      ? '2px solid #6B7280'
+                      ? '2px solid #D1D5DB'
                       : '2px solid transparent',
                   }}
                 >

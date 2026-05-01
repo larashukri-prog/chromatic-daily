@@ -1017,7 +1017,7 @@ const Index = () => {
                       )}
                       style={{
                         backgroundColor: shapesMode ? '#FFFFFF' : c.hex,
-                        border: showAsWhite ? '2px solid #6B7280' : undefined,
+                        border: showAsWhite ? '2px solid #D1D5DB' : undefined,
                         outline: selectedColor === c.hex
                           ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
                           : '2px solid transparent',

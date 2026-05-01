@@ -56,7 +56,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
     if (color === '#FFFFFF' || color === '#FFF' || displayWhite) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
-      return '2px solid #6B7280';
+      return '2px solid #D1D5DB';
     }
     if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
