@@ -306,6 +306,12 @@ const Index = () => {
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
     posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
+    posthog.capture('game_started', {
+      visual_style: visualTheme,
+      round_number: roundIndex + 1,
+      day_number: dayNum,
+      difficulty: difficultyName,
+    });
 
     const hasPlayed = localStorage.getItem('chromatic-has-played');
     localStorage.setItem('chromatic-has-played', 'true');
@@ -315,7 +321,7 @@ const Index = () => {
     } else {
       startObservation();
     }
-  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
+  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode, visualTheme]);
 
   // --- Free Play callbacks ---
 
@@ -361,8 +367,13 @@ const Index = () => {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
+    posthog.capture('practice_started', {
+      visual_style: visualTheme,
+      difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
+      color_count: puzzle.colorCount,
+    });
     startCountdown(() => startFreePlayObservation(puzzle));
-  }, [a11y, startCountdown, startFreePlayObservation]);
+  }, [a11y, startCountdown, startFreePlayObservation, visualTheme]);
 
   const backToDaily = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
