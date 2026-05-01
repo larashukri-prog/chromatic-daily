@@ -255,12 +255,16 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                     transition={{ duration: 0.3, delay: i * 0.04 }}
                     className="aspect-square rounded-full relative overflow-hidden"
                     style={{
-                      backgroundColor: color,
-                      border: '2px solid transparent',
+                      backgroundColor: shapesMode && solution[i] ? '#FFFFFF' : color,
+                      border:
+                        shapesMode && solution[i]
+                          ? '2px solid #6B7280'
+                          : '2px solid transparent',
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
                     {a11y && <PatternOverlay colorHex={solution[i]} size="100%" />}
+                    {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -286,12 +290,17 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   transition={{ duration: 0.3, delay: i * 0.04 }}
                   className="aspect-square rounded-full relative overflow-hidden"
                   style={{
-                    backgroundColor: cellColor,
+                    backgroundColor: shapesMode && playerGrid[i] ? '#FFFFFF' : cellColor,
                     boxShadow: glow,
-                    border: !result[i] && solution[i] ? '2px solid #DC2626' : '2px solid transparent',
+                    border: !result[i] && solution[i]
+                      ? '2px solid #DC2626'
+                      : shapesMode && playerGrid[i]
+                      ? '2px solid #6B7280'
+                      : '2px solid transparent',
                   }}
                 >
                   {a11y && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
+                  {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
