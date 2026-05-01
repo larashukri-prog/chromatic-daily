@@ -1093,7 +1093,7 @@ const Index = () => {
       {/* Accessibility Toggle (below card, above streaks) */}
       {!showDailySummary && (
         <div className="mt-5 flex justify-center">
-          <AccessibilityToggle />
+          <VisualThemeToggle />
         </div>
       )}
 
