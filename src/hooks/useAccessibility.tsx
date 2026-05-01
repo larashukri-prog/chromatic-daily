@@ -1,39 +1,66 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const STORAGE_KEY = 'chromatic-accessibility';
+export type VisualTheme = 'colors' | 'patterns' | 'shapes';
 
-interface AccessibilityContextType {
+const THEME_KEY = 'chromatic-visual-theme';
+const LEGACY_KEY = 'chromatic-accessibility';
+
+interface VisualThemeContextType {
+  theme: VisualTheme;
+  setTheme: (t: VisualTheme) => void;
+  // Back-compat shim
   enabled: boolean;
   toggle: () => void;
 }
 
-const AccessibilityContext = createContext<AccessibilityContextType>({
+const VisualThemeContext = createContext<VisualThemeContextType>({
+  theme: 'colors',
+  setTheme: () => {},
   enabled: false,
   toggle: () => {},
 });
 
+function loadInitial(): VisualTheme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes') return stored;
+    // Migrate legacy boolean
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy === 'true') return 'patterns';
+    return 'colors';
+  } catch {
+    return 'colors';
+  }
+}
+
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabled] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [theme, setThemeState] = useState<VisualTheme>(loadInitial);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(enabled));
-  }, [enabled]);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {}
+  }, [theme]);
 
-  const toggle = () => setEnabled((prev) => !prev);
+  const setTheme = (t: VisualTheme) => setThemeState(t);
+  const toggle = () =>
+    setThemeState((prev) => (prev === 'patterns' ? 'colors' : 'patterns'));
 
   return (
-    <AccessibilityContext.Provider value={{ enabled, toggle }}>
+    <VisualThemeContext.Provider
+      value={{ theme, setTheme, enabled: theme === 'patterns', toggle }}
+    >
       {children}
-    </AccessibilityContext.Provider>
+    </VisualThemeContext.Provider>
   );
 }
 
 export function useAccessibility() {
-  return useContext(AccessibilityContext);
+  const { enabled, toggle } = useContext(VisualThemeContext);
+  return { enabled, toggle };
+}
+
+export function useVisualTheme() {
+  const { theme, setTheme } = useContext(VisualThemeContext);
+  return { theme, setTheme };
 }

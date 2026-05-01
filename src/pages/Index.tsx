@@ -11,9 +11,10 @@ import { GameGrid } from '@/components/GameGrid';
 import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
-import { AccessibilityToggle } from '@/components/AccessibilityToggle';
-import { useAccessibility } from '@/hooks/useAccessibility';
+import { VisualThemeToggle } from '@/components/VisualThemeToggle';
+import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
+import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -162,6 +163,8 @@ const Index = () => {
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
+  const { theme: visualTheme } = useVisualTheme();
+  const shapesMode = visualTheme === 'shapes';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -988,6 +991,7 @@ const Index = () => {
                 <div className="flex justify-center gap-2 flex-wrap">
                   {pickerColors.map((c) => {
                     const isWhite = c.hex.toUpperCase() === '#FFFFFF';
+                    const showAsWhite = shapesMode || isWhite;
                     return (
                     <button
                       key={c.hex}
@@ -1009,13 +1013,13 @@ const Index = () => {
                       className={cn(
                         "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
                         "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
-                        !isWhite && "border border-muted-foreground/50"
+                        !showAsWhite && "border border-muted-foreground/50"
                       )}
                       style={{
-                        backgroundColor: c.hex,
-                        border: isWhite ? '2px solid #6B7280' : undefined,
+                        backgroundColor: shapesMode ? '#FFFFFF' : c.hex,
+                        border: showAsWhite ? '2px solid #6B7280' : undefined,
                         outline: selectedColor === c.hex
-                          ? (isWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
+                          ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
                           : '2px solid transparent',
                         outlineOffset: '2px',
                         transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
@@ -1023,6 +1027,7 @@ const Index = () => {
                       title={c.name}
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
+                      {shapesMode && <ShapeOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
@@ -1090,7 +1095,7 @@ const Index = () => {
       {/* Accessibility Toggle (below card, above streaks) */}
       {!showDailySummary && (
         <div className="mt-5 flex justify-center">
-          <AccessibilityToggle />
+          <VisualThemeToggle />
         </div>
       )}
 
@@ -1248,12 +1253,16 @@ const Index = () => {
                       key={i}
                       className="aspect-square rounded-full relative overflow-hidden"
                       style={{
-                        backgroundColor: c || NEUTRAL,
+                        backgroundColor: shapesMode && c ? '#FFFFFF' : (c || NEUTRAL),
                         width: '100%',
-                        border: c?.toUpperCase() === '#FFFFFF' ? '2px solid rgb(209, 213, 219)' : undefined,
+                        border:
+                          (shapesMode && c) || c?.toUpperCase() === '#FFFFFF'
+                            ? '2px solid rgb(209, 213, 219)'
+                            : undefined,
                       }}
                     >
                       {a11y && <PatternOverlay colorHex={c} size="100%" />}
+                      {shapesMode && <ShapeOverlay colorHex={c} />}
                     </div>
                   ))}
                 </div>
