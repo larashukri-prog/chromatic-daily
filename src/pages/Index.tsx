@@ -1253,12 +1253,16 @@ const Index = () => {
                       key={i}
                       className="aspect-square rounded-full relative overflow-hidden"
                       style={{
-                        backgroundColor: c || NEUTRAL,
+                        backgroundColor: shapesMode && c ? '#FFFFFF' : (c || NEUTRAL),
                         width: '100%',
-                        border: c?.toUpperCase() === '#FFFFFF' ? '2px solid rgb(209, 213, 219)' : undefined,
+                        border:
+                          (shapesMode && c) || c?.toUpperCase() === '#FFFFFF'
+                            ? '2px solid rgb(209, 213, 219)'
+                            : undefined,
                       }}
                     >
                       {a11y && <PatternOverlay colorHex={c} size="100%" />}
+                      {shapesMode && <ShapeOverlay colorHex={c} />}
                     </div>
                   ))}
                 </div>
