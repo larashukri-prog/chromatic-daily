@@ -187,6 +187,14 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Focus + Stars stat card - moved to bottom */}
         <div className="px-6 pt-4 pb-6">
           <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
+            {stats && stats.roundsPlayed > 0 && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3 pb-3 border-b border-border/60 text-left">
+                <MetricRow label="Consistency" value={`${consistency}%`} />
+                <MetricRow label="Reflex Avg" value={reflexLabel} />
+                <MetricRow label="Peak" value={peakLabel} />
+                <MetricRow label="Decoded" value={`${tilesDecoded} tiles`} />
+              </div>
+            )}
             <p className="text-sm text-foreground">
               You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
             </p>
