@@ -511,7 +511,6 @@ export function generateShareText(
   }
 
   lines.push(`⭐️ Speed Stars: ${starsEarned}`);
-  lines.push(`🧠 Focus: ${Math.round(totalFocusSeconds)}s`);
 
   if (metrics) {
     const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
