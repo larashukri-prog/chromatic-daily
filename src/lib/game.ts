@@ -509,20 +509,14 @@ export function generateShareText(
   } else {
     lines.push('Better luck tomorrow!');
   }
-
-  lines.push('');
   lines.push(`⭐️ Speed Stars: ${starsEarned}`);
-  lines.push('');
 
   if (metrics) {
     const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
     const peak = metrics.peak ? `${metrics.peak.tiles} in ${metrics.peak.seconds.toFixed(1)}s` : '—';
     lines.push(`🎯 Consistency: ${metrics.consistency}%`);
-    lines.push('');
     lines.push(`⚡ Reflex Avg: ${reflex}`);
-    lines.push('');
     lines.push(`👑 Peak: ${peak}`);
-    lines.push('');
     lines.push(`🧩 Decoded: ${metrics.tilesDecoded} tiles`);
   }
 
