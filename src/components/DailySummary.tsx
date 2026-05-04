@@ -7,6 +7,7 @@ import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
+import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
   rounds: RoundData[];
@@ -20,6 +21,7 @@ interface DailySummaryProps {
   colorCount: number;
   starsEarned: number;
   totalFocusSeconds: number;
+  stats?: SessionStats;
 }
 
 function getDifficultyName(colorCount: number): string {
@@ -36,8 +38,22 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Derived metrics for the bottom block.
+  const consistency = stats && stats.roundsPlayed
+    ? Math.round((stats.totalCorrect / stats.roundsPlayed) * 100)
+    : 0;
+  const sortedTimes = stats ? [...stats.correctTimes].sort((a, b) => a - b).slice(0, 3) : [];
+  const reflexAvg = sortedTimes.length
+    ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
+    : null;
+  const reflexLabel = reflexAvg !== null ? `${reflexAvg.toFixed(2)}s` : '—';
+  const peakLabel = stats?.peakComplexity
+    ? `${stats.peakComplexity.tiles} in ${stats.peakComplexity.seconds.toFixed(1)}s`
+    : '—';
+  const tilesDecoded = stats?.tilesDecoded ?? 0;
 
   // Flatten all attempts across rounds into individual slides
   const slides: AttemptSlide[] = [];
