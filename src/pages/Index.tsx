@@ -101,9 +101,16 @@ const Index = () => {
 
   // --- Practice Mode Session Stats ---
   const initialStats: SessionStats = {
-    roundsPlayed: 0, bestSpeed: 0, totalCorrect: 0, totalAttempts: 0, currentStreak: 0, longestStreak: 0,
+    roundsPlayed: 0,
+    totalCorrect: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    correctTimes: [],
+    tilesDecoded: 0,
+    peakComplexity: null,
   };
   const [sessionStats, setSessionStats] = useState<SessionStats>(initialStats);
+  const [dailyStats, setDailyStats] = useState<SessionStats>(initialStats);
   const [showSessionReport, setShowSessionReport] = useState(false);
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
@@ -198,6 +205,7 @@ const Index = () => {
       setStarsEarned(0);
       setTotalFocusSeconds(0);
       setSavedRounds([]);
+      setDailyStats(initialStats);
       setRoundIndex(0);
       setAttemptInRound(1);
       const { solution: sol, activeColors: ac } = generateSolution(0);
@@ -480,24 +488,41 @@ const Index = () => {
     setIsCorrect(correct);
     setVerifying(true);
 
+    const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
+    const correctTilesThisRound = res.filter(Boolean).length;
+    const updateStats = (prev: SessionStats): SessionStats => {
+      const newRoundsPlayed = prev.roundsPlayed + 1;
+      const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
+      const newCorrectTimes = correct ? [...prev.correctTimes, recallSeconds] : prev.correctTimes;
+      const newTilesDecoded = correct ? prev.tilesDecoded + correctTilesThisRound : prev.tilesDecoded;
+      let newPeak = prev.peakComplexity;
+      if (correct) {
+        const tiles = effectiveColorCount;
+        if (
+          !newPeak ||
+          tiles > newPeak.tiles ||
+          (tiles === newPeak.tiles && recallSeconds < newPeak.seconds)
+        ) {
+          newPeak = { tiles, seconds: recallSeconds };
+        }
+      }
+      return {
+        roundsPlayed: newRoundsPlayed,
+        totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
+        currentStreak: newCurrentStreak,
+        longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
+        correctTimes: newCorrectTimes,
+        tilesDecoded: newTilesDecoded,
+        peakComplexity: newPeak,
+      };
+    };
+
     if (isFreeplay) {
-      // Track session stats
-      const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
       let milestoneHit = false;
       setSessionStats((prev) => {
-        const newRoundsPlayed = prev.roundsPlayed + 1;
-        const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
-        if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) milestoneHit = true;
-        return {
-          roundsPlayed: newRoundsPlayed,
-          bestSpeed: correct
-            ? (prev.bestSpeed === 0 ? recallSeconds : Math.min(prev.bestSpeed, recallSeconds))
-            : prev.bestSpeed,
-          totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
-          totalAttempts: prev.totalAttempts + 1,
-          currentStreak: newCurrentStreak,
-          longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
-        };
+        const next = updateStats(prev);
+        if (next.roundsPlayed > 0 && next.roundsPlayed % 10 === 0) milestoneHit = true;
+        return next;
       });
 
       // Freeplay: no save, no DDA, no localStorage
@@ -519,6 +544,9 @@ const Index = () => {
       }, 1500);
       return;
     }
+
+    // Daily mode — accumulate the same metrics for the daily summary.
+    setDailyStats(updateStats);
 
     // Daily mode verification
     const newTotalUsed = totalAttemptsUsed + 1;
@@ -745,15 +773,22 @@ const Index = () => {
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setCountdown(null);
 
-    const accuracy = sessionStats.totalAttempts
-      ? Math.round((sessionStats.totalCorrect / sessionStats.totalAttempts) * 100)
+    const consistency = sessionStats.roundsPlayed
+      ? Math.round((sessionStats.totalCorrect / sessionStats.roundsPlayed) * 100)
+      : 0;
+    const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+    const reflexAvg = sortedTimes.length
+      ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
       : 0;
 
     if (posthog.__loaded) {
       posthog.capture('practice_results_viewed', {
         rounds_played: sessionStats.roundsPlayed,
-        best_speed: sessionStats.bestSpeed,
-        accuracy,
+        reflex_avg_seconds: reflexAvg,
+        consistency,
+        tiles_decoded: sessionStats.tilesDecoded,
+        peak_complexity_tiles: sessionStats.peakComplexity?.tiles ?? 0,
+        peak_complexity_seconds: sessionStats.peakComplexity?.seconds ?? 0,
         longest_streak: sessionStats.longestStreak,
       });
     }
@@ -781,9 +816,14 @@ const Index = () => {
 
   const shareSession = useCallback(() => {
     if (posthog.__loaded) {
+      const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+      const reflexAvg = sortedTimes.length
+        ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
+        : 0;
       posthog.capture('practice_card_shared', {
         rounds_played: sessionStats.roundsPlayed,
-        best_speed: sessionStats.bestSpeed,
+        reflex_avg_seconds: reflexAvg,
+        tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
     }
@@ -914,6 +954,7 @@ const Index = () => {
           colorCount={baseColorCount}
           starsEarned={starsEarned}
           totalFocusSeconds={totalFocusSeconds}
+          stats={dailyStats}
         />
       ) : (
         <>

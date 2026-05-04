@@ -7,6 +7,7 @@ import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
+import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
   rounds: RoundData[];
@@ -20,6 +21,7 @@ interface DailySummaryProps {
   colorCount: number;
   starsEarned: number;
   totalFocusSeconds: number;
+  stats?: SessionStats;
 }
 
 function getDifficultyName(colorCount: number): string {
@@ -36,8 +38,22 @@ interface AttemptSlide {
   roundIndex: number;
 }
 
-export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds }: DailySummaryProps) {
+export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Derived metrics for the bottom block.
+  const consistency = stats && stats.roundsPlayed
+    ? Math.round((stats.totalCorrect / stats.roundsPlayed) * 100)
+    : 0;
+  const sortedTimes = stats ? [...stats.correctTimes].sort((a, b) => a - b).slice(0, 3) : [];
+  const reflexAvg = sortedTimes.length
+    ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
+    : null;
+  const reflexLabel = reflexAvg !== null ? `${reflexAvg.toFixed(2)}s` : '—';
+  const peakLabel = stats?.peakComplexity
+    ? `${stats.peakComplexity.tiles} in ${stats.peakComplexity.seconds.toFixed(1)}s`
+    : '—';
+  const tilesDecoded = stats?.tilesDecoded ?? 0;
 
   // Flatten all attempts across rounds into individual slides
   const slides: AttemptSlide[] = [];
@@ -171,6 +187,14 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Focus + Stars stat card - moved to bottom */}
         <div className="px-6 pt-4 pb-6">
           <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
+            {stats && stats.roundsPlayed > 0 && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3 pb-3 border-b border-border/60 text-left">
+                <MetricRow label="Consistency" value={`${consistency}%`} />
+                <MetricRow label="Reflex Avg" value={reflexLabel} />
+                <MetricRow label="Peak" value={peakLabel} />
+                <MetricRow label="Decoded" value={`${tilesDecoded} tiles`} />
+              </div>
+            )}
             <p className="text-sm text-foreground">
               You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
             </p>
@@ -343,6 +367,15 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold text-foreground tabular-nums">{value}</span>
     </div>
   );
 }
