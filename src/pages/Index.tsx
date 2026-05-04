@@ -772,15 +772,22 @@ const Index = () => {
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setCountdown(null);
 
-    const accuracy = sessionStats.totalAttempts
-      ? Math.round((sessionStats.totalCorrect / sessionStats.totalAttempts) * 100)
+    const consistency = sessionStats.roundsPlayed
+      ? Math.round((sessionStats.totalCorrect / sessionStats.roundsPlayed) * 100)
+      : 0;
+    const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+    const reflexAvg = sortedTimes.length
+      ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
       : 0;
 
     if (posthog.__loaded) {
       posthog.capture('practice_results_viewed', {
         rounds_played: sessionStats.roundsPlayed,
-        best_speed: sessionStats.bestSpeed,
-        accuracy,
+        reflex_avg_seconds: reflexAvg,
+        consistency,
+        tiles_decoded: sessionStats.tilesDecoded,
+        peak_complexity_tiles: sessionStats.peakComplexity?.tiles ?? 0,
+        peak_complexity_seconds: sessionStats.peakComplexity?.seconds ?? 0,
         longest_streak: sessionStats.longestStreak,
       });
     }
@@ -808,9 +815,14 @@ const Index = () => {
 
   const shareSession = useCallback(() => {
     if (posthog.__loaded) {
+      const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+      const reflexAvg = sortedTimes.length
+        ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
+        : 0;
       posthog.capture('practice_card_shared', {
         rounds_played: sessionStats.roundsPlayed,
-        best_speed: sessionStats.bestSpeed,
+        reflex_avg_seconds: reflexAvg,
+        tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
     }
