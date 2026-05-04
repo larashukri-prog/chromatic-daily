@@ -48,56 +48,22 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     ? `${stats.peakComplexity.tiles} in ${stats.peakComplexity.seconds.toFixed(1)}s`
     : '—';
   const cardRef = useRef<HTMLDivElement>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const handleShareCard = async () => {
-    if (!cardRef.current || isCapturing) return;
+    if (isCapturing) return;
     setIsCapturing(true);
-    const cardEl = cardRef.current;
-    // Save originals so we can restore after capture.
-    const prevWidth = cardEl.style.width;
-    const prevMaxWidth = cardEl.style.maxWidth;
-    const prevWebkitSmoothing = (cardEl.style as any).webkitFontSmoothing as string;
-    const prevMozSmoothing = (cardEl.style as any).MozOsxFontSmoothing as string;
     try {
-      // Yield once so React commits the spinner/disabled state before heavy work runs.
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-      // Lock card to a fixed width so the snapshot doesn't reflow at higher pixel ratios.
-      cardEl.style.width = '420px';
-      cardEl.style.maxWidth = '420px';
-      (cardEl.style as any).webkitFontSmoothing = 'antialiased';
-      (cardEl.style as any).MozOsxFontSmoothing = 'grayscale';
-
-      // Wait two frames so DOM reflects hidden buttons + visible footer.
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      );
-
-      // Default to 3x for crisp retina output; downshift to 2x on lower-end devices
-      // or after we've recorded a slow capture in this session.
-      const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const lowMemory =
-        ((navigator as any).deviceMemory ?? 8) <= 4 ||
-        (navigator.hardwareConcurrency ?? 8) <= 4;
-      const lowResFlag =
-        typeof sessionStorage !== 'undefined' &&
-        sessionStorage.getItem('chromatic:lowResShare') === '1';
-      const pixelRatio = lowResFlag || (isMobileUA && lowMemory) ? 2 : 3;
-
-      const t0 = performance.now();
-      const dataUrl = await htmlToImage.toPng(cardEl, {
-        pixelRatio,
+      // Wait one paint so the off-screen capture node is in the DOM.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const node = captureRef.current;
+      if (!node) throw new Error('Capture node not mounted');
+      const dataUrl = await htmlToImage.toPng(node, {
+        pixelRatio: 3,
         cacheBust: true,
         backgroundColor: '#ffffff',
       });
-      const elapsed = performance.now() - t0;
-      if (pixelRatio === 3 && elapsed > 1500) {
-        try {
-          sessionStorage.setItem('chromatic:lowResShare', '1');
-        } catch {}
-        console.info(`[Chromatic] Share capture ${elapsed.toFixed(0)}ms — downshifting to 2x next time.`);
-      }
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'Chromatic_Practice_Results.png', { type: 'image/png' });
 
@@ -136,11 +102,6 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     } catch (err) {
       console.error('[Chromatic] Share card failed:', err);
     } finally {
-      // Restore card styles regardless of success/failure.
-      cardEl.style.width = prevWidth;
-      cardEl.style.maxWidth = prevMaxWidth;
-      (cardEl.style as any).webkitFontSmoothing = prevWebkitSmoothing ?? '';
-      (cardEl.style as any).MozOsxFontSmoothing = prevMozSmoothing ?? '';
       setIsCapturing(false);
     }
   };
@@ -236,26 +197,101 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
           </button>
         </div>
 
-        {isCapturing && (
-          <div className="flex items-center justify-center gap-2 pt-2 mt-2 border-t border-border">
+      </motion.div>
+
+      {isCapturing && (
+        <div
+          ref={captureRef}
+          style={{
+            position: 'fixed',
+            left: '-10000px',
+            top: 0,
+            width: '420px',
+            padding: '24px',
+            background: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '16px',
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            WebkitFontSmoothing: 'antialiased',
+            color: '#111',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
+              Practice Session Complete
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>
+              {getInsight(stats)}
+            </div>
+          </div>
+
+          {[
+            { Icon: Target, label: 'Rounds', value: String(stats.roundsPlayed) },
+            { Icon: Zap, label: 'Reflex Avg', value: reflexLabel },
+            { Icon: Crown, label: 'Peak', value: peakLabel },
+            { Icon: Brain, label: 'Decoded', value: String(stats.tilesDecoded) },
+          ].map(({ Icon, label, value }) => (
+            <div
+              key={label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                marginBottom: '8px',
+              }}
+            >
+              <Icon style={{ width: 18, height: 18, flexShrink: 0, color: '#6b7280' }} />
+              <span style={{ flexShrink: 0, fontWeight: 600, fontSize: 18, color: '#111' }}>
+                {value}
+              </span>
+              <span
+                style={{
+                  flexShrink: 0,
+                  marginLeft: 'auto',
+                  fontSize: 10,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: '#6b7280',
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              marginTop: 16,
+              paddingTop: 12,
+              borderTop: '1px solid #e5e7eb',
+            }}
+          >
             <img
               src="/share-logo.png"
-              alt="Chromatic"
-              className="h-6 w-auto"
+              alt=""
+              style={{ height: 20, flexShrink: 0 }}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
               }}
             />
-            <span
-              className="text-foreground text-sm"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}
-            >
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#111', flexShrink: 0 }}>
               ChromaticDaily
             </span>
-            <span className="text-muted-foreground text-xs">· chromatic-daily.lovable.app</span>
+            <span style={{ fontSize: 11, color: '#6b7280', flexShrink: 0 }}>
+              · chromatic-daily.lovable.app
+            </span>
           </div>
-        )}
-      </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
