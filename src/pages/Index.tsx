@@ -1235,8 +1235,8 @@ const Index = () => {
                   <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">Peak Complexity</p>
-                  <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
+                  <p className="font-medium text-foreground mb-1">Tiles Decoded</p>
+                  <p>Your total mental volume. A cumulative count of every correct tile placed, tracking your sustained endurance and "Brain Mileage."</p>
                 </div>
               </div>
             </div>
