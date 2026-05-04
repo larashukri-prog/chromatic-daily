@@ -1223,20 +1223,20 @@ const Index = () => {
               <p className="font-semibold text-foreground mb-2 text-base">Performance Metrics</p>
               <div className="space-y-3">
                 <div>
-                  <p className="font-medium text-foreground mb-1">Neural Match (Accuracy)</p>
-                  <p>This measures your retention precision. Unlike a simple pass/fail, it tracks how perfectly you recreated the chromatic spectrum. Achieve a 100% match to reach the Mastered State.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground mb-1">Speed Star ⭐️ (Reflexes)</p>
+                  <p className="font-medium text-foreground mb-1">⭐️ Speed Star (Reflexes)</p>
                   <p>Awarded for rapid encoding. If you hit 'Ready' before the internal threshold and win the round, you earn a star. It proves you can capture a complex visual field in an instant.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">Deep Focus Tracking (Stamina)</p>
-                  <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
+                  <p className="font-medium text-foreground mb-1">🎯 Consistency</p>
+                  <p>Your reliability under pressure. The percentage of rounds successfully completed. Aim for 100% to reach the Mastered State.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">Tiles Decoded</p>
-                  <p>Your total mental volume. A cumulative count of every correct tile placed, tracking your sustained endurance and "Brain Mileage."</p>
+                  <p className="font-medium text-foreground mb-1">⚡ Reflex Average</p>
+                  <p>Your true "Flow State" speed. This calculates the average of your 3 fastest correct rounds to measure your sustainable pace.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a round—essential training for the 9-tile Weekend Challenge.</p>
                 </div>
               </div>
             </div>
