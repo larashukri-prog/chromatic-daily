@@ -205,6 +205,7 @@ const Index = () => {
       setStarsEarned(0);
       setTotalFocusSeconds(0);
       setSavedRounds([]);
+      setDailyStats(initialStats);
       setRoundIndex(0);
       setAttemptInRound(1);
       const { solution: sol, activeColors: ac } = generateSolution(0);
