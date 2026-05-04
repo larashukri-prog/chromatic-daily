@@ -195,13 +195,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
                 <MetricRow label="Decoded" value={`${tilesDecoded} tiles`} />
               </div>
             )}
-            <p className="text-sm text-foreground">
-              You focused for <span className="font-semibold">{Math.round(totalFocusSeconds)}</span> seconds today.
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Your neural pathways are strengthening.
-            </p>
-            <div className="flex items-center justify-center gap-1.5 mt-2">
+            <div className="flex items-center justify-center gap-1.5">
               <span className="text-base">⭐️</span>
               <span className="text-xs font-semibold text-foreground">× {starsEarned}</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider ml-1">
