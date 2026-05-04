@@ -2,16 +2,26 @@ import { motion } from 'framer-motion';
 import { useRef, useState } from 'react';
 import * as htmlToImage from 'html-to-image';
 import { Button } from '@/components/ui/button';
-import { Target, Zap, Eye, Trophy, Share2, Loader2 } from 'lucide-react';
+import { Target, Zap, Crown, Brain, Share2, Loader2 } from 'lucide-react';
 
 export type SessionStats = {
   roundsPlayed: number;
-  bestSpeed: number;
   totalCorrect: number;
-  totalAttempts: number;
   currentStreak: number;
   longestStreak: number;
+  /** recallSeconds for each correct round (in order). */
+  correctTimes: number[];
+  /** Cumulative correctly-placed tiles across all successful rounds. */
+  tilesDecoded: number;
+  /** Largest successful round in the session (tie-broken by faster time). */
+  peakComplexity: { tiles: number; seconds: number } | null;
 };
+
+function computeReflexAvg(times: number[]): number | null {
+  if (!times.length) return null;
+  const sorted = [...times].sort((a, b) => a - b).slice(0, 3);
+  return sorted.reduce((s, n) => s + n, 0) / sorted.length;
+}
 
 interface SessionReportProps {
   stats: SessionStats;
@@ -22,16 +32,21 @@ interface SessionReportProps {
 }
 
 function getInsight(s: SessionStats): string {
-  const accuracy = s.totalAttempts ? (s.totalCorrect / s.totalAttempts) * 100 : 0;
-  if (s.bestSpeed > 0 && s.bestSpeed < 1.0) return "Elite reflexes. You're ready for the Daily Challenge.";
-  if (accuracy > 95) return "Incredible focus. You're in the zone.";
+  const consistency = s.roundsPlayed ? (s.totalCorrect / s.roundsPlayed) * 100 : 0;
+  const reflex = computeReflexAvg(s.correctTimes);
+  if (reflex !== null && reflex < 1.0) return "Elite reflexes. You're ready for the Daily Challenge.";
+  if (consistency > 95) return "Incredible focus. You're in the zone.";
   if (s.longestStreak > 10) return 'Great rhythm! Your consistency is improving.';
   return "You're getting faster! Your reaction time is peaking.";
 }
 
 export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu }: SessionReportProps) {
-  const accuracy = stats.totalAttempts ? Math.round((stats.totalCorrect / stats.totalAttempts) * 100) : 0;
-  const speedLabel = stats.bestSpeed > 0 ? `${stats.bestSpeed.toFixed(2)}s` : '—';
+  const consistency = stats.roundsPlayed ? Math.round((stats.totalCorrect / stats.roundsPlayed) * 100) : 0;
+  const reflexAvg = computeReflexAvg(stats.correctTimes);
+  const reflexLabel = reflexAvg !== null ? `${reflexAvg.toFixed(2)}s` : '—';
+  const peakLabel = stats.peakComplexity
+    ? `${stats.peakComplexity.tiles} in ${stats.peakComplexity.seconds.toFixed(1)}s`
+    : '—';
   const cardRef = useRef<HTMLDivElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
@@ -89,8 +104,8 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
       onShare?.();
 
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const peak = stats.bestSpeed > 0 ? `${stats.bestSpeed.toFixed(2)}s` : '—';
-      const caption = `My Chromatic Practice Stats ⚡️\nRounds: ${stats.roundsPlayed} · Streak: ${stats.longestStreak} · Peak: ${peak}\n\nhttps://chromatic-daily.lovable.app`;
+      const reflex = reflexAvg !== null ? `${reflexAvg.toFixed(2)}s` : '—';
+      const caption = `My Chromatic Practice Stats ⚡️\nRounds: ${stats.roundsPlayed} · Consistency: ${consistency}% · Reflex: ${reflex}\n\nhttps://chromatic-daily.lovable.app`;
 
       const canShareFiles =
         typeof navigator !== 'undefined' &&
@@ -130,10 +145,25 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     }
   };
 
-  const StatCard = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) => (
+  const StatCard = ({
+    icon: Icon,
+    label,
+    value,
+    valueClassName,
+  }: {
+    icon: any;
+    label: string;
+    value: string | number;
+    valueClassName?: string;
+  }) => (
     <div className="bg-card/70 border border-border rounded-xl p-3 flex flex-col items-center gap-1">
-      <Icon className="w-4 h-4 text-muted-foreground" />
-      <div className="text-xl font-semibold text-foreground" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{value}</div>
+      <Icon className={`w-4 h-4 text-muted-foreground ${isCapturing ? 'hidden' : ''}`} />
+      <div
+        className={`font-semibold text-foreground ${valueClassName ?? 'text-xl'}`}
+        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+      >
+        {value}
+      </div>
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
     </div>
   );
@@ -165,10 +195,10 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-5">
-          <StatCard icon={Target} label="Rounds" value={stats.roundsPlayed} />
-          <StatCard icon={Zap} label="Top Speed" value={speedLabel} />
-          <StatCard icon={Trophy} label="Wins" value={stats.totalCorrect} />
-          <StatCard icon={Eye} label="Focus" value={`${accuracy}%`} />
+          <StatCard icon={Target} label="Consistency" value={`${consistency}%`} />
+          <StatCard icon={Zap} label="Reflex Avg" value={reflexLabel} />
+          <StatCard icon={Crown} label="Peak" value={peakLabel} valueClassName="text-base" />
+          <StatCard icon={Brain} label="Decoded" value={stats.tilesDecoded} />
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
