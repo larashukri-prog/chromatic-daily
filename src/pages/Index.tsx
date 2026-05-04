@@ -1235,8 +1235,8 @@ const Index = () => {
                   <p>Your true "Flow State" speed. This calculates the average of your 3 fastest correct rounds to measure your sustainable pace.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a round—essential training for the 9-tile Weekend Challenge.</p>
+                  <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
+                  <p>Your total mental volume. A cumulative count of every correct tile placed, tracking your sustained endurance and "Brain Mileage."</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
