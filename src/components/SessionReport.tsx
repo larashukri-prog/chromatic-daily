@@ -287,9 +287,9 @@ function buildShareCardNode(data: {
       ${stat(ICONS.peak, data.peak, 'Peak', 16)}
       ${stat(ICONS.decoded, data.decoded, 'Decoded')}
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding-top:14px;border-top:1px solid #e5e7eb;">
+    <div style="text-align:center;padding-top:14px;border-top:1px solid #e5e7eb;white-space:nowrap;">
       <span style="font-family:${SERIF};font-weight:700;font-size:14px;color:#111;">ChromaticDaily</span>
-      <span style="font-size:11px;color:#6b7280;">\u00b7 chromatic-daily.lovable.app</span>
+      <span style="font-size:11px;color:#6b7280;margin-left:8px;">· chromatic-daily.lovable.app</span>
     </div>
   `;
   return root;
