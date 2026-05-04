@@ -437,6 +437,12 @@ export function generateShareText(
   rounds: RoundData[],
   starsEarned: number = 0,
   totalFocusSeconds: number = 0,
+  metrics?: {
+    consistency: number;
+    reflexAvg: number | null;
+    peak: { tiles: number; seconds: number } | null;
+    tilesDecoded: number;
+  },
 ): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
@@ -506,6 +512,16 @@ export function generateShareText(
 
   lines.push(`⭐️ Speed Stars: ${starsEarned}`);
   lines.push(`🧠 Focus: ${Math.round(totalFocusSeconds)}s`);
+
+  if (metrics) {
+    const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
+    const peak = metrics.peak ? `${metrics.peak.tiles} in ${metrics.peak.seconds.toFixed(1)}s` : '—';
+    lines.push('');
+    lines.push(`🎯 Consistency: ${metrics.consistency}%`);
+    lines.push(`⚡ Reflex Avg: ${reflex}`);
+    lines.push(`👑 Peak: ${peak}`);
+    lines.push(`🧩 Decoded: ${metrics.tilesDecoded} tiles`);
+  }
 
   lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');
