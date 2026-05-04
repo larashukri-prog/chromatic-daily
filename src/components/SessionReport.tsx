@@ -201,13 +201,14 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
 
       </motion.div>
 
-      {isCapturing && (
-        <div
-          ref={captureRef}
-          style={{
-            position: 'fixed',
-            left: '-10000px',
-            top: 0,
+      <div
+        aria-hidden
+        ref={captureRef}
+        style={{
+          position: 'fixed',
+          left: '-10000px',
+          top: 0,
+          pointerEvents: 'none',
             width: '420px',
             padding: '24px',
             background: '#ffffff',
@@ -292,8 +293,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
               · chromatic-daily.lovable.app
             </span>
           </div>
-        </div>
-      )}
+      </div>
     </motion.div>
   );
 }
