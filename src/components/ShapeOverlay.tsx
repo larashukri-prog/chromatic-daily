@@ -1,12 +1,13 @@
 import {
-  FaHeart, FaStar, FaCat, FaTree, FaMoon, FaCircle, FaSquare,
+  FaHeart, FaStar, FaCat, FaTree, FaMoon,
   FaFish, FaGhost, FaDroplet, FaSnowflake,
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 
-// 1:1 hex → icon mapping. Order tracks COLORS in src/lib/game.ts plus the two anchors.
-// Circle/Square reserved for Black/White anchors. FaSun/FaSnowflake added so all 9
-// chromatic colors get a unique shape.
+// 1:1 hex → icon mapping for the 9 chromatic colors.
+// Black and White anchors intentionally have no icon — they render as
+// solid black / solid white cells to match Colors mode and reduce
+// cognitive load in Shapes mode.
 export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#EF4444': FaHeart,      // Red
   '#FDE047': FaStar,       // Yellow
@@ -17,8 +18,6 @@ export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#3F6212': FaGhost,      // Dark Green
   '#F198C4': FaDroplet,    // Pink
   '#2563EB': FaSnowflake,  // Blue
-  '#000000': FaCircle,     // Black anchor
-  '#FFFFFF': FaSquare,     // White anchor
 };
 
 interface ShapeOverlayProps {
