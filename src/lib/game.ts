@@ -510,7 +510,9 @@ export function generateShareText(
     lines.push('Better luck tomorrow!');
   }
 
+  lines.push('');
   lines.push(`⭐️ Speed Stars: ${starsEarned}`);
+  lines.push('');
 
   if (metrics) {
     const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
