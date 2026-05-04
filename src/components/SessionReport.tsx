@@ -246,38 +246,47 @@ function buildShareCardNode(data: {
     zIndex: '-1',
     pointerEvents: 'none',
     width: '420px',
-    padding: '24px',
+    padding: '28px',
     background: '#ffffff',
     border: '1px solid #e5e7eb',
-    borderRadius: '16px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    borderRadius: '20px',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+    fontFamily:
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     color: '#111111',
     boxSizing: 'border-box',
   } as CSSStyleDeclaration);
   root.setAttribute('aria-hidden', 'true');
 
+  const ICONS = {
+    rounds: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    reflex: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    peak: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.964.734H5.818a1 1 0 0 1-.965-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>`,
+    decoded: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/><path d="M18 18a4 4 0 0 0 2-7.464"/><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/><path d="M6 18a4 4 0 0 1-2-7.464"/><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/></svg>`,
+  };
+
+  const SERIF = `'Playfair Display', Georgia, 'Times New Roman', serif`;
+  const stat = (icon: string, value: string, label: string, valueSize = 22) => `
+    <div style="background:rgba(255,255,255,0.7);border:1px solid #e5e7eb;border-radius:12px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+      ${icon}
+      <div style="font-family:${SERIF};font-weight:600;font-size:${valueSize}px;color:#111;line-height:1.1;text-align:center;">${escapeHtml(value)}</div>
+      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;">${escapeHtml(label)}</div>
+    </div>`;
+
   root.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px;">
-      <div style="font-size:22px;font-weight:700;margin-bottom:6px;color:#111;">Practice Session Complete</div>
-      <div style="font-size:12px;color:#6b7280;line-height:1.5;">${escapeHtml(data.insight)}</div>
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-family:${SERIF};font-size:24px;font-weight:700;letter-spacing:-0.01em;color:#111;margin-bottom:8px;">Practice Session Complete</div>
+      <div style="font-size:12px;color:#6b7280;line-height:1.55;padding:0 12px;">${escapeHtml(data.insight)}</div>
     </div>
-    ${[
-      ['Rounds', data.rounds],
-      ['Reflex Avg', data.reflex],
-      ['Peak', data.peak],
-      ['Decoded', data.decoded],
-    ]
-      .map(
-        ([label, value]) => `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px;">
-        <span style="flex-shrink:0;font-weight:600;font-size:18px;color:#111;min-width:64px;">${escapeHtml(value)}</span>
-        <span style="flex-shrink:0;margin-left:auto;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;">${escapeHtml(label)}</span>
-      </div>`,
-      )
-      .join('')}
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">
-      <span style="font-weight:700;font-size:14px;color:#111;flex-shrink:0;">ChromaticDaily</span>
-      <span style="font-size:11px;color:#6b7280;flex-shrink:0;">· chromatic-daily.lovable.app</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+      ${stat(ICONS.rounds, data.rounds, 'Rounds')}
+      ${stat(ICONS.reflex, data.reflex, 'Reflex Avg')}
+      ${stat(ICONS.peak, data.peak, 'Peak', 16)}
+      ${stat(ICONS.decoded, data.decoded, 'Decoded')}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding-top:14px;border-top:1px solid #e5e7eb;">
+      <span style="font-family:${SERIF};font-weight:700;font-size:14px;color:#111;">ChromaticDaily</span>
+      <span style="font-size:11px;color:#6b7280;">\u00b7 chromatic-daily.lovable.app</span>
     </div>
   `;
   return root;
