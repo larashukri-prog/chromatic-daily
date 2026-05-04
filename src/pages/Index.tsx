@@ -1109,7 +1109,7 @@ const Index = () => {
             {/* Actions */}
             <div className="px-6 pb-6 flex gap-3 justify-center">
               {/* Daily idle start */}
-              {phase === 'idle' && !isFreeplay && !alreadyFinished && (
+              {phase === 'idle' && !isFreeplay && !alreadyFinished && countdown === null && (
                 <Button
                   onClick={startGame}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
