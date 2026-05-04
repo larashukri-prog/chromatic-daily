@@ -515,13 +515,16 @@ export function generateShareText(
   if (metrics) {
     const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
     const peak = metrics.peak ? `${metrics.peak.tiles} in ${metrics.peak.seconds.toFixed(1)}s` : '—';
-    lines.push('');
     lines.push(`🎯 Consistency: ${metrics.consistency}%`);
+    lines.push('');
     lines.push(`⚡ Reflex Avg: ${reflex}`);
+    lines.push('');
     lines.push(`👑 Peak: ${peak}`);
+    lines.push('');
     lines.push(`🧩 Decoded: ${metrics.tilesDecoded} tiles`);
   }
 
+  lines.push('');
   lines.push('Play Chromatic: https://chromatic-daily.lovable.app');
   return lines.join('\n');
 }
