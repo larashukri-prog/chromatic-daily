@@ -1,22 +1,30 @@
-## Problem
-On a user's first daily game, tapping "Start" triggers a 3-2-1 countdown before observation begins. The Start button stays visible during the countdown (because `phase` is still `'idle'`), so it can be tapped again, restarting the countdown.
+# Fix: Show icons AND branded footer in shared Practice Session PNG
 
-## Fix
-In `src/pages/Index.tsx` (~line 1112), update the daily idle Start button condition to also check that no countdown is running — matching the pattern already used by the freeplay Start button just below it.
+## Why icons are missing today
+In `src/components/SessionReport.tsx`, `StatCard` renders its lucide icon with `${isCapturing ? 'hidden' : ''}`. When Share Card is tapped, `isCapturing` flips to `true` right before `html-to-image` snapshots the card, so the four icons (Target, Zap, Crown, Brain) get hidden along with the buttons. The branded footer ("ChromaticDaily · chromatic-daily.lovable.app") is already shown only during capture — that part works.
 
-Change:
-```tsx
-{phase === 'idle' && !isFreeplay && !alreadyFinished && (
-```
-to:
-```tsx
-{phase === 'idle' && !isFreeplay && !alreadyFinished && countdown === null && (
-```
+## Changes
+
+**File:** `src/components/SessionReport.tsx`
+
+1. **Keep icons visible during capture.** In `StatCard` (around line 160), drop the `isCapturing` toggle from the Icon className:
+
+   ```tsx
+   // Before
+   <Icon className={`w-4 h-4 text-muted-foreground ${isCapturing ? 'hidden' : ''}`} />
+
+   // After
+   <Icon className="w-4 h-4 text-muted-foreground" />
+   ```
+
+2. **Make sure the branded footer is captured cleanly.** It already renders when `isCapturing` is true, so it will appear in the PNG. Two small hardening tweaks so it never renders blank:
+   - Confirm `/share-logo.png` exists in `public/`. If it does not, the `onError` handler hides the `<img>` and only the wordmark is captured — fine, but worth verifying.
+   - The capture already waits two animation frames after toggling `isCapturing`, so the footer is in the DOM before `html-to-image.toPng` runs. No change needed there.
+
+Buttons (Resume / Share / Restart / Main Menu) keep hiding during capture — that's correct, they're interactive UI we don't want in the shareable image.
 
 ## Result
-- During the 3-2-1 countdown the Start button is hidden, so it cannot be tapped again.
-- The countdown itself remains unchanged (still only triggered on the first-ever play, per existing logic).
-- Freeplay Start behavior is unchanged (already hides during countdown).
-
-## Files touched
-- `src/pages/Index.tsx` — single condition update on the daily Start button.
+The shared PNG will show:
+- Each stat's icon above its value (Target, Zap, Crown, Brain)
+- The branded "ChromaticDaily · chromatic-daily.lovable.app" footer at the bottom
+- No buttons or interactive links
