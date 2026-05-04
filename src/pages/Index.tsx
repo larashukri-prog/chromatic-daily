@@ -489,7 +489,7 @@ const Index = () => {
     setVerifying(true);
 
     const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
-    const correctTilesThisRound = res.filter(Boolean).length;
+    const correctTilesThisRound = solution.reduce((n, c, i) => n + (c !== null && res[i] ? 1 : 0), 0);
     const updateStats = (prev: SessionStats): SessionStats => {
       const newRoundsPlayed = prev.roundsPlayed + 1;
       const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
