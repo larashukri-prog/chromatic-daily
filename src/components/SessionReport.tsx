@@ -266,11 +266,14 @@ function buildShareCardNode(data: {
   };
 
   const SERIF = `'Playfair Display', Georgia, 'Times New Roman', serif`;
+  // Note: avoid flex `gap` — html-to-image rasterizes via foreignObject and
+  // gap collapses when a child wraps, causing the label to slide under the value.
+  // Use explicit margins + white-space:nowrap to keep rows from overlapping.
   const stat = (icon: string, value: string, label: string, valueSize = 22) => `
-    <div style="background:rgba(255,255,255,0.7);border:1px solid #e5e7eb;border-radius:12px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;">
-      ${icon}
-      <div style="font-family:${SERIF};font-weight:600;font-size:${valueSize}px;color:#111;line-height:1.1;text-align:center;">${escapeHtml(value)}</div>
-      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;">${escapeHtml(label)}</div>
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 10px;text-align:center;">
+      <div style="margin-bottom:8px;line-height:0;">${icon}</div>
+      <div style="font-family:${SERIF};font-weight:600;font-size:${valueSize}px;color:#111;line-height:1.15;margin-bottom:8px;white-space:nowrap;">${escapeHtml(value)}</div>
+      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;line-height:1.2;white-space:nowrap;">${escapeHtml(label)}</div>
     </div>`;
 
   root.innerHTML = `
