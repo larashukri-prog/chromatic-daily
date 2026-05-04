@@ -97,7 +97,9 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, '_blank');
+        // Copy caption to clipboard so user can paste it alongside the saved PNG.
+        // (wa.me redirects to api.whatsapp.com which is blocked in embedded/iframe contexts.)
+        try { await navigator.clipboard?.writeText(caption); } catch {}
       }
     } catch (err) {
       console.error('[Chromatic] Share card failed:', err);
