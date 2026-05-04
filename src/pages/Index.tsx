@@ -1001,8 +1001,13 @@ const Index = () => {
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap">
                   {pickerColors.map((c) => {
-                    const isWhite = c.hex.toUpperCase() === '#FFFFFF';
-                    const showAsWhite = shapesMode || isWhite;
+                    const upHex = c.hex.toUpperCase();
+                    const isWhite = upHex === '#FFFFFF';
+                    const isBlack = upHex === '#000000';
+                    // In shapes mode, anchors keep their true fill (black/white);
+                    // chromatic colors render on white with a shape overlay.
+                    const bg = shapesMode ? (isBlack ? '#000000' : '#FFFFFF') : c.hex;
+                    const showAsWhite = (shapesMode && !isBlack) || isWhite;
                     return (
                     <button
                       key={c.hex}
@@ -1024,10 +1029,10 @@ const Index = () => {
                       className={cn(
                         "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
                         "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
-                        !showAsWhite && "border border-muted-foreground/50"
+                        !showAsWhite && !isBlack && "border border-muted-foreground/50"
                       )}
                       style={{
-                        backgroundColor: shapesMode ? '#FFFFFF' : c.hex,
+                        backgroundColor: bg,
                         border: showAsWhite ? '2px solid #D1D5DB' : undefined,
                         outline: selectedColor === c.hex
                           ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
@@ -1264,10 +1269,12 @@ const Index = () => {
                       key={i}
                       className="aspect-square rounded-full relative overflow-hidden"
                       style={{
-                        backgroundColor: shapesMode && c ? '#FFFFFF' : (c || NEUTRAL),
+                        backgroundColor: shapesMode && c
+                          ? (c.toUpperCase() === '#000000' ? '#000000' : '#FFFFFF')
+                          : (c || NEUTRAL),
                         width: '100%',
                         border:
-                          (shapesMode && c) || c?.toUpperCase() === '#FFFFFF'
+                          ((shapesMode && c && c.toUpperCase() !== '#000000') || c?.toUpperCase() === '#FFFFFF')
                             ? '2px solid rgb(209, 213, 219)'
                             : undefined,
                       }}
