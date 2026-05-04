@@ -55,14 +55,16 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     if (isCapturing) return;
     setIsCapturing(true);
     try {
-      // Wait one paint so the off-screen capture node is in the DOM.
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      // Wait two frames: 1) React commits styles, 2) browser paints them.
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      if (!captureRef.current) return;
       const node = captureRef.current;
-      if (!node) throw new Error('Capture node not mounted');
       const dataUrl = await htmlToImage.toPng(node, {
-        pixelRatio: 3,
+        pixelRatio: 2,
         cacheBust: true,
         backgroundColor: '#ffffff',
+        skipFonts: false,
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'Chromatic_Practice_Results.png', { type: 'image/png' });
@@ -206,21 +208,23 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
         ref={captureRef}
         style={{
           position: 'fixed',
-          left: '-10000px',
+          left: 0,
           top: 0,
+          opacity: 0,
           pointerEvents: 'none',
-            width: '420px',
-            padding: '24px',
-            background: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '16px',
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            WebkitFontSmoothing: 'antialiased',
-            color: '#111',
-            boxSizing: 'border-box',
-          }}
-        >
+          zIndex: -1,
+          width: '420px',
+          padding: '24px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '16px',
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          WebkitFontSmoothing: 'antialiased',
+          color: '#111',
+          boxSizing: 'border-box',
+        }}
+      >
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
               Practice Session Complete
