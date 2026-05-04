@@ -487,24 +487,41 @@ const Index = () => {
     setIsCorrect(correct);
     setVerifying(true);
 
+    const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
+    const correctTilesThisRound = res.filter(Boolean).length;
+    const updateStats = (prev: SessionStats): SessionStats => {
+      const newRoundsPlayed = prev.roundsPlayed + 1;
+      const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
+      const newCorrectTimes = correct ? [...prev.correctTimes, recallSeconds] : prev.correctTimes;
+      const newTilesDecoded = correct ? prev.tilesDecoded + correctTilesThisRound : prev.tilesDecoded;
+      let newPeak = prev.peakComplexity;
+      if (correct) {
+        const tiles = effectiveColorCount;
+        if (
+          !newPeak ||
+          tiles > newPeak.tiles ||
+          (tiles === newPeak.tiles && recallSeconds < newPeak.seconds)
+        ) {
+          newPeak = { tiles, seconds: recallSeconds };
+        }
+      }
+      return {
+        roundsPlayed: newRoundsPlayed,
+        totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
+        currentStreak: newCurrentStreak,
+        longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
+        correctTimes: newCorrectTimes,
+        tilesDecoded: newTilesDecoded,
+        peakComplexity: newPeak,
+      };
+    };
+
     if (isFreeplay) {
-      // Track session stats
-      const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
       let milestoneHit = false;
       setSessionStats((prev) => {
-        const newRoundsPlayed = prev.roundsPlayed + 1;
-        const newCurrentStreak = correct ? prev.currentStreak + 1 : 0;
-        if (newRoundsPlayed > 0 && newRoundsPlayed % 10 === 0) milestoneHit = true;
-        return {
-          roundsPlayed: newRoundsPlayed,
-          bestSpeed: correct
-            ? (prev.bestSpeed === 0 ? recallSeconds : Math.min(prev.bestSpeed, recallSeconds))
-            : prev.bestSpeed,
-          totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
-          totalAttempts: prev.totalAttempts + 1,
-          currentStreak: newCurrentStreak,
-          longestStreak: Math.max(prev.longestStreak, newCurrentStreak),
-        };
+        const next = updateStats(prev);
+        if (next.roundsPlayed > 0 && next.roundsPlayed % 10 === 0) milestoneHit = true;
+        return next;
       });
 
       // Freeplay: no save, no DDA, no localStorage
@@ -526,6 +543,9 @@ const Index = () => {
       }, 1500);
       return;
     }
+
+    // Daily mode — accumulate the same metrics for the daily summary.
+    setDailyStats(updateStats);
 
     // Daily mode verification
     const newTotalUsed = totalAttemptsUsed + 1;
