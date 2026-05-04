@@ -1234,6 +1234,10 @@ const Index = () => {
                   <p className="font-medium text-foreground mb-1">Deep Focus Tracking (Stamina)</p>
                   <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
                 </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Peak Complexity</p>
+                  <p>We monitor your total focus duration. This isn’t a race; it’s a measure of sustained attention. Watch your daily focus time grow as you strengthen your mental endurance.</p>
+                </div>
               </div>
             </div>
             <div className="border-t border-border pt-4">
