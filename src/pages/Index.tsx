@@ -101,9 +101,16 @@ const Index = () => {
 
   // --- Practice Mode Session Stats ---
   const initialStats: SessionStats = {
-    roundsPlayed: 0, bestSpeed: 0, totalCorrect: 0, totalAttempts: 0, currentStreak: 0, longestStreak: 0,
+    roundsPlayed: 0,
+    totalCorrect: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    correctTimes: [],
+    tilesDecoded: 0,
+    peakComplexity: null,
   };
   const [sessionStats, setSessionStats] = useState<SessionStats>(initialStats);
+  const [dailyStats, setDailyStats] = useState<SessionStats>(initialStats);
   const [showSessionReport, setShowSessionReport] = useState(false);
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
