@@ -195,7 +195,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-5">
-          <StatCard icon={Target} label="Consistency" value={`${consistency}%`} />
+          <StatCard icon={Target} label="Rounds" value={stats.roundsPlayed} />
           <StatCard icon={Zap} label="Reflex Avg" value={reflexLabel} />
           <StatCard icon={Crown} label="Peak" value={peakLabel} valueClassName="text-base" />
           <StatCard icon={Brain} label="Decoded" value={stats.tilesDecoded} />
