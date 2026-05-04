@@ -48,23 +48,42 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     ? `${stats.peakComplexity.tiles} in ${stats.peakComplexity.seconds.toFixed(1)}s`
     : '—';
   const cardRef = useRef<HTMLDivElement>(null);
-  const captureRef = useRef<HTMLDivElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const handleShareCard = async () => {
     if (isCapturing) return;
     setIsCapturing(true);
+    let tempNode: HTMLDivElement | null = null;
     try {
-      // Wait two frames: 1) React commits styles, 2) browser paints them.
+      // Build an isolated, visible-to-the-renderer share card with inline
+      // styles + system fonts so html-to-image doesn't trip on cross-origin
+      // Google Fonts stylesheets and the node is fully painted.
+      tempNode = buildShareCardNode({
+        insight: getInsight(stats),
+        rounds: String(stats.roundsPlayed),
+        reflex: reflexLabel,
+        peak: peakLabel,
+        decoded: String(stats.tilesDecoded),
+      });
+      document.body.appendChild(tempNode);
+
+      // Wait for fonts + two paint cycles before rasterizing.
+      try { await (document as any).fonts?.ready; } catch {}
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      if (!captureRef.current) return;
-      const node = captureRef.current;
-      const dataUrl = await htmlToImage.toPng(node, {
+
+      const rect = tempNode.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        throw new Error('Capture node has zero size');
+      }
+
+      const dataUrl = await htmlToImage.toPng(tempNode, {
         pixelRatio: 2,
         cacheBust: true,
         backgroundColor: '#ffffff',
-        skipFonts: false,
+        skipFonts: true,
+        width: tempNode.offsetWidth,
+        height: tempNode.offsetHeight,
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'Chromatic_Practice_Results.png', { type: 'image/png' });
@@ -106,6 +125,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     } catch (err) {
       console.error('[Chromatic] Share card failed:', err);
     } finally {
+      if (tempNode && tempNode.parentNode) tempNode.parentNode.removeChild(tempNode);
       setIsCapturing(false);
     }
   };
@@ -202,102 +222,72 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
         </div>
 
       </motion.div>
-
-      <div
-        aria-hidden
-        ref={captureRef}
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          opacity: 0,
-          pointerEvents: 'none',
-          zIndex: -1,
-          width: '420px',
-          padding: '24px',
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '16px',
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          WebkitFontSmoothing: 'antialiased',
-          color: '#111',
-          boxSizing: 'border-box',
-        }}
-      >
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-              Practice Session Complete
-            </div>
-            <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>
-              {getInsight(stats)}
-            </div>
-          </div>
-
-          {[
-            { Icon: Target, label: 'Rounds', value: String(stats.roundsPlayed) },
-            { Icon: Zap, label: 'Reflex Avg', value: reflexLabel },
-            { Icon: Crown, label: 'Peak', value: peakLabel },
-            { Icon: Brain, label: 'Decoded', value: String(stats.tilesDecoded) },
-          ].map(({ Icon, label, value }) => (
-            <div
-              key={label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                marginBottom: '8px',
-              }}
-            >
-              <Icon style={{ width: 18, height: 18, flexShrink: 0, color: '#6b7280' }} />
-              <span style={{ flexShrink: 0, fontWeight: 600, fontSize: 18, color: '#111' }}>
-                {value}
-              </span>
-              <span
-                style={{
-                  flexShrink: 0,
-                  marginLeft: 'auto',
-                  fontSize: 10,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  color: '#6b7280',
-                }}
-              >
-                {label}
-              </span>
-            </div>
-          ))}
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              marginTop: 16,
-              paddingTop: 12,
-              borderTop: '1px solid #e5e7eb',
-            }}
-          >
-            <img
-              src="/share-logo.png"
-              alt=""
-              style={{ height: 20, flexShrink: 0 }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#111', flexShrink: 0 }}>
-              ChromaticDaily
-            </span>
-            <span style={{ fontSize: 11, color: '#6b7280', flexShrink: 0 }}>
-              · chromatic-daily.lovable.app
-            </span>
-          </div>
-      </div>
     </motion.div>
   );
+}
+
+/**
+ * Build a self-contained, inline-styled DOM card for PNG capture.
+ * Avoids React/lucide/Google-Fonts dependencies so html-to-image
+ * never produces a blank rasterization.
+ */
+function buildShareCardNode(data: {
+  insight: string;
+  rounds: string;
+  reflex: string;
+  peak: string;
+  decoded: string;
+}): HTMLDivElement {
+  const root = document.createElement('div');
+  Object.assign(root.style, {
+    position: 'fixed',
+    left: '0px',
+    top: '0px',
+    zIndex: '-1',
+    pointerEvents: 'none',
+    width: '420px',
+    padding: '24px',
+    background: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    color: '#111111',
+    boxSizing: 'border-box',
+  } as CSSStyleDeclaration);
+  root.setAttribute('aria-hidden', 'true');
+
+  root.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:22px;font-weight:700;margin-bottom:6px;color:#111;">Practice Session Complete</div>
+      <div style="font-size:12px;color:#6b7280;line-height:1.5;">${escapeHtml(data.insight)}</div>
+    </div>
+    ${[
+      ['Rounds', data.rounds],
+      ['Reflex Avg', data.reflex],
+      ['Peak', data.peak],
+      ['Decoded', data.decoded],
+    ]
+      .map(
+        ([label, value]) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px;">
+        <span style="flex-shrink:0;font-weight:600;font-size:18px;color:#111;min-width:64px;">${escapeHtml(value)}</span>
+        <span style="flex-shrink:0;margin-left:auto;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;">${escapeHtml(label)}</span>
+      </div>`,
+      )
+      .join('')}
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">
+      <span style="font-weight:700;font-size:14px;color:#111;flex-shrink:0;">ChromaticDaily</span>
+      <span style="font-size:11px;color:#6b7280;flex-shrink:0;">· chromatic-daily.lovable.app</span>
+    </div>
+  `;
+  return root;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
