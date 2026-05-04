@@ -683,10 +683,24 @@ const Index = () => {
     }, 50);
   }, [a11y, activeColors.length]);
 
+  const buildShareMetrics = () => {
+    const sorted = [...dailyStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+    const reflexAvg = sorted.length ? sorted.reduce((s, n) => s + n, 0) / sorted.length : null;
+    const consistency = dailyStats.roundsPlayed
+      ? Math.round((dailyStats.totalCorrect / dailyStats.roundsPlayed) * 100)
+      : 0;
+    return {
+      consistency,
+      reflexAvg,
+      peak: dailyStats.peakComplexity,
+      tilesDecoded: dailyStats.tilesDecoded,
+    };
+  };
+
   const share = async () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] Share text preview:\n' + text);
     try {
       await navigator.clipboard.writeText(text);
@@ -700,7 +714,7 @@ const Index = () => {
   const shareWhatsApp = () => {
     const data = getTodayData();
     const rounds = data?.rounds ?? savedRounds;
-    const text = generateShareText(rounds, starsEarned, totalFocusSeconds);
+    const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
