@@ -157,7 +157,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
     valueClassName?: string;
   }) => (
     <div className="bg-card/70 border border-border rounded-xl p-3 flex flex-col items-center gap-1">
-      <Icon className={`w-4 h-4 text-muted-foreground ${isCapturing ? 'hidden' : ''}`} />
+      <Icon className="w-4 h-4 text-muted-foreground" />
       <div
         className={`font-semibold text-foreground ${valueClassName ?? 'text-xl'}`}
         style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
