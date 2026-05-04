@@ -1224,7 +1224,7 @@ const Index = () => {
               <div className="space-y-3">
                 <div>
                   <p className="font-medium text-foreground mb-1">⭐️ Speed Star (Reflexes)</p>
-                  <p>Awarded for rapid encoding. If you hit 'Ready' before the internal threshold and win the round, you earn a star. It proves you can capture a complex visual field in an instant.</p>
+                  <p>Awarded for "Snapshot" memory. If you memorize the pattern and hit 'Ready' in record time, you earn a star. It proves you can capture a complex visual field in a single blink.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🎯 Consistency</p>
