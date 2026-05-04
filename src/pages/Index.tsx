@@ -954,6 +954,7 @@ const Index = () => {
           colorCount={baseColorCount}
           starsEarned={starsEarned}
           totalFocusSeconds={totalFocusSeconds}
+          stats={dailyStats}
         />
       ) : (
         <>
