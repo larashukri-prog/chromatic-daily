@@ -370,3 +370,12 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
     </div>
   );
 }
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold text-foreground tabular-nums">{value}</span>
+    </div>
+  );
+}
