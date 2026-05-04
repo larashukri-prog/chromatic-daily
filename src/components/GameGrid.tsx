@@ -38,6 +38,9 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     if (!shapes) return c;
     if (c === NEUTRAL) return NEUTRAL;
     if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
+    // Anchors render as their true fill so Black stays black and White stays white.
+    const up = c.toUpperCase();
+    if (up === '#000000' || up === '#FFFFFF') return up;
     return '#FFFFFF';
   };
 
