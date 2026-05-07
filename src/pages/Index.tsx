@@ -114,6 +114,7 @@ const Index = () => {
   const [showSessionReport, setShowSessionReport] = useState(false);
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
+  const pendingMilestone = useRef(false);
 
   useEffect(() => {
     try {
@@ -359,6 +360,7 @@ const Index = () => {
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSessionStats(initialStats);
+    pendingMilestone.current = false;
     setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
@@ -521,7 +523,15 @@ const Index = () => {
       let milestoneHit = false;
       setSessionStats((prev) => {
         const next = updateStats(prev);
-        if (next.roundsPlayed > 0 && next.roundsPlayed % 10 === 0) milestoneHit = true;
+        const crossedMilestone =
+          next.roundsPlayed > 0 && next.roundsPlayed % 10 === 0;
+        if (crossedMilestone && !correct) {
+          pendingMilestone.current = true;
+        }
+        if (correct && (crossedMilestone || pendingMilestone.current)) {
+          milestoneHit = true;
+          pendingMilestone.current = false;
+        }
         return next;
       });
 
@@ -845,6 +855,7 @@ const Index = () => {
 
   const restartSession = useCallback(() => {
     setSessionStats(initialStats);
+    pendingMilestone.current = false;
     setShowSessionReport(false);
     startFreePlay();
   }, [startFreePlay]);
