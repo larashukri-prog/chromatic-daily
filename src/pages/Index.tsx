@@ -360,6 +360,7 @@ const Index = () => {
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSessionStats(initialStats);
+    pendingMilestone.current = false;
     setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
@@ -854,6 +855,7 @@ const Index = () => {
 
   const restartSession = useCallback(() => {
     setSessionStats(initialStats);
+    pendingMilestone.current = false;
     setShowSessionReport(false);
     startFreePlay();
   }, [startFreePlay]);
