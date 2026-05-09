@@ -1,41 +1,23 @@
-## Confetti Trigger Fix Only
+## Why iOS shows a grey tile
 
-Update `src/pages/Index.tsx` so practice-mode confetti only fires on a *correct* milestone round, deferring the celebration when a milestone round is missed.
+iOS ignores `favicon.ico` and standard PWA manifest icons when adding to Home Screen. It looks specifically for an **`apple-touch-icon`** link in the HTML head. When none is found, iOS generates a grey tile from a screenshot of the page. Android, by contrast, happily uses `favicon.ico` or any reasonably-sized PNG, which is why it looks fine there.
 
-### Changes in `src/pages/Index.tsx`
+There's also an iOS-specific quirk: the icon **must be opaque** (no transparency). Transparent PNGs get composited onto black, producing a dark/grey-looking tile.
 
-1. Add a ref near the other refs:
-   ```ts
-   const pendingMilestone = useRef(false);
+## Plan
+
+1. **Generate a 180×180 opaque PNG** of the Chromatic Daily mark (white or branded background, no transparency) and save it as `public/apple-touch-icon.png`. iOS auto-rounds the corners — supply a square, full-bleed image.
+2. **Add the link tag** to `index.html` `<head>`:
+   ```html
+   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
    ```
+3. *(Optional, nice-to-have)* Add `<meta name="apple-mobile-web-app-title" content="Chromatic">` so the label under the icon is clean, and `<meta name="apple-mobile-web-app-capable" content="yes">` if we want it to launch standalone.
 
-2. Replace the existing milestone check inside the freeplay `setSessionStats` updater (around line 524):
-   ```ts
-   let milestoneHit = false;
-   setSessionStats((prev) => {
-     const next = updateStats(prev);
-     const crossedMilestone =
-       next.roundsPlayed > 0 && next.roundsPlayed % 10 === 0;
-     if (crossedMilestone && !correct) {
-       pendingMilestone.current = true;
-     }
-     if (correct && (crossedMilestone || pendingMilestone.current)) {
-       milestoneHit = true;
-       pendingMilestone.current = false;
-     }
-     return next;
-   });
-   ```
-   Then keep the existing `if (milestoneHit) { ...confetti + audio... }` block.
+## Notes for the user
 
-3. Reset `pendingMilestone.current = false` wherever a new practice session starts (same place `sessionStats` is reset).
+- iOS aggressively caches Home Screen icons. To test the fix, the existing tile must be deleted from the Home Screen and re-added (a hard refresh in Safari isn't enough).
+- No service worker / PWA changes required — this is purely a static asset + meta tag fix.
 
-### Behavior
-- Round 10 correct → confetti fires.
-- Round 10 missed → no confetti; flag set. First correct round after that (e.g. 11, 12…) fires confetti once.
-- Round 20 missed with flag still pending → flag stays set until next correct.
-
-### Files touched
-- `src/pages/Index.tsx` (only)
-
-No new test file will be added.
+## Files touched
+- `public/apple-touch-icon.png` (new, 180×180, opaque)
+- `index.html` (one `<link>` tag, optionally two `<meta>` tags)
