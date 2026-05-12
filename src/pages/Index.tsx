@@ -771,6 +771,9 @@ const Index = () => {
       });
       hasStartedPlaying.current = false;
     }
+    if (showDailySummary) {
+      trackVirtualPageview('/summary', 'Chromatic Daily — Summary');
+    }
   }, [showDailySummary]);
 
   useEffect(() => {
