@@ -1096,11 +1096,13 @@ const Index = () => {
                           if (isOverwrite || currentCount < effectiveColorCount) {
                             newGrid[activeSlot] = c.hex;
                             setPlayerGrid(newGrid);
+                            trackEngagement('color_placed', { mode });
                           }
                           setActiveSlot(null);
                           setSelectedColor(null);
                         } else {
                           setSelectedColor(c.hex);
+                          trackEngagement('color_selected', { mode });
                         }
                       }}
                       className={cn(
