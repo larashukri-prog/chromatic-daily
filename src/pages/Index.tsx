@@ -323,6 +323,7 @@ const Index = () => {
       day_number: dayNum,
       difficulty: difficultyName,
     });
+    trackVirtualPageview('/play', 'Chromatic Daily — Play');
 
     const hasPlayed = localStorage.getItem('chromatic-has-played');
     localStorage.setItem('chromatic-has-played', 'true');
