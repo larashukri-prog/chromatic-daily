@@ -393,6 +393,8 @@ const Index = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setCountdown(null);
+    trackEngagement('main_menu_clicked');
+    trackVirtualPageview('/', 'Chromatic Daily');
     setMode('daily');
     setFreeplayRoundNum(0);
     setShowResult(false);
