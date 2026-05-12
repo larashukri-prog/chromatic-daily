@@ -23,6 +23,7 @@ import {
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
+import { trackVirtualPageview, trackEngagement } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -271,6 +272,7 @@ const Index = () => {
     if (phase !== 'observation') return;
     if (timerRef.current) clearInterval(timerRef.current);
     hasStartedPlaying.current = true;
+    trackEngagement('ready_clicked', { mode, round_number: roundIndex + 1 });
 
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
     const elapsed = Date.now() - observationStartTime.current;
@@ -292,7 +294,7 @@ const Index = () => {
     setPhase('recall');
     setSelectedColor(null);
     recallStartTime.current = Date.now();
-  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
+  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay, mode, roundIndex]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
@@ -321,6 +323,7 @@ const Index = () => {
       day_number: dayNum,
       difficulty: difficultyName,
     });
+    trackVirtualPageview('/play', 'Chromatic Daily — Play');
 
     const hasPlayed = localStorage.getItem('chromatic-has-played');
     localStorage.setItem('chromatic-has-played', 'true');
@@ -382,6 +385,7 @@ const Index = () => {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
+    trackVirtualPageview('/practice', 'Chromatic Daily — Practice');
     startCountdown(() => startFreePlayObservation(puzzle));
   }, [a11y, startCountdown, startFreePlayObservation, visualTheme]);
 
@@ -389,6 +393,8 @@ const Index = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setCountdown(null);
+    trackEngagement('main_menu_clicked');
+    trackVirtualPageview('/', 'Chromatic Daily');
     setMode('daily');
     setFreeplayRoundNum(0);
     setShowResult(false);
@@ -765,6 +771,9 @@ const Index = () => {
       });
       hasStartedPlaying.current = false;
     }
+    if (showDailySummary) {
+      trackVirtualPageview('/summary', 'Chromatic Daily — Summary');
+    }
   }, [showDailySummary]);
 
   useEffect(() => {
@@ -818,6 +827,7 @@ const Index = () => {
     }
 
     setShowSessionReport(true);
+    trackVirtualPageview('/practice/results', 'Chromatic Daily — Practice Results');
   }, [sessionStats]);
 
   const resumePractice = useCallback(() => {
@@ -854,6 +864,7 @@ const Index = () => {
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {
+    trackEngagement('practice_restart_clicked');
     setSessionStats(initialStats);
     pendingMilestone.current = false;
     setShowSessionReport(false);
@@ -1085,11 +1096,13 @@ const Index = () => {
                           if (isOverwrite || currentCount < effectiveColorCount) {
                             newGrid[activeSlot] = c.hex;
                             setPlayerGrid(newGrid);
+                            trackEngagement('color_placed', { mode });
                           }
                           setActiveSlot(null);
                           setSelectedColor(null);
                         } else {
                           setSelectedColor(c.hex);
+                          trackEngagement('color_selected', { mode });
                         }
                       }}
                       className={cn(
