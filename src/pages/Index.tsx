@@ -863,6 +863,7 @@ const Index = () => {
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {
+    trackEngagement('practice_restart_clicked');
     setSessionStats(initialStats);
     pendingMilestone.current = false;
     setShowSessionReport(false);
