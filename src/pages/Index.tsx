@@ -23,6 +23,7 @@ import {
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
+import { trackVirtualPageview, trackEngagement } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
