@@ -1293,10 +1293,10 @@ const Index = () => {
       {/* Result Modal */}
       <Dialog open={showResult} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
+          <DialogHeader className="text-center sm:text-center items-center">
             <DialogTitle
               style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
-              className="text-2xl"
+              className="text-2xl text-center"
             >
               {isFreeplay
                 ? isCorrect ? 'Nice One!' : 'Not Quite'

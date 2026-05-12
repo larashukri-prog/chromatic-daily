@@ -1,29 +1,18 @@
 ## Goal
 
-Remove the red circle-X icon from the wrong-attempt result modal so users stop tapping it thinking it's a close button.
+Center the "Not Quite" / "Perfect Recall" / "Game Over" / "Nice One!" titles in the result modal. They currently render left-aligned on `sm+` because shadcn's default `DialogHeader` applies `text-center sm:text-left`, which overrides the parent `text-center` on `DialogContent`.
 
 ## Change
 
-**File:** `src/pages/Index.tsx` (around line 1314–1316)
+**File:** `src/pages/Index.tsx` (around line 1296–1307)
 
-Remove the `<XCircle />` shown in the incorrect branch of the result modal. The "Not Quite" / "Game Over" title and the Neural Match progress bar already communicate the outcome clearly.
+Add `text-center` (and `sm:text-center` to override the shadcn default) on the `DialogHeader` of the result modal.
 
-Before:
 ```tsx
-{isCorrect ? (
-  <div className="flex flex-col items-center mb-4">
-    {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
-    <Trophy className="w-12 h-12 text-yellow-500" />
-  </div>
-) : (
-  <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-)}
+<DialogHeader className="text-center sm:text-center items-center">
+  <DialogTitle ...>...</DialogTitle>
+  ...
+</DialogHeader>
 ```
 
-After: keep the correct branch unchanged; drop the `<XCircle>` (render nothing for the incorrect branch).
-
-Also remove `XCircle` from the lucide-react import in the same file if no longer used elsewhere there.
-
-## Out of scope
-
-No changes to `DailySummary.tsx` (where `XCircle` marks incorrect attempts in the carousel summary — that's a recap, not a tap target).
+Scoped only to the result modal — the "How to Play" / info dialogs remain unchanged.
