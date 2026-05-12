@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Info, Share2, Trophy, RotateCcw, CheckCircle2, XCircle, ArrowLeft, Sparkles, Star, Eye, BarChart3 } from 'lucide-react';
+import { Info, Share2, Trophy, RotateCcw, CheckCircle2, ArrowLeft, Sparkles, Star, Eye, BarChart3 } from 'lucide-react';
 import { DailySummary } from '@/components/DailySummary';
 import { OnboardingOverlay, useOnboarding } from '@/components/OnboardingOverlay';
 import { GameGrid } from '@/components/GameGrid';
@@ -1306,13 +1306,11 @@ const Index = () => {
             <DialogDescription className="sr-only">Your game result</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {isCorrect ? (
+            {isCorrect && (
               <div className="flex flex-col items-center mb-4">
                 {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
                 <Trophy className="w-12 h-12 text-yellow-500" />
               </div>
-            ) : (
-              <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             )}
 
             {!isCorrect && result && (
