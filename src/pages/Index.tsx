@@ -827,6 +827,7 @@ const Index = () => {
     }
 
     setShowSessionReport(true);
+    trackVirtualPageview('/practice/results', 'Chromatic Daily — Practice Results');
   }, [sessionStats]);
 
   const resumePractice = useCallback(() => {
