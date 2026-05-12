@@ -385,6 +385,7 @@ const Index = () => {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
+    trackVirtualPageview('/practice', 'Chromatic Daily — Practice');
     startCountdown(() => startFreePlayObservation(puzzle));
   }, [a11y, startCountdown, startFreePlayObservation, visualTheme]);
 
