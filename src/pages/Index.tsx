@@ -272,6 +272,7 @@ const Index = () => {
     if (phase !== 'observation') return;
     if (timerRef.current) clearInterval(timerRef.current);
     hasStartedPlaying.current = true;
+    trackEngagement('ready_clicked', { mode, round_number: roundIndex + 1 });
 
     const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
     const elapsed = Date.now() - observationStartTime.current;
@@ -293,7 +294,7 @@ const Index = () => {
     setPhase('recall');
     setSelectedColor(null);
     recallStartTime.current = Date.now();
-  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay]);
+  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay, mode, roundIndex]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
