@@ -1283,6 +1283,9 @@ const Index = () => {
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
                   <p>Unlocked once your daily attempts are used. Dive in for unlimited rounds to sharpen your eye and master the mix.</p>
                 </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Practice Goals</p>
+                </div>
               </div>
             </div>
           </div>

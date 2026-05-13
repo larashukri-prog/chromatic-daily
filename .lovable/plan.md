@@ -1,18 +1,17 @@
-## Goal
+Add a new entry titled "Practice Goals" directly below the "Practice Mode" item inside the "The Journey" section of the How to Play modal. Title only, no description paragraph — matching the user's request.
 
-Center the "Not Quite" / "Perfect Recall" / "Game Over" / "Nice One!" titles in the result modal. They currently render left-aligned on `sm+` because shadcn's default `DialogHeader` applies `text-center sm:text-left`, which overrides the parent `text-center` on `DialogContent`.
+## File
+
+`src/pages/Index.tsx` — inside the `Dialog` for `showHowTo`, after the `Practice Mode` block (around line 1285).
 
 ## Change
 
-**File:** `src/pages/Index.tsx` (around line 1296–1307)
-
-Add `text-center` (and `sm:text-center` to override the shadcn default) on the `DialogHeader` of the result modal.
+Append a new `<div>` after the Practice Mode block:
 
 ```tsx
-<DialogHeader className="text-center sm:text-center items-center">
-  <DialogTitle ...>...</DialogTitle>
-  ...
-</DialogHeader>
+<div>
+  <p className="font-medium text-foreground mb-1">Practice Goals</p>
+</div>
 ```
 
-Scoped only to the result modal — the "How to Play" / info dialogs remain unchanged.
+No other styling, copy, or layout changes.
