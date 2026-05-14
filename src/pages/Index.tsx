@@ -1283,11 +1283,7 @@ const Index = () => {
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
                   <p>Unlocked once your daily attempts are used. Dive in for unlimited rounds to sharpen your eye and master the mix.</p>
                 </div>
-                <div className="pt-2">
-                  <p className="font-medium text-foreground mb-1 whitespace-pre-line">
-                    HAPPY BIRTHDAY VICTOR VB!{"\n"}Have a Fabulous day GOAT!
-                  </p>
-                </div>
+                <div className="pt-2" />
               </div>
             </div>
           </div>
