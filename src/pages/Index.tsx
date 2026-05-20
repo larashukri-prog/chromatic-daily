@@ -1214,6 +1214,28 @@ const Index = () => {
         )}
       </div>
 
+      {/* SEO: semantic content rendered in initial DOM for crawlers; visually hidden from users */}
+      <section className="sr-only" aria-hidden="true">
+        <h1>Chromatic Daily | Daily Color Memory & Brain Game</h1>
+        <h2>How it Works: Stimulating Neuroplasticity Through Color</h2>
+        <p>
+          Chromatic Daily is a minimalist daily color memory game built to train visual recall and
+          cognitive focus. Each day presents a new configuration of color tiles to study, memorize,
+          and reproduce — a short, deliberate exercise designed to stimulate neuroplasticity through
+          color-based pattern recognition. Difficulty scales across the week, from two colors on
+          Monday up to a nine-color master grid on Sunday, giving the brain a progressive,
+          repeatable workout.
+        </p>
+        <h3>Cognitive Benefits of Daily Memory Games</h3>
+        <p>
+          Regular practice with brain games and memory games has been linked to stronger working
+          memory, sharper visual attention, and improved processing speed. Chromatic Daily focuses
+          specifically on color memory: a low-friction, high-signal way to engage neuroplasticity
+          every day. Three short attempts, a clean interface, and no streaks or pressure — just a
+          daily color puzzle designed to keep cognition active.
+        </p>
+      </section>
+
       {/* How to Play Modal */}
       <Dialog open={showHowTo} onOpenChange={setShowHowTo}>
         <DialogContent className="sm:max-w-md rounded-2xl max-h-[85vh] overflow-hidden">
