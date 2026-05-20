@@ -1,32 +1,15 @@
-## Add SoftwareApplication JSON-LD + update meta description
+## Add second Google Search Console verification meta tag
 
-Two small edits to `index.html`. No component, hook, or game logic changes.
+Add this line to `<head>` in `index.html`, right after the existing `google-site-verification` tag:
 
-### 1. Update description tags
-
-Replace the existing `<meta name="description">` (and matching `og:description` / `twitter:description`) content with:
-
-> Chromatic Daily: The free, minimalist color memory game you can play instantly in any browser. No app store downloads or sign-ups required.
-
-### 2. Add SoftwareApplication JSON-LD
-
-Append a second `<script type="application/ld+json">` block in `<head>`, alongside the existing `WebApplication` schema (the two coexist fine):
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Chromatic Daily",
-  "description": "A free, minimalist color memory game you can play instantly in any browser. No app store downloads or sign-ups required.",
-  "applicationCategory": "BrowserGame",
-  "operatingSystem": "Web Browser",
-  "url": "https://chromatic-daily.lovable.app"
-}
+```html
+<meta name="google-site-verification" content="pkTYqNdZN3roR8pfObDuCgcr3NeIc5eZxb4cZE03gZE" />
 ```
 
+Multiple verification tags can coexist — the existing one stays in place.
+
 ### Files touched
-- `index.html` — description tags + new JSON-LD script block.
+- `index.html` — one-line addition.
 
 ### Out of scope
-- No changes to React components, routes, hooks, game state, color generation, or score sharing.
-- Existing `WebApplication` JSON-LD, canonical, OG image, and title tags left as-is.
+- No other tag, SEO, or game logic changes.
