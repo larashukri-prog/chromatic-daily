@@ -6,6 +6,15 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    const prevTitle = document.title;
+    const prevDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
+    document.title = "Page Not Found | Chromatic Daily";
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.setAttribute('content', 'The page you were looking for does not exist. Return to Chromatic Daily to play today\'s color memory game.');
+    return () => {
+      document.title = prevTitle;
+      if (descEl && prevDesc !== null) descEl.setAttribute('content', prevDesc);
+    };
   }, [location.pathname]);
 
   return (
