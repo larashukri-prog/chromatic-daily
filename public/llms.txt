@@ -1,0 +1,9 @@
+# Chromatic Daily
+
+> A free, minimalist daily color memory game you can play instantly in any browser. No app store downloads or sign-ups required.
+
+Chromatic Daily is a once-a-day cognitive game. Each day, players study a small grid of colors, then recreate it from memory. Difficulty scales across the week, from 2 colors on Monday to 9 colors on Sunday. A Practice Mode is available for unlimited play.
+
+## Pages
+
+- [Home](/): The daily game and Practice Mode entry point.
