@@ -654,8 +654,17 @@ const Index = () => {
         setDdaLevel('standard');
       }
 
-      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
+      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
       setResultMessage(msg);
+
+      // Go Knicks: fire bing-bong + blue/orange confetti once per daily result.
+      if (visualTheme === 'knicks') {
+        const key = `${roundIndex}:${attemptInRound}:${correct ? 1 : 0}`;
+        if (knicksCelebrationKey.current !== key) {
+          knicksCelebrationKey.current = key;
+          fireKnicksCelebration();
+        }
+      }
 
       const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
       if (done || savedData.finished) {
