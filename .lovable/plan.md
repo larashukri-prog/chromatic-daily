@@ -1,9 +1,29 @@
-In `src/pages/Index.tsx`, conditionally switch five action buttons to Knicks blue (`#006BB6`) when `knicksMode` is true, keeping existing `bg-primary` styling for all other themes:
+## Goal
 
-1. **"I'm ready" button** (line ~1213) — observation phase
-2. **"Verify" button** (line ~1226) — recall phase
-3. **"Next Level" button** (line ~1468) — freeplay result, correct
-4. **"Try Again" button** (line ~1472) — freeplay result, incorrect
-5. **"Next Round / Try Again" button** (line ~1480) — daily result, can continue
+Record the active visual theme (`colors` | `patterns` | `shapes` | `knicks`) on each individual attempt at the moment it's saved, and have the Daily Summary render every attempt using its own recorded theme instead of the currently-active global theme.
 
-All buttons currently use `bg-primary hover:bg-primary/90`. In Knicks mode they will use `bg-[#006BB6] hover:bg-[#005a9e] text-primary-foreground`. No game logic, other UI, or non-Knicks styles are affected.
+## Changes
+
+### 1. `src/lib/game.ts`
+- Extend `RoundAttempt` with `visualTheme?: VisualTheme` (optional for back-compat with existing localStorage entries).
+- Import/re-export the `VisualTheme` type (or use a string union) so callers can pass it.
+- Update `saveRoundAttempt(...)` signature to accept a `visualTheme` argument and store it on the new attempt object.
+
+### 2. `src/pages/Index.tsx`
+- Pass the current `visualTheme` into the `saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme)` call (line ~606).
+
+### 3. `src/components/DailySummary.tsx`
+- Extend the local `AttemptSlide` interface with `visualTheme?: VisualTheme`.
+- When flattening rounds → slides, copy `attempt.visualTheme` onto the slide.
+- In `SlideContent`, derive `shapesMode` / `knicksMode` / pattern-mode from `slide.visualTheme` (falling back to the current global `useVisualTheme()` only when an old attempt has no recorded theme, for back-compat). The grid rendering (background fill, border, `ShapeOverlay`, `KnicksOverlay`, `PatternOverlay`) should key off the per-attempt theme.
+- The outer "Game Over — Swish!" / share-section copy that uses `knicks` should keep using the global active theme (it's about the whole session, not a specific attempt) — no change there.
+
+## Out of scope / unchanged
+
+- No change to gameplay logic, scoring, DDA, persistence schema beyond the new optional field, analytics events, or non-Knicks button styling.
+- The `VisualThemeToggle` continues to switch the global active theme; switching mid-session no longer rewrites past attempts.
+- Practice/freeplay result rendering is unaffected (it doesn't use the daily summary slides).
+
+## Back-compat
+
+Existing localStorage entries that lack `visualTheme` on an attempt will fall back to the current global theme so already-saved sessions still render.
