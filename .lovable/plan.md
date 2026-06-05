@@ -1,35 +1,26 @@
 ## Goal
 
-Make every surface that renders chromatic tiles respect Go Knicks — currently only the main `GameGrid` does. The color picker and the result-modal "Correct Pattern" mini-grid (both in `Index.tsx`), plus the `DailySummary` carousel tiles, all still render as raw color swatches.
+Render the Knicks anchors as the two uploaded PNGs (orange circle for White anchor, blue circle for Black anchor) on every surface, instead of solid color fills. They'll fit the circle exactly like the other 7 Knicks images.
 
 ## Changes
 
-All edits gated by `visualTheme === 'knicks'`. No game logic, no layout changes.
+1. **Upload assets** — push `Ellipse_6.png` (orange) and `Ellipse_7.png` (blue) to Lovable Assets under `src/assets/knicks/`.
 
-### 1. `src/pages/Index.tsx` — color picker (lines ~1138-1186)
-- Pull `knicks = visualTheme === 'knicks'` once near `shapesMode`.
-- Compute `bg` so chromatic picker swatches in knicks mode use white backdrop, Black anchor renders `#1D428A`, White anchor renders `#F58426`.
-- Treat anchors as solid (no overlay); chromatic swatches get `<KnicksOverlay colorHex={c.hex} />` overlaying the white circle, same as `GameGrid`.
-- Reuse the existing `showAsWhite`/border rules so light-fill swatches keep the gray border + black selection outline. Selected-outline color for the orange/blue Knicks anchors uses the existing primary outline since they're dark.
+2. **`src/components/KnicksOverlay.tsx`** — extend `KNICKS_IMAGE_FOR_HEX` with anchor entries:
+   - `'#000000'` → blue PNG
+   - `'#FFFFFF'` → orange PNG
+   
+   Overlay component already handles any hex, no logic change needed.
 
-### 2. `src/pages/Index.tsx` — result-modal "Correct Pattern" mini-grid (lines ~1432-1452)
-- Mirror the picker logic: knicks anchors → `#1D428A` / `#F58426`, chromatic slots → white bg + `<KnicksOverlay />`, with the same border rule for light fills.
-
-### 3. `src/components/DailySummary.tsx` — carousel tiles (lines ~275-330)
-- Add `knicks` branch alongside the existing `shapesMode` branch for both the solution grid and the player grid.
-- Same rules: anchors → solid blue/orange, chromatic → white backdrop + `<KnicksOverlay />`, light-fill border.
-
-### 4. Import `KnicksOverlay` in both files
-- `Index.tsx` and `DailySummary.tsx` — add the import next to `ShapeOverlay`.
+3. **All knicks-mode renderers** — drop the `!isBlack && !isWhite` guard so anchors also get a `<KnicksOverlay />`. Switch the anchor background from solid `#1D428A`/`#F58426` to white (consistent backdrop behind the PNG, like other chromatic slots). The light-fill border treatment now applies to anchors too so they get the same subtle gray ring.
+   
+   Files: `src/components/GameGrid.tsx`, `src/pages/Index.tsx` (picker + result mini-grid), `src/components/DailySummary.tsx` (solution + player grids).
 
 ## Out of scope
 
-- COLORS, round logic, scoring, DDA, share text, analytics — all untouched.
-- No new images (reuses the 7 CDN assets already wired in `KnicksOverlay`).
-- Other themes (colors / patterns / shapes) keep current rendering exactly.
+- Confetti palette stays `#1D428A` / `#F58426`.
+- No game logic, color array, scoring, or other theme changes.
 
 ## Verification
 
-- Toggle Go Knicks → picker swatches show the same Knicks images as the board; Black/White anchors (Sunday/Practice) render as solid blue/orange chips.
-- After a round, the result modal's "Correct Pattern" mini-grid and the daily summary carousel both render Knicks-themed tiles.
-- Toggle back to Colors/Patterns/Shapes → identical to today.
+Toggle Go Knicks → on Sunday/Practice the Black/White anchor slots now show the uploaded orange and blue PNGs and visually match the rest of the Knicks tiles. Other themes unchanged.

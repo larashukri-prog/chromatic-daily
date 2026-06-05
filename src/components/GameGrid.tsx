@@ -5,9 +5,6 @@ import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
 import { KnicksOverlay } from '@/components/KnicksOverlay';
 
-const KNICKS_BLUE = '#1D428A';
-const KNICKS_ORANGE = '#F58426';
-
 interface GameGridProps {
   phase: GamePhase;
   solution: (string | null)[];
@@ -43,10 +40,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     if (knicks) {
       if (c === NEUTRAL) return NEUTRAL;
       if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-      const up = c.toUpperCase();
-      if (up === '#000000') return KNICKS_BLUE;
-      if (up === '#FFFFFF') return KNICKS_ORANGE;
-      // chromatic slots: white backdrop behind the image
+      // Every Knicks tile renders a PNG on a white backdrop, including anchors.
       return '#FFFFFF';
     }
     if (!shapes) return c;
@@ -71,7 +65,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    const knicksLightFill = knicks && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]) && color !== '#000000';
+    const knicksLightFill = knicks && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
     if (color === '#FFFFFF' || color === '#FFF' || displayWhite || knicksLightFill) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';

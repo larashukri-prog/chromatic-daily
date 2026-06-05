@@ -1147,11 +1147,11 @@ const Index = () => {
                     // chromatic colors render on white with the Knicks image overlay.
                     let bg = c.hex;
                     if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                    else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                    else if (knicksMode) bg = '#FFFFFF';
                     const showAsWhite =
                       (shapesMode && !isBlack) ||
                       isWhite && !knicksMode ||
-                      (knicksMode && !isBlack && !isWhite);
+                      knicksMode;
                     return (
                     <button
                       key={c.hex}
@@ -1190,7 +1190,7 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
-                      {knicksMode && !isBlack && !isWhite && <KnicksOverlay colorHex={c.hex} />}
+                      {knicksMode && <KnicksOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
@@ -1447,12 +1447,12 @@ const Index = () => {
                     let bg: string = c || NEUTRAL;
                     if (c) {
                       if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                      else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                      else if (knicksMode) bg = '#FFFFFF';
                     }
                     const lightBorder =
                       (shapesMode && c && !isBlack) ||
                       (isWhite && !knicksMode) ||
-                      (knicksMode && c && !isBlack && !isWhite);
+                      (knicksMode && !!c);
                     return (
                       <div
                         key={i}
@@ -1465,7 +1465,7 @@ const Index = () => {
                       >
                         {a11y && <PatternOverlay colorHex={c} size="100%" />}
                         {shapesMode && <ShapeOverlay colorHex={c} />}
-                        {knicksMode && c && !isBlack && !isWhite && <KnicksOverlay colorHex={c} />}
+                        {knicksMode && c && <KnicksOverlay colorHex={c} />}
                       </div>
                     );
                   })}
