@@ -5,9 +5,6 @@ import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
 import { KnicksOverlay } from '@/components/KnicksOverlay';
 
-const KNICKS_BLUE = '#1D428A';
-const KNICKS_ORANGE = '#F58426';
-
 interface GameGridProps {
   phase: GamePhase;
   solution: (string | null)[];
