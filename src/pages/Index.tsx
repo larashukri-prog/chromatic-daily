@@ -116,6 +116,8 @@ const Index = () => {
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
   const pendingMilestone = useRef(false);
+  const bingBongAudio = useRef<HTMLAudioElement | null>(null);
+  const knicksCelebrationKey = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -123,6 +125,13 @@ const Index = () => {
       a.preload = 'auto';
       a.volume = 0.5;
       milestoneAudio.current = a;
+    } catch { /* noop */ }
+    try {
+      // "Bing Bong" stand-in — short open-source bell SFX. Easy to swap later.
+      const b = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_a8e603753c.mp3');
+      b.preload = 'auto';
+      b.volume = 0.7;
+      bingBongAudio.current = b;
     } catch { /* noop */ }
   }, []);
 
