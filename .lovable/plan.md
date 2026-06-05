@@ -1,18 +1,18 @@
-## Fix
+## Changes in `src/pages/Index.tsx`
 
-In `src/components/KnicksOverlay.tsx`, remap the two chromatic slots that currently reuse other images so they use the new uploaded anchor PNGs instead. This removes the visible duplication in the color picker (and everywhere else).
+1. Remove `bingBongAudio` ref, its `new Audio(...)` init in the audio `useEffect`, and the `play()` call inside `fireKnicksCelebration`. No sound on game end.
 
-```
-'#F198C4' (Pink)            → anchor_orange.png   (was wordmark — duplicate)
-'#2563EB' (Chromatic Blue)  → anchor_blue.png     (was jersey11 — duplicate)
-```
+2. Gate the Knicks confetti trigger so it only fires on a **successful final-round completion**: replace the current `if (visualTheme === 'knicks')` block with:
 
-Anchors stay as-is:
-```
-'#000000' → anchor_blue.png
-'#FFFFFF' → anchor_orange.png
-```
+   ```ts
+   const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+   if (visualTheme === 'knicks' && correct && isDailyDone) {
+     const key = `${roundIndex}:${attemptInRound}`;
+     if (knicksCelebrationKey.current !== key) {
+       knicksCelebrationKey.current = key;
+       fireKnicksCelebration();
+     }
+   }
+   ```
 
-So on Sun/Practice the anchor + same-hued chromatic share the same image, which is fine since they're internally distinct slots and the new PNGs read cleanly in both contexts.
-
-No other changes — same imports, same overlay logic, every surface already renders `KnicksOverlay` for all hexes.
+That fires once when the player solves the round that finishes the daily game (whether on attempt 1, 2, or 3). Confetti palette and copy unchanged.
