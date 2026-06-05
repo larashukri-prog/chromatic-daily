@@ -1143,8 +1143,15 @@ const Index = () => {
                     const isBlack = upHex === '#000000';
                     // In shapes mode, anchors keep their true fill (black/white);
                     // chromatic colors render on white with a shape overlay.
-                    const bg = shapesMode ? (isBlack ? '#000000' : '#FFFFFF') : c.hex;
-                    const showAsWhite = (shapesMode && !isBlack) || isWhite;
+                    // In knicks mode, anchors render solid Knicks blue/orange;
+                    // chromatic colors render on white with the Knicks image overlay.
+                    let bg = c.hex;
+                    if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
+                    else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                    const showAsWhite =
+                      (shapesMode && !isBlack) ||
+                      isWhite && !knicksMode ||
+                      (knicksMode && !isBlack && !isWhite);
                     return (
                     <button
                       key={c.hex}
@@ -1183,6 +1190,7 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
+                      {knicksMode && !isBlack && !isWhite && <KnicksOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
