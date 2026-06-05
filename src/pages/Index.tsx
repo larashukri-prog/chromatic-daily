@@ -179,6 +179,42 @@ const Index = () => {
     } catch { /* noop */ }
   }, []);
 
+  const fireKnicksCelebration = useCallback(() => {
+    try {
+      const colors = ['#1D428A', '#F58426'];
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'fixed';
+      canvas.style.inset = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '2147483647';
+      document.body.appendChild(canvas);
+      const myConfetti = (confetti as any).create(canvas, { resize: true, useWorker: true });
+      const burst = (origin: { x: number; y: number }, angle: number) =>
+        myConfetti({
+          particleCount: 90,
+          angle,
+          spread: 80,
+          startVelocity: 60,
+          scalar: 1.1,
+          origin,
+          colors,
+          disableForReducedMotion: false,
+        });
+      burst({ x: 0.05, y: 0.8 }, 60);
+      burst({ x: 0.95, y: 0.8 }, 120);
+      burst({ x: 0.5, y: 0.4 }, 90);
+      setTimeout(() => { try { canvas.remove(); } catch { /* noop */ } }, 4000);
+    } catch { /* noop */ }
+    try {
+      if (bingBongAudio.current) {
+        bingBongAudio.current.currentTime = 0;
+        bingBongAudio.current.play().catch(() => {});
+      }
+    } catch { /* noop */ }
+  }, []);
+
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
