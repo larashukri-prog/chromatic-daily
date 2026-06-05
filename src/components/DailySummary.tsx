@@ -218,9 +218,12 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
   const { enabled: a11y } = useAccessibility();
-  const { theme: visualTheme } = useVisualTheme();
-  const shapesMode = visualTheme === 'shapes';
-  const knicksMode = visualTheme === 'knicks';
+  const { theme: globalTheme } = useVisualTheme();
+  const effectiveTheme = slide.visualTheme ?? globalTheme;
+  const shapesMode = effectiveTheme === 'shapes';
+  const knicksMode = effectiveTheme === 'knicks';
+  const patternsMode = effectiveTheme === 'patterns';
+  const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
