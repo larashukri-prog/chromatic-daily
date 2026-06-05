@@ -277,11 +277,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 let bg: string = color;
                 if (solution[i]) {
                   if (shapesMode) bg = '#FFFFFF';
-                  else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                  else if (knicksMode) bg = '#FFFFFF';
                 }
                 const lightBorder =
                   (shapesMode && solution[i]) ||
-                  (knicksMode && solution[i] && !isBlack && !isWhite);
+                  (knicksMode && !!solution[i]);
                 return (
                   <motion.div
                     key={i}
@@ -297,7 +297,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   >
                     {a11y && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {knicksMode && solution[i] && !isBlack && !isWhite && <KnicksOverlay colorHex={solution[i]} />}
+                    {knicksMode && solution[i] && <KnicksOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -320,11 +320,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               let pBg: string = cellColor;
               if (playerGrid[i]) {
                 if (shapesMode) pBg = '#FFFFFF';
-                else if (knicksMode) pBg = pIsBlack ? '#1D428A' : pIsWhite ? '#F58426' : '#FFFFFF';
+                else if (knicksMode) pBg = '#FFFFFF';
               }
               const pLightBorder =
                 (shapesMode && playerGrid[i]) ||
-                (knicksMode && playerGrid[i] && !pIsBlack && !pIsWhite);
+                (knicksMode && !!playerGrid[i]);
 
               return (
                 <motion.div
@@ -345,7 +345,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 >
                   {a11y && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {knicksMode && playerGrid[i] && !pIsBlack && !pIsWhite && <KnicksOverlay colorHex={playerGrid[i]} />}
+                  {knicksMode && playerGrid[i] && <KnicksOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
