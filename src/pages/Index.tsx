@@ -1210,7 +1210,12 @@ const Index = () => {
               {phase === 'observation' && (
                 <Button
                   onClick={handleReady}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
+                  className={cn(
+                    'w-full rounded-xl h-12 text-sm tracking-wide text-primary-foreground',
+                    knicksMode
+                      ? 'bg-[#006BB6] hover:bg-[#005a9e]'
+                      : 'bg-primary hover:bg-primary/90'
+                  )}
                 >
                   I'm ready
                 </Button>
@@ -1223,7 +1228,12 @@ const Index = () => {
                   <Button
                     onClick={verify}
                     disabled={!canVerify}
-                    className="rounded-xl flex-1 bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                    className={cn(
+                      'rounded-xl flex-1 gap-2 text-primary-foreground',
+                      knicksMode
+                        ? 'bg-[#006BB6] hover:bg-[#005a9e]'
+                        : 'bg-primary hover:bg-primary/90'
+                    )}
                   >
                     <CheckCircle2 className="w-4 h-4" /> Verify
                   </Button>
@@ -1465,11 +1475,11 @@ const Index = () => {
               {isFreeplay ? (
                 <>
                   {isCorrect ? (
-                    <Button onClick={freeplayNext} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <Sparkles className="w-4 h-4" /> Next Level
                     </Button>
                   ) : (
-                    <Button onClick={freeplayRetry} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> Try Again
                     </Button>
                   )}
@@ -1477,7 +1487,7 @@ const Index = () => {
               ) : (
                 <>
                   {canContinue && (
-                    <Button onClick={nextAttempt} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                     </Button>
                   )}

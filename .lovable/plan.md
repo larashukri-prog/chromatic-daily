@@ -1,8 +1,9 @@
-### Replace mask_7.png (Pink tile portrait) with the new upload
+In `src/pages/Index.tsx`, conditionally switch five action buttons to Knicks blue (`#006BB6`) when `knicksMode` is true, keeping existing `bg-primary` styling for all other themes:
 
-Re-upload `user-uploads://Mask_group_9.png` and overwrite the existing pointer at `src/assets/knicks/mask_7.png.asset.json`.
+1. **"I'm ready" button** (line ~1213) — observation phase
+2. **"Verify" button** (line ~1226) — recall phase
+3. **"Next Level" button** (line ~1468) — freeplay result, correct
+4. **"Try Again" button** (line ~1472) — freeplay result, incorrect
+5. **"Next Round / Try Again" button** (line ~1480) — daily result, can continue
 
-### Steps
-1. Run `lovable-assets create --file /mnt/user-uploads/Mask_group_9.png --filename mask_7.png > src/assets/knicks/mask_7.png.asset.json`.
-
-No code changes — `KnicksOverlay.tsx` continues importing the same JSON pointer, which now resolves to the new portrait image. The Pink (`#F198C4`) tile will display the updated portrait.
+All buttons currently use `bg-primary hover:bg-primary/90`. In Knicks mode they will use `bg-[#006BB6] hover:bg-[#005a9e] text-primary-foreground`. No game logic, other UI, or non-Knicks styles are affected.
