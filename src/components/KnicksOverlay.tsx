@@ -5,6 +5,8 @@ import wordmark from '@/assets/knicks/mask_3.png.asset.json';
 import roundel from '@/assets/knicks/mask_4.png.asset.json';
 import liberty from '@/assets/knicks/mask_5.png.asset.json';
 import jersey11 from '@/assets/knicks/mask_6.png.asset.json';
+import portrait23 from '@/assets/knicks/mask_7.png.asset.json';
+import jersey23 from '@/assets/knicks/mask_8.png.asset.json';
 import anchorBlue from '@/assets/knicks/anchor_blue.png.asset.json';
 import anchorOrange from '@/assets/knicks/anchor_orange.png.asset.json';
 
@@ -18,8 +20,8 @@ export const KNICKS_IMAGE_FOR_HEX: Record<string, string> = {
   '#8B5CF6': roundel.url,     // Purple — KNICKS circular logo
   '#7AC00F': brunson.url,     // Lime — player portrait
   '#3F6212': towns.url,       // DarkGreen — player portrait
-  '#F198C4': anchorOrange.url, // Pink — orange anchor PNG
-  '#2563EB': anchorBlue.url,   // Blue — blue anchor PNG
+  '#F198C4': portrait23.url,  // Pink — player portrait
+  '#2563EB': jersey23.url,    // Blue — jersey 23
   '#000000': anchorBlue.url,  // Black anchor → blue Knicks PNG
   '#FFFFFF': anchorOrange.url, // White anchor → orange Knicks PNG
 };
