@@ -15,6 +15,7 @@ import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
+import { KnicksOverlay } from '@/components/KnicksOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -219,6 +220,7 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
+  const knicksMode = visualTheme === 'knicks';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -1141,8 +1143,15 @@ const Index = () => {
                     const isBlack = upHex === '#000000';
                     // In shapes mode, anchors keep their true fill (black/white);
                     // chromatic colors render on white with a shape overlay.
-                    const bg = shapesMode ? (isBlack ? '#000000' : '#FFFFFF') : c.hex;
-                    const showAsWhite = (shapesMode && !isBlack) || isWhite;
+                    // In knicks mode, anchors render solid Knicks blue/orange;
+                    // chromatic colors render on white with the Knicks image overlay.
+                    let bg = c.hex;
+                    if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
+                    else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                    const showAsWhite =
+                      (shapesMode && !isBlack) ||
+                      isWhite && !knicksMode ||
+                      (knicksMode && !isBlack && !isWhite);
                     return (
                     <button
                       key={c.hex}
@@ -1181,6 +1190,7 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
+                      {knicksMode && !isBlack && !isWhite && <KnicksOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
@@ -1430,25 +1440,35 @@ const Index = () => {
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[120px] mx-auto">
-                  {solution.map((c, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square rounded-full relative overflow-hidden"
-                      style={{
-                        backgroundColor: shapesMode && c
-                          ? (c.toUpperCase() === '#000000' ? '#000000' : '#FFFFFF')
-                          : (c || NEUTRAL),
-                        width: '100%',
-                        border:
-                          ((shapesMode && c && c.toUpperCase() !== '#000000') || c?.toUpperCase() === '#FFFFFF')
-                            ? '2px solid rgb(209, 213, 219)'
-                            : undefined,
-                      }}
-                    >
-                      {a11y && <PatternOverlay colorHex={c} size="100%" />}
-                      {shapesMode && <ShapeOverlay colorHex={c} />}
-                    </div>
-                  ))}
+                  {solution.map((c, i) => {
+                    const up = c?.toUpperCase();
+                    const isBlack = up === '#000000';
+                    const isWhite = up === '#FFFFFF';
+                    let bg: string = c || NEUTRAL;
+                    if (c) {
+                      if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
+                      else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                    }
+                    const lightBorder =
+                      (shapesMode && c && !isBlack) ||
+                      (isWhite && !knicksMode) ||
+                      (knicksMode && c && !isBlack && !isWhite);
+                    return (
+                      <div
+                        key={i}
+                        className="aspect-square rounded-full relative overflow-hidden"
+                        style={{
+                          backgroundColor: bg,
+                          width: '100%',
+                          border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
+                        }}
+                      >
+                        {a11y && <PatternOverlay colorHex={c} size="100%" />}
+                        {shapesMode && <ShapeOverlay colorHex={c} />}
+                        {knicksMode && c && !isBlack && !isWhite && <KnicksOverlay colorHex={c} />}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -7,6 +7,7 @@ import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
+import { KnicksOverlay } from '@/components/KnicksOverlay';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -217,6 +218,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
+  const knicksMode = visualTheme === 'knicks';
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
@@ -269,6 +271,17 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             {Array.from({ length: 9 }).map((_, i) => {
               if (showSolution) {
                 const color = solution[i] ?? NEUTRAL;
+                const up = solution[i]?.toUpperCase();
+                const isBlack = up === '#000000';
+                const isWhite = up === '#FFFFFF';
+                let bg: string = color;
+                if (solution[i]) {
+                  if (shapesMode) bg = '#FFFFFF';
+                  else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                }
+                const lightBorder =
+                  (shapesMode && solution[i]) ||
+                  (knicksMode && solution[i] && !isBlack && !isWhite);
                 return (
                   <motion.div
                     key={i}
@@ -277,16 +290,14 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                     transition={{ duration: 0.3, delay: i * 0.04 }}
                     className="aspect-square rounded-full relative overflow-hidden"
                     style={{
-                      backgroundColor: shapesMode && solution[i] ? '#FFFFFF' : color,
-                      border:
-                        shapesMode && solution[i]
-                          ? '2px solid #D1D5DB'
-                          : '2px solid transparent',
+                      backgroundColor: bg,
+                      border: lightBorder ? '2px solid #D1D5DB' : '2px solid transparent',
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
                     {a11y && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
+                    {knicksMode && solution[i] && !isBlack && !isWhite && <KnicksOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -303,6 +314,17 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
                   : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
                 : 'none';
+              const pUp = playerGrid[i]?.toUpperCase();
+              const pIsBlack = pUp === '#000000';
+              const pIsWhite = pUp === '#FFFFFF';
+              let pBg: string = cellColor;
+              if (playerGrid[i]) {
+                if (shapesMode) pBg = '#FFFFFF';
+                else if (knicksMode) pBg = pIsBlack ? '#1D428A' : pIsWhite ? '#F58426' : '#FFFFFF';
+              }
+              const pLightBorder =
+                (shapesMode && playerGrid[i]) ||
+                (knicksMode && playerGrid[i] && !pIsBlack && !pIsWhite);
 
               return (
                 <motion.div
@@ -312,17 +334,18 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   transition={{ duration: 0.3, delay: i * 0.04 }}
                   className="aspect-square rounded-full relative overflow-hidden"
                   style={{
-                    backgroundColor: shapesMode && playerGrid[i] ? '#FFFFFF' : cellColor,
+                    backgroundColor: pBg,
                     boxShadow: glow,
                     border: !result[i] && solution[i]
                       ? '2px solid #DC2626'
-                      : shapesMode && playerGrid[i]
+                      : pLightBorder
                       ? '2px solid #D1D5DB'
                       : '2px solid transparent',
                   }}
                 >
                   {a11y && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
+                  {knicksMode && playerGrid[i] && !pIsBlack && !pIsWhite && <KnicksOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
