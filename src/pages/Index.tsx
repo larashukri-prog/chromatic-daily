@@ -649,7 +649,7 @@ const Index = () => {
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
       setResultMessage(msg);
 
-      // Go Knicks: fire blue/orange confetti only when the player wins the
+      // Go Knicks!: fire blue/orange confetti only when the player wins the
       // round that finishes the daily game.
       const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
       if (visualTheme === 'knicks' && correct && isDailyDone) {
