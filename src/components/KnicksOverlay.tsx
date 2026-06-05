@@ -1,25 +1,23 @@
-import basketball from '@/assets/knicks/basketball.jpg';
-import wordmark from '@/assets/knicks/wordmark.png';
-import liberty from '@/assets/knicks/liberty.jpg';
-import jersey11 from '@/assets/knicks/jersey11.png';
-import roundel from '@/assets/knicks/roundel.png';
-import arena from '@/assets/knicks/arena.jpg';
-import skyline from '@/assets/knicks/skyline.jpg';
-import nymonogram from '@/assets/knicks/nymonogram.png';
-import player from '@/assets/knicks/player.jpg';
+import basketball from '@/assets/knicks/mask.png.asset.json';
+import brunson from '@/assets/knicks/mask_1.png.asset.json';
+import towns from '@/assets/knicks/mask_2.png.asset.json';
+import wordmark from '@/assets/knicks/mask_3.png.asset.json';
+import roundel from '@/assets/knicks/mask_4.png.asset.json';
+import liberty from '@/assets/knicks/mask_5.png.asset.json';
+import jersey11 from '@/assets/knicks/mask_6.png.asset.json';
 
 // 1:1 hex → Knicks image mapping for the 9 chromatic colors.
 // Black/White anchors render as solid Knicks blue/orange (no image overlay).
 export const KNICKS_IMAGE_FOR_HEX: Record<string, string> = {
-  '#EF4444': basketball,    // Red
-  '#FDE047': wordmark,      // Yellow
-  '#2DD4D4': liberty,       // Teal
-  '#FD9349': jersey11,      // Orange
-  '#8B5CF6': roundel,       // Purple
-  '#7AC00F': arena,         // Lime
-  '#3F6212': skyline,       // Dark Green
-  '#F198C4': nymonogram,    // Pink
-  '#2563EB': player,        // Blue
+  '#EF4444': basketball.url,  // Red — basketball
+  '#FDE047': wordmark.url,    // Yellow — KNICKS wordmark roundel
+  '#2DD4D4': liberty.url,     // Teal — Statue of Liberty
+  '#FD9349': jersey11.url,    // Orange — jersey 11
+  '#8B5CF6': roundel.url,     // Purple — KNICKS circular logo
+  '#7AC00F': brunson.url,     // Lime — player portrait
+  '#3F6212': towns.url,       // DarkGreen — player portrait
+  '#F198C4': wordmark.url,    // Pink — reuse wordmark
+  '#2563EB': jersey11.url,    // Blue — reuse jersey 11
 };
 
 interface KnicksOverlayProps {
@@ -38,7 +36,8 @@ export function KnicksOverlay({ colorHex, className = '' }: KnicksOverlayProps) 
       alt=""
       aria-hidden
       loading="lazy"
-      className={`absolute inset-0 w-full h-full object-cover rounded-full pointer-events-none ${className}`}
+      style={{ objectPosition: 'center' }}
+      className={`absolute inset-0 w-full h-full object-contain rounded-full pointer-events-none ${className}`}
     />
   );
 }

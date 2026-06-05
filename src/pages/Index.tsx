@@ -116,6 +116,8 @@ const Index = () => {
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
   const pendingMilestone = useRef(false);
+  const bingBongAudio = useRef<HTMLAudioElement | null>(null);
+  const knicksCelebrationKey = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -123,6 +125,13 @@ const Index = () => {
       a.preload = 'auto';
       a.volume = 0.5;
       milestoneAudio.current = a;
+    } catch { /* noop */ }
+    try {
+      // "Bing Bong" stand-in — short open-source bell SFX. Easy to swap later.
+      const b = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_a8e603753c.mp3');
+      b.preload = 'auto';
+      b.volume = 0.7;
+      bingBongAudio.current = b;
     } catch { /* noop */ }
   }, []);
 
@@ -166,6 +175,42 @@ const Index = () => {
       if (milestoneAudio.current) {
         milestoneAudio.current.currentTime = 0;
         milestoneAudio.current.play().catch(() => {});
+      }
+    } catch { /* noop */ }
+  }, []);
+
+  const fireKnicksCelebration = useCallback(() => {
+    try {
+      const colors = ['#1D428A', '#F58426'];
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'fixed';
+      canvas.style.inset = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '2147483647';
+      document.body.appendChild(canvas);
+      const myConfetti = (confetti as any).create(canvas, { resize: true, useWorker: true });
+      const burst = (origin: { x: number; y: number }, angle: number) =>
+        myConfetti({
+          particleCount: 90,
+          angle,
+          spread: 80,
+          startVelocity: 60,
+          scalar: 1.1,
+          origin,
+          colors,
+          disableForReducedMotion: false,
+        });
+      burst({ x: 0.05, y: 0.8 }, 60);
+      burst({ x: 0.95, y: 0.8 }, 120);
+      burst({ x: 0.5, y: 0.4 }, 90);
+      setTimeout(() => { try { canvas.remove(); } catch { /* noop */ } }, 4000);
+    } catch { /* noop */ }
+    try {
+      if (bingBongAudio.current) {
+        bingBongAudio.current.currentTime = 0;
+        bingBongAudio.current.play().catch(() => {});
       }
     } catch { /* noop */ }
   }, []);
@@ -545,7 +590,11 @@ const Index = () => {
       setTimeout(() => {
         setVerifying(false);
         setPhase('result');
-        setResultMessage(correct ? 'Great memory! Ready for the next one?' : 'Not quite — give it another shot!');
+        setResultMessage(
+          correct
+            ? (visualTheme === 'knicks' ? 'Swish! Run it back?' : 'Great memory! Ready for the next one?')
+            : 'Not quite — give it another shot!'
+        );
         // Fire milestone after the verify animation settles so the celebration
         // is visible at the same time the result modal appears (mobile-friendly).
         if (milestoneHit) triggerMilestone();
@@ -609,8 +658,17 @@ const Index = () => {
         setDdaLevel('standard');
       }
 
-      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed);
+      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
       setResultMessage(msg);
+
+      // Go Knicks: fire bing-bong + blue/orange confetti once per daily result.
+      if (visualTheme === 'knicks') {
+        const key = `${roundIndex}:${attemptInRound}:${correct ? 1 : 0}`;
+        if (knicksCelebrationKey.current !== key) {
+          knicksCelebrationKey.current = key;
+          fireKnicksCelebration();
+        }
+      }
 
       const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
       if (done || savedData.finished) {

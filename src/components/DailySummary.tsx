@@ -40,6 +40,8 @@ interface AttemptSlide {
 
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
+  const { theme: visualTheme } = useVisualTheme();
+  const knicks = visualTheme === 'knicks';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -154,11 +156,13 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
         {/* Rest indicator */}
         <div className="px-6 py-4 text-center border-t border-border">
-          <p className="font-semibold text-foreground text-base">Daily Challenge Complete</p>
+          <p className="font-semibold text-foreground text-base">
+            {knicks ? 'Game Over — Swish!' : 'Daily Challenge Complete'}
+          </p>
           <p className="text-sm text-muted-foreground mt-1">
             {dayName === 'Sunday'
-              ? 'Master Challenge Complete! A fresh start begins tomorrow.'
-              : 'Tomorrow will be even more challenging!'}
+              ? (knicks ? 'Championship Game complete! Tip-off resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
+              : (knicks ? 'Tomorrow’s tip-off brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
           </p>
         </div>
 
