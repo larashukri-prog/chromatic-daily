@@ -404,10 +404,27 @@ export function getStreaks() {
   };
 }
 
-export function getResultMessage(roundIndex: number, attemptInRound: number, isCorrect: boolean, totalAttemptsUsed: number): string {
+export function getResultMessage(roundIndex: number, attemptInRound: number, isCorrect: boolean, totalAttemptsUsed: number, theme?: string): string {
   const remaining = MAX_ROUNDS - totalAttemptsUsed;
+  const knicks = theme === 'knicks';
 
   if (isCorrect) {
+    if (knicks) {
+      if (totalAttemptsUsed >= MAX_ROUNDS && attemptInRound >= 2) {
+        return "Buzzer Beater! 🏀 Game complete — championship form!";
+      }
+      if (roundIndex === 0 && attemptInRound === 1) {
+        return remaining > 0
+          ? `Swish! Nothing but net. You've got ${remaining} round${remaining > 1 ? 's' : ''} left — fresh puzzle for Round ${roundIndex + 2}.`
+          : "Swish! Perfect run — championship form!";
+      }
+      if (totalAttemptsUsed >= MAX_ROUNDS) {
+        return "On Fire! That's the final buzzer — game complete.";
+      }
+      return remaining > 0
+        ? `On Fire! ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Next play coming up.`
+        : "Game complete — On Fire today!";
+    }
     if (roundIndex === 0 && attemptInRound === 1) {
       return remaining > 0
         ? `Perfect score! You've got ${remaining} round${remaining > 1 ? 's' : ''} left. Here is a completely new challenge for Round ${roundIndex + 2}.`
