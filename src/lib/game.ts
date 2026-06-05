@@ -332,7 +332,8 @@ export function saveRoundAttempt(
   roundIndex: number,
   isCorrect: boolean,
   playerGrid: (string | null)[],
-  solution: (string | null)[]
+  solution: (string | null)[],
+  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'knicks'
 ): StoredData {
   const today = getTodayString();
   const existing = loadData();
@@ -347,7 +348,7 @@ export function saveRoundAttempt(
     rounds.push(round);
   }
 
-  round.attempts.push({ grid: playerGrid, isCorrect, solution });
+  round.attempts.push({ grid: playerGrid, isCorrect, solution, visualTheme });
   round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
