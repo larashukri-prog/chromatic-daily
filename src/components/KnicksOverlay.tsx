@@ -18,8 +18,8 @@ export const KNICKS_IMAGE_FOR_HEX: Record<string, string> = {
   '#8B5CF6': roundel.url,     // Purple — KNICKS circular logo
   '#7AC00F': brunson.url,     // Lime — player portrait
   '#3F6212': towns.url,       // DarkGreen — player portrait
-  '#F198C4': wordmark.url,    // Pink — reuse wordmark
-  '#2563EB': jersey11.url,    // Blue — reuse jersey 11
+  '#F198C4': anchorOrange.url, // Pink — orange anchor PNG
+  '#2563EB': anchorBlue.url,   // Blue — blue anchor PNG
   '#000000': anchorBlue.url,  // Black anchor → blue Knicks PNG
   '#FFFFFF': anchorOrange.url, // White anchor → orange Knicks PNG
 };
