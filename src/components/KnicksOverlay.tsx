@@ -5,6 +5,8 @@ import wordmark from '@/assets/knicks/mask_3.png.asset.json';
 import roundel from '@/assets/knicks/mask_4.png.asset.json';
 import liberty from '@/assets/knicks/mask_5.png.asset.json';
 import jersey11 from '@/assets/knicks/mask_6.png.asset.json';
+import anchorBlue from '@/assets/knicks/anchor_blue.png.asset.json';
+import anchorOrange from '@/assets/knicks/anchor_orange.png.asset.json';
 
 // 1:1 hex → Knicks image mapping for the 9 chromatic colors.
 // Black/White anchors render as solid Knicks blue/orange (no image overlay).
@@ -18,6 +20,8 @@ export const KNICKS_IMAGE_FOR_HEX: Record<string, string> = {
   '#3F6212': towns.url,       // DarkGreen — player portrait
   '#F198C4': wordmark.url,    // Pink — reuse wordmark
   '#2563EB': jersey11.url,    // Blue — reuse jersey 11
+  '#000000': anchorBlue.url,  // Black anchor → blue Knicks PNG
+  '#FFFFFF': anchorOrange.url, // White anchor → orange Knicks PNG
 };
 
 interface KnicksOverlayProps {
