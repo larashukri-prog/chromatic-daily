@@ -117,7 +117,6 @@ const Index = () => {
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
   const pendingMilestone = useRef(false);
-  const bingBongAudio = useRef<HTMLAudioElement | null>(null);
   const knicksCelebrationKey = useRef<string | null>(null);
 
   useEffect(() => {
@@ -126,13 +125,6 @@ const Index = () => {
       a.preload = 'auto';
       a.volume = 0.5;
       milestoneAudio.current = a;
-    } catch { /* noop */ }
-    try {
-      // "Bing Bong" stand-in — short open-source bell SFX. Easy to swap later.
-      const b = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_a8e603753c.mp3');
-      b.preload = 'auto';
-      b.volume = 0.7;
-      bingBongAudio.current = b;
     } catch { /* noop */ }
   }, []);
 
@@ -207,12 +199,6 @@ const Index = () => {
       burst({ x: 0.95, y: 0.8 }, 120);
       burst({ x: 0.5, y: 0.4 }, 90);
       setTimeout(() => { try { canvas.remove(); } catch { /* noop */ } }, 4000);
-    } catch { /* noop */ }
-    try {
-      if (bingBongAudio.current) {
-        bingBongAudio.current.currentTime = 0;
-        bingBongAudio.current.play().catch(() => {});
-      }
     } catch { /* noop */ }
   }, []);
 
@@ -663,9 +649,11 @@ const Index = () => {
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
       setResultMessage(msg);
 
-      // Go Knicks: fire bing-bong + blue/orange confetti once per daily result.
-      if (visualTheme === 'knicks') {
-        const key = `${roundIndex}:${attemptInRound}:${correct ? 1 : 0}`;
+      // Go Knicks: fire blue/orange confetti only when the player wins the
+      // round that finishes the daily game.
+      const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+      if (visualTheme === 'knicks' && correct && isDailyDone) {
+        const key = `${roundIndex}:${attemptInRound}`;
         if (knicksCelebrationKey.current !== key) {
           knicksCelebrationKey.current = key;
           fireKnicksCelebration();
