@@ -1,57 +1,87 @@
-## Goal
+## Scope
 
-Add a new **Go Knicks** visual style alongside Colors / Patterns / Shapes. It maps each of the 9 chromatic colors to a Knicks-themed circular image, and replaces the Black/White weekend anchors with solid Blue/Orange circles. All game logic (DDA, persistence, round scaling, timers, scoring, sharing) stays untouched — this is purely a presentation layer swap, exactly like Shapes mode.
+All changes are gated to the **Go Knicks** visual theme. Core game logic, scoring, persistence, DDA, timers, sharing, and other themes are untouched.
 
-## Image generation
+## 1. Replace Knicks images with uploaded PNGs
 
-Generate 9 square PNGs into `src/assets/knicks/` and externalize each via `lovable-assets` (so the binaries don't bloat the repo). All generated with `imagegen` (premium for the logo/typographic ones):
+Use the 7 attached PNGs for the 7 chromatic slots (excluding the two that previously mapped to images now serving as anchors). The Black anchor renders solid Knicks blue and the White anchor renders solid Knicks orange — these stay as solid color fills, no image.
 
-| Hex | Color name | Image |
+Upload all 7 PNGs to Lovable Assets (CDN pointers under `src/assets/knicks/`), then delete the obsolete locally-generated PNGs that they replace. Final 9-slot mapping for `KnicksOverlay`:
+
+| Hex | Slot | Asset |
 |---|---|---|
-| #EF4444 Red | Heart | Orange basketball on white |
-| #FDE047 Yellow | Star | Knicks "KNICKS" roundel logo (orange/blue) |
-| #2DD4D4 Teal | Cat | Stylized Statue of Liberty on blue circle |
-| #FD9349 Orange | Tree | Jersey "11" white-on-blue tile |
-| #8B5CF6 Purple | Moon | Knicks primary logo (basketball + KNICKS arch) |
-| #7AC00F Lime | Fish | MSG arena silhouette on blue |
-| #3F6212 DarkGreen | Ghost | NYC skyline silhouette on blue |
-| #F198C4 Pink | Droplet | Orange "NY" monogram on white |
-| #2563EB Blue | Snowflake | Knicks throwback wordmark on orange |
+| #EF4444 Red | basketball | `Mask group.png` |
+| #FDE047 Yellow | KNICKS wordmark roundel | `Mask group (3).png` |
+| #2DD4D4 Teal | Statue of Liberty | `Mask group (5).png` |
+| #FD9349 Orange | Jersey 11 | `Mask group (6).png` |
+| #8B5CF6 Purple | KNICKS circular logo | `Mask group (4).png` |
+| #7AC00F Lime | Player portrait (Brunson) | `Mask group (1).png` |
+| #3F6212 DarkGreen | Player portrait (Towns) | `Mask group (2).png` |
+| #F198C4 Pink | reuse KNICKS roundel | `Mask group (3).png` |
+| #2563EB Blue | reuse jersey 11 | `Mask group (6).png` |
+| #000000 (anchor) | solid Knicks blue `#1D428A` | none |
+| #FFFFFF (anchor) | solid Knicks orange `#F58426` | none |
 
-(Final image choices may vary slightly based on what the image model produces cleanly — the *mapping slot* is what's fixed.)
+(Two slots reuse an attached image since only 7 unique uploads were provided. No new generation.)
 
-**Anchors (weekend only):**
-- `#000000` Black → solid **Blue** circle (`#1D428A` — Knicks navy/blue)
-- `#FFFFFF` White → solid **Orange** circle (`#F58426` — Knicks orange)
+### Responsive circular sizing
 
-## Code changes
+Update `KnicksOverlay` so each `<img>` reliably fits the circle regardless of source aspect ratio:
+- `position: absolute; inset: 0; width: 100%; height: 100%`
+- `object-fit: contain` (was `cover`) so logos/portraits aren't cropped
+- `object-position: center`
+- Underlying tile keeps the white backdrop from `GameGrid.getDisplayBackground` so transparent PNG corners read as a clean circle
+- Existing border rule for light-filled tiles stays in place
 
-1. **`src/hooks/useAccessibility.tsx`** — extend `VisualTheme` union to `'colors' | 'patterns' | 'shapes' | 'knicks'`, accept `'knicks'` in `loadInitial`.
+No layout, sizing, or container changes outside the overlay's own styles.
 
-2. **`src/components/VisualThemeToggle.tsx`** — add `{ value: 'knicks', label: 'Go Knicks' }` to `OPTIONS`.
+## 2. Conditional game-end audio + confetti (Go Knicks only)
 
-3. **New `src/components/KnicksOverlay.tsx`** — mirror of `ShapeOverlay`:
-   - `KNICKS_IMAGE_FOR_HEX: Record<string, string>` mapping the 9 chromatic hexes to imported asset URLs.
-   - Renders an absolutely-positioned `<img>` filling the circle (object-cover, rounded-full, pointer-events-none, `aria-hidden`).
-   - Anchors (`#000000`, `#FFFFFF`) intentionally return `null` so the underlying solid color shows through.
+Trigger when `phase` transitions to `'result'` for the **daily** game **and** `visualTheme === 'knicks'`. Fires on every game-end (wins and losses), per user choice.
 
-4. **`src/components/GameGrid.tsx`** — add `knicks = theme === 'knicks'` branch:
-   - `getDisplayBackground`: in knicks mode, anchors render as their Knicks solid (`#000` → `#1D428A`, `#FFF` → `#F58426`); chromatic slots render white underneath the image (same idea as shapes mode making the slot white).
-   - Render `<KnicksOverlay colorHex={getPatternColor(i)} />` when `knicks` is true.
-   - Borders for the orange-anchor tile follow the same "light fill needs visible border" rule used for white in shapes mode.
+Implementation in `src/pages/Index.tsx`:
 
-5. **No changes** to `game.ts`, round logic, DDA, timer, persistence, sharing, analytics, onboarding copy, or any other file. The COLORS array and all hex values stay identical — only the *rendering* of those hexes changes when `theme === 'knicks'`.
+1. Add a second audio ref `bingBongAudio` loaded once in the existing audio-init `useEffect`. Use a free open-source SFX URL (e.g. a short Pixabay "ding/bell" clip) as a placeholder for "Bing Bong" — easy to swap later.
+2. Add `fireKnicksCelebration()` helper modeled on existing `triggerMilestone`, but with `colors: ['#1D428A', '#F58426']` (Knicks blue + orange) only.
+3. In the existing daily-result effect (around line 432 / where `phase === 'result'` first commits), add a one-shot guard so when `visualTheme === 'knicks'` and the result modal is opening for the first time this round, we call `fireKnicksCelebration()` and play `bingBongAudio`. Use a `useRef` flag keyed off `(roundIndex, attemptInRound)` to avoid double-firing on rerenders or auto-transition.
+4. Practice/freeplay mode is excluded (the existing `practiceMode` / freeplay branches don't enter the daily result path we're hooking).
 
-## Out of scope
+The existing `triggerMilestone` (multi-color confetti + chime) is left alone for non-Knicks themes.
 
-- No changes to color count progression or weekend anchor logic — anchors still mean "Black slot" / "White slot" internally, just rendered as blue/orange in this theme.
-- No theme-specific PostHog event names beyond the existing `visual_theme_changed` (which already accepts any string).
-- No new onboarding/legend modal for the Knicks mapping (separate request if wanted later).
-- No sound, no extra animations.
+## 3. Basketball-themed copy (Go Knicks only)
+
+Wrap the small set of player-facing strings so that when `visualTheme === 'knicks'`, the alternates apply. All other themes keep current copy verbatim.
+
+Locations:
+
+- **`src/lib/game.ts` → `getResultMessage`**: accept an optional `theme` param. When `theme === 'knicks'` and `isCorrect`, return Knicks-flavored variants:
+  - First-round perfect → "Swish! Nothing but net." (+ existing "rounds left" tail)
+  - Final-attempt clutch win → "Buzzer Beater! 🏀"
+  - Generic mid-game win → "On Fire!"
+  - Final round complete (any) → "Game complete — championship form!"
+  - Loss copy stays as-is (no goofy basketball loss copy was requested).
+- **`src/pages/Index.tsx`** around the freeplay result string (line 548): when knicks, swap `'Great memory! Ready for the next one?'` → `'Swish! Run it back?'`.
+- **Streak / daily summary headline** in `DailySummary.tsx`: when knicks, swap any "Nice work" / generic success headline for "On Fire!" and the streak-line label (e.g. "Day streak") for "Game streak". I'll grep the file for the exact strings and only replace the success-facing ones — no layout changes, just text swaps inside existing nodes so spacing/alignment stay identical.
+
+All swaps are pure string substitutions in the same JSX nodes — no new components, no wrapping containers.
+
+## 4. Preservation
+
+- No changes to `COLORS`, round count, DDA, timers, scoring, persistence keys, share text format, analytics event names, onboarding copy, or other themes.
+- `KNICKS_IMAGE_FOR_HEX` keys stay aligned with the canonical `COLORS` hexes.
+- No new dependencies (canvas-confetti is already installed).
+
+## Files touched
+
+- `src/assets/knicks/*.asset.json` — 7 new CDN pointers; delete obsolete generated PNGs they replace
+- `src/components/KnicksOverlay.tsx` — new mapping + `object-contain` styling
+- `src/pages/Index.tsx` — bing-bong audio ref, Knicks-only celebration trigger, freeplay copy swap
+- `src/lib/game.ts` — `getResultMessage` accepts optional `theme` and returns Knicks variants
+- `src/components/DailySummary.tsx` — Knicks-only headline/streak label swaps
 
 ## Verification
 
-- Toggle to Go Knicks → 9 chromatic slots show images, anchors show solid blue/orange.
-- Toggle back to Colors/Patterns/Shapes → identical behavior to today.
-- Verify in observation, recall, and result phases; error state (wrong slot) still tints red.
-- Persisted theme survives reload.
+- Toggle to Go Knicks → tiles show the 7 attached PNGs (no cropping), anchors solid blue/orange.
+- Finish a daily round in Go Knicks → bing-bong plays, blue/orange confetti bursts, result text reads "Swish!" / "Buzzer Beater!" / "On Fire!" as appropriate.
+- Toggle to Colors/Patterns/Shapes → original copy, original confetti palette, original chime — completely unchanged.
+- Reload mid-state → no double-fire of celebration.
