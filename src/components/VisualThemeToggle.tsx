@@ -6,6 +6,7 @@ const OPTIONS: { value: VisualTheme; label: string }[] = [
   { value: 'colors', label: 'Colors' },
   { value: 'patterns', label: 'Patterns' },
   { value: 'shapes', label: 'Shapes' },
+  { value: 'knicks', label: 'Go Knicks' },
 ];
 
 export function VisualThemeToggle() {

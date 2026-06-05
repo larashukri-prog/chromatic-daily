@@ -3,6 +3,10 @@ import { GamePhase, NEUTRAL } from '@/lib/game';
 import { useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
+import { KnicksOverlay } from '@/components/KnicksOverlay';
+
+const KNICKS_BLUE = '#1D428A';
+const KNICKS_ORANGE = '#F58426';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -19,6 +23,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const { theme } = useVisualTheme();
   const a11y = theme === 'patterns';
   const shapes = theme === 'shapes';
+  const knicks = theme === 'knicks';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -35,6 +40,15 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   // empty slots stay neutral so the player can still see what's filled in.
   const getDisplayBackground = (index: number): string => {
     const c = getCircleColor(index);
+    if (knicks) {
+      if (c === NEUTRAL) return NEUTRAL;
+      if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
+      const up = c.toUpperCase();
+      if (up === '#000000') return KNICKS_BLUE;
+      if (up === '#FFFFFF') return KNICKS_ORANGE;
+      // chromatic slots: white backdrop behind the image
+      return '#FFFFFF';
+    }
     if (!shapes) return c;
     if (c === NEUTRAL) return NEUTRAL;
     if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
@@ -57,7 +71,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    if (color === '#FFFFFF' || color === '#FFF' || displayWhite) {
+    const knicksLightFill = knicks && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]) && color !== '#000000';
+    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || knicksLightFill) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';
     }
@@ -105,6 +120,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
         >
           {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
           {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
+          {knicks && <KnicksOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>

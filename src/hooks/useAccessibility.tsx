@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { posthog } from '@/lib/posthog';
 
-export type VisualTheme = 'colors' | 'patterns' | 'shapes';
+export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'knicks';
 
 const THEME_KEY = 'chromatic-visual-theme';
 const LEGACY_KEY = 'chromatic-accessibility';
@@ -24,7 +24,7 @@ const VisualThemeContext = createContext<VisualThemeContextType>({
 function loadInitial(): VisualTheme {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes') return stored;
+    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes' || stored === 'knicks') return stored;
     // Migrate legacy boolean
     const legacy = localStorage.getItem(LEGACY_KEY);
     if (legacy === 'true') return 'patterns';
