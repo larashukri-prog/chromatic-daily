@@ -15,6 +15,7 @@ import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
+import { KnicksOverlay, KNICKS_IMAGE_FOR_HEX } from '@/components/KnicksOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -219,6 +220,7 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
+  const knicksMode = visualTheme === 'knicks';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
