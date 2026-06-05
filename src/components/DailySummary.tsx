@@ -300,7 +300,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
-                    {a11y && <PatternOverlay colorHex={solution[i]} size="100%" />}
+                    {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
                     {knicksMode && solution[i] && <KnicksOverlay colorHex={solution[i]} />}
                   </motion.div>
@@ -348,7 +348,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       : '2px solid transparent',
                   }}
                 >
-                  {a11y && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
+                  {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
                   {knicksMode && playerGrid[i] && <KnicksOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
