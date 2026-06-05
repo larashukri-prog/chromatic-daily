@@ -590,7 +590,11 @@ const Index = () => {
       setTimeout(() => {
         setVerifying(false);
         setPhase('result');
-        setResultMessage(correct ? 'Great memory! Ready for the next one?' : 'Not quite — give it another shot!');
+        setResultMessage(
+          correct
+            ? (visualTheme === 'knicks' ? 'Swish! Run it back?' : 'Great memory! Ready for the next one?')
+            : 'Not quite — give it another shot!'
+        );
         // Fire milestone after the verify animation settles so the celebration
         // is visible at the same time the result modal appears (mobile-friendly).
         if (milestoneHit) triggerMilestone();
