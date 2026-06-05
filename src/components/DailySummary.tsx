@@ -4,7 +4,7 @@ import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
-import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
+import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
 import { KnicksOverlay } from '@/components/KnicksOverlay';
@@ -37,6 +37,7 @@ interface AttemptSlide {
   solution: (string | null)[];
   isCorrect: boolean;
   roundIndex: number;
+  visualTheme?: VisualTheme;
 }
 
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
@@ -67,6 +68,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         solution: attempt.solution ?? round.solution,
         isCorrect: attempt.isCorrect,
         roundIndex: round.roundIndex,
+        visualTheme: attempt.visualTheme as VisualTheme | undefined,
       });
     }
   }
