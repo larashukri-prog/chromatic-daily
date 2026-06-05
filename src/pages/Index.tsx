@@ -603,7 +603,7 @@ const Index = () => {
 
     // Daily mode verification
     const newTotalUsed = totalAttemptsUsed + 1;
-    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution);
+    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme);
 
     console.log('[Chromatic] Round verified:', {
       roundIndex,
