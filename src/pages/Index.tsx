@@ -1440,25 +1440,35 @@ const Index = () => {
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[120px] mx-auto">
-                  {solution.map((c, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square rounded-full relative overflow-hidden"
-                      style={{
-                        backgroundColor: shapesMode && c
-                          ? (c.toUpperCase() === '#000000' ? '#000000' : '#FFFFFF')
-                          : (c || NEUTRAL),
-                        width: '100%',
-                        border:
-                          ((shapesMode && c && c.toUpperCase() !== '#000000') || c?.toUpperCase() === '#FFFFFF')
-                            ? '2px solid rgb(209, 213, 219)'
-                            : undefined,
-                      }}
-                    >
-                      {a11y && <PatternOverlay colorHex={c} size="100%" />}
-                      {shapesMode && <ShapeOverlay colorHex={c} />}
-                    </div>
-                  ))}
+                  {solution.map((c, i) => {
+                    const up = c?.toUpperCase();
+                    const isBlack = up === '#000000';
+                    const isWhite = up === '#FFFFFF';
+                    let bg: string = c || NEUTRAL;
+                    if (c) {
+                      if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
+                      else if (knicksMode) bg = isBlack ? '#1D428A' : isWhite ? '#F58426' : '#FFFFFF';
+                    }
+                    const lightBorder =
+                      (shapesMode && c && !isBlack) ||
+                      (isWhite && !knicksMode) ||
+                      (knicksMode && c && !isBlack && !isWhite);
+                    return (
+                      <div
+                        key={i}
+                        className="aspect-square rounded-full relative overflow-hidden"
+                        style={{
+                          backgroundColor: bg,
+                          width: '100%',
+                          border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
+                        }}
+                      >
+                        {a11y && <PatternOverlay colorHex={c} size="100%" />}
+                        {shapesMode && <ShapeOverlay colorHex={c} />}
+                        {knicksMode && c && !isBlack && !isWhite && <KnicksOverlay colorHex={c} />}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
