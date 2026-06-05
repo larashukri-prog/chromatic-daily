@@ -251,6 +251,7 @@ export interface RoundAttempt {
   grid: (string | null)[];
   isCorrect: boolean;
   solution: (string | null)[];
+  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'knicks';
 }
 
 export interface RoundData {
