@@ -4,7 +4,7 @@ import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
-import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
+import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
 import { KnicksOverlay } from '@/components/KnicksOverlay';
@@ -37,6 +37,7 @@ interface AttemptSlide {
   solution: (string | null)[];
   isCorrect: boolean;
   roundIndex: number;
+  visualTheme?: VisualTheme;
 }
 
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
@@ -67,6 +68,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         solution: attempt.solution ?? round.solution,
         isCorrect: attempt.isCorrect,
         roundIndex: round.roundIndex,
+        visualTheme: attempt.visualTheme as VisualTheme | undefined,
       });
     }
   }
@@ -216,9 +218,12 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
   const { enabled: a11y } = useAccessibility();
-  const { theme: visualTheme } = useVisualTheme();
-  const shapesMode = visualTheme === 'shapes';
-  const knicksMode = visualTheme === 'knicks';
+  const { theme: globalTheme } = useVisualTheme();
+  const effectiveTheme = slide.visualTheme ?? globalTheme;
+  const shapesMode = effectiveTheme === 'shapes';
+  const knicksMode = effectiveTheme === 'knicks';
+  const patternsMode = effectiveTheme === 'patterns';
+  const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
@@ -295,7 +300,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
-                    {a11y && <PatternOverlay colorHex={solution[i]} size="100%" />}
+                    {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
                     {knicksMode && solution[i] && <KnicksOverlay colorHex={solution[i]} />}
                   </motion.div>
@@ -343,7 +348,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       : '2px solid transparent',
                   }}
                 >
-                  {a11y && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
+                  {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
                   {knicksMode && playerGrid[i] && <KnicksOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
