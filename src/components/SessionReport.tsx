@@ -233,7 +233,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
 function buildShareCardNode(data: {
   insight: string;
   rounds: string;
-  reflex: string;
+  wins: string;
   peak: string;
   decoded: string;
 }): HTMLDivElement {
@@ -282,7 +282,7 @@ function buildShareCardNode(data: {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
       ${stat(ICONS.rounds, data.rounds, 'Rounds')}
-      ${stat(ICONS.reflex, data.reflex, 'Reflex Avg')}
+      ${stat(ICONS.reflex, data.wins, 'Wins')}
       ${stat(ICONS.peak, data.peak, 'Peak', 16)}
       ${stat(ICONS.decoded, data.decoded, 'Decoded')}
     </div>
