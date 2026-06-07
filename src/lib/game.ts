@@ -461,6 +461,7 @@ export function generateShareText(
     reflexAvg: number | null;
     peak: { tiles: number; seconds: number } | null;
     tilesDecoded: number;
+    visualStyles?: string;
   },
 ): string {
   const { dayName, colorCount } = getDayInfo();
@@ -528,13 +529,14 @@ export function generateShareText(
   } else {
     lines.push('Better luck tomorrow!');
   }
+  if (metrics?.visualStyles) {
+    lines.push(`🎨 Visual Style: ${metrics.visualStyles}`);
+  }
   lines.push(`⭐️ Speed Stars: ${starsEarned}`);
 
   if (metrics) {
-    const reflex = metrics.reflexAvg !== null ? `${metrics.reflexAvg.toFixed(2)}s` : '—';
     const peak = metrics.peak ? `${metrics.peak.tiles} in ${metrics.peak.seconds.toFixed(1)}s` : '—';
     lines.push(`🎯 Consistency: ${metrics.consistency}%`);
-    lines.push(`⚡ Reflex Avg: ${reflex}`);
     lines.push(`👑 Peak: ${peak}`);
     lines.push(`🧩 Decoded: ${metrics.tilesDecoded} tiles`);
   }
