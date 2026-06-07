@@ -12,7 +12,7 @@ import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
 import { VisualThemeToggle } from '@/components/VisualThemeToggle';
-import { useAccessibility, useVisualTheme } from '@/hooks/useAccessibility';
+import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
 import { KnicksOverlay } from '@/components/KnicksOverlay';
