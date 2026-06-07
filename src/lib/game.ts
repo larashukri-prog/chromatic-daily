@@ -525,12 +525,6 @@ export function generateShareText(
     lines.push('');
   }
 
-  const totalAttempts = Math.min(allAttempts.length, MAX_ROUNDS);
-  if (anySolved) {
-    lines.push(`Solved in ${totalAttempts}/${MAX_ROUNDS} attempts`);
-  } else {
-    lines.push('Better luck tomorrow!');
-  }
   if (metrics?.visualStyles) {
     lines.push(`🎨 Visual Style: ${metrics.visualStyles}`);
   }
