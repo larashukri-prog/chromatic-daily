@@ -1,22 +1,18 @@
-## Goal
-Swap the displayed "Reflex Avg" stat for "Wins" in the Practice Session results card and its generated share PNG, without touching any underlying tracking logic.
+## Overview
+Replace the Zap icon with a Trophy icon for the "Wins" stat in the Practice Session results card (`src/components/SessionReport.tsx`). Update both the React component and the share-card PNG builder.
 
-## File: `src/components/SessionReport.tsx`
+## Changes
 
-1. **On-screen stat grid** — Change the second `StatCard` from:
-   - `label="Reflex Avg"` / `value={reflexLabel}`
-   - to `label="Wins"` / `value={stats.totalCorrect}`
-   - Keep the `Zap` icon and all existing styling/classes.
+### File: `src/components/SessionReport.tsx`
 
-2. **PNG share card builder (`buildShareCardNode`)** —
-   - Rename the incoming data key from `reflex` to `wins`.
-   - Update the label in the generated HTML from `"Reflex Avg"` to `"Wins"`.
-   - Pass `wins: String(stats.totalCorrect)` from `handleShareCard` instead of `reflex: reflexLabel`.
+1. **Import**
+   - Add `Trophy` to the `lucide-react` import alongside existing icons.
 
-3. **Share caption text** — Update the caption string from `Reflex: ${reflex}` to `Wins: ${stats.totalCorrect}`.
+2. **On-screen stat grid**
+   - Change the "Wins" `StatCard` from `icon={Zap}` to `icon={Trophy}`.
 
-## Preserved (no changes)
-- `computeReflexAvg()` function and its return value.
-- `reflexAvg` local variable and its use inside `getInsight()`.
-- All layout, typography, colors, spacing, borders, shadows, and icon choices.
-- All state tracking, `SessionStats` shape, and data-capture flows.
+3. **PNG share card builder (`buildShareCardNode`)**
+   - Update the inline SVG key `reflex` to use a Trophy-shaped inline SVG instead of the current Zap (lightning bolt) SVG.
+   - Rename the key from `reflex` to `wins` for clarity (optional, but keeps the label consistent with the stat).
+
+All other logic, styling, and state tracking remain untouched.
