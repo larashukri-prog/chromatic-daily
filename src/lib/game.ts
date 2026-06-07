@@ -531,9 +531,7 @@ export function generateShareText(
 
   if (metrics) {
     const peak = metrics.peak ? `${metrics.peak.tiles} in ${metrics.peak.seconds.toFixed(1)}s` : '—';
-    lines.push(`🎯 Consistency: ${metrics.consistency}%`);
-    lines.push(`👑 Peak: ${peak}`);
-    lines.push(`🧩 Decoded: ${metrics.tilesDecoded} tiles`);
+    lines.push(`⏱️ Peak: ${peak}`);
   }
 
   lines.push('');
