@@ -760,16 +760,50 @@ const Index = () => {
     const visualStyles = (seen.length ? seen : [visualTheme])
       .map(getVisualThemeLabel)
       .join(', ');
+    // Derive metrics from persisted rounds so the share text is correct
+    // even after a reload / when viewing /summary in a fresh session.
+    let roundsPlayed = 0;
+    let totalCorrect = 0;
+    let tilesDecoded = 0;
+    let peak: { tiles: number; seconds: number } | null = null;
+    for (const round of roundsForStyles) {
+      for (const attempt of round.attempts) {
+        roundsPlayed += 1;
+        if (!attempt.isCorrect) continue;
+        totalCorrect += 1;
+        const sol = attempt.solution ?? round.solution ?? [];
+        let matched = 0;
+        let tiles = 0;
+        for (let i = 0; i < 9; i++) {
+          const s = sol[i];
+          if (s !== null && s !== undefined) tiles += 1;
+          const p = attempt.grid?.[i];
+          if (s && p && s.toLowerCase() === p.toLowerCase()) matched += 1;
+        }
+        tilesDecoded += matched;
+        if (!peak || tiles > peak.tiles) {
+          peak = { tiles, seconds: 0 };
+        }
+      }
+    }
+    // Fall back to in-session stats if persisted derivation produced nothing
+    // (e.g. very first attempt before save completes).
+    if (roundsPlayed === 0 && dailyStats.roundsPlayed > 0) {
+      roundsPlayed = dailyStats.roundsPlayed;
+      totalCorrect = dailyStats.totalCorrect;
+      tilesDecoded = dailyStats.tilesDecoded;
+      peak = dailyStats.peakComplexity;
+    }
     const sorted = [...dailyStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
     const reflexAvg = sorted.length ? sorted.reduce((s, n) => s + n, 0) / sorted.length : null;
-    const consistency = dailyStats.roundsPlayed
-      ? Math.round((dailyStats.totalCorrect / dailyStats.roundsPlayed) * 100)
+    const consistency = roundsPlayed
+      ? Math.round((totalCorrect / roundsPlayed) * 100)
       : 0;
     return {
       consistency,
       reflexAvg,
-      peak: dailyStats.peakComplexity,
-      tilesDecoded: dailyStats.tilesDecoded,
+      peak,
+      tilesDecoded,
       visualStyles,
     };
   };
