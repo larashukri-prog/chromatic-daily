@@ -61,7 +61,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
       tempNode = buildShareCardNode({
         insight: getInsight(stats),
         rounds: String(stats.roundsPlayed),
-        reflex: reflexLabel,
+        wins: String(stats.totalCorrect),
         peak: peakLabel,
         decoded: String(stats.tilesDecoded),
       });
@@ -91,8 +91,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
       onShare?.();
 
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const reflex = reflexAvg !== null ? `${reflexAvg.toFixed(2)}s` : '—';
-      const caption = `My Chromatic Practice Stats ⚡️\nRounds: ${stats.roundsPlayed} · Consistency: ${consistency}% · Reflex: ${reflex}\n\nhttps://chromatic-daily.lovable.app`;
+      const caption = `My Chromatic Practice Stats ⚡️\nRounds: ${stats.roundsPlayed} · Consistency: ${consistency}% · Wins: ${stats.totalCorrect}\n\nhttps://chromatic-daily.lovable.app`;
 
       const canShareFiles =
         typeof navigator !== 'undefined' &&
@@ -181,7 +180,7 @@ export function SessionReport({ stats, onResume, onShare, onRestart, onMainMenu 
 
         <div className="grid grid-cols-2 gap-2 mb-5">
           <StatCard icon={Target} label="Rounds" value={stats.roundsPlayed} />
-          <StatCard icon={Zap} label="Reflex Avg" value={reflexLabel} />
+          <StatCard icon={Zap} label="Wins" value={stats.totalCorrect} />
           <StatCard icon={Crown} label="Peak" value={peakLabel} valueClassName="text-base" />
           <StatCard icon={Brain} label="Decoded" value={stats.tilesDecoded} />
         </div>
