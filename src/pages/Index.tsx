@@ -603,7 +603,7 @@ const Index = () => {
 
     // Daily mode verification
     const newTotalUsed = totalAttemptsUsed + 1;
-    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme);
+    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme, Math.round(recallSeconds * 1000));
 
     console.log('[Chromatic] Round verified:', {
       roundIndex,
@@ -766,6 +766,7 @@ const Index = () => {
     let totalCorrect = 0;
     let tilesDecoded = 0;
     let peak: { tiles: number; seconds: number } | null = null;
+    const persistedTimes: number[] = [];
     for (const round of roundsForStyles) {
       for (const attempt of round.attempts) {
         roundsPlayed += 1;
@@ -781,10 +782,21 @@ const Index = () => {
           if (s && p && s.toLowerCase() === p.toLowerCase()) matched += 1;
         }
         tilesDecoded += matched;
-        if (!peak || tiles > peak.tiles) {
-          peak = { tiles, seconds: 0 };
+        const secs = typeof attempt.recallMs === 'number' ? attempt.recallMs / 1000 : 0;
+        if (typeof attempt.recallMs === 'number') persistedTimes.push(secs);
+        if (
+          !peak ||
+          tiles > peak.tiles ||
+          (tiles === peak.tiles && secs > 0 && (peak.seconds === 0 || secs < peak.seconds))
+        ) {
+          peak = { tiles, seconds: secs };
         }
       }
+    }
+    // If persisted peak lacks recall time (legacy data), borrow seconds from
+    // in-session dailyStats when tile counts match.
+    if (peak && peak.seconds === 0 && dailyStats.peakComplexity && dailyStats.peakComplexity.tiles === peak.tiles) {
+      peak = { tiles: peak.tiles, seconds: dailyStats.peakComplexity.seconds };
     }
     // Fall back to in-session stats if persisted derivation produced nothing
     // (e.g. very first attempt before save completes).
@@ -794,7 +806,8 @@ const Index = () => {
       tilesDecoded = dailyStats.tilesDecoded;
       peak = dailyStats.peakComplexity;
     }
-    const sorted = [...dailyStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
+    const timesSource = persistedTimes.length ? persistedTimes : dailyStats.correctTimes;
+    const sorted = [...timesSource].sort((a, b) => a - b).slice(0, 3);
     const reflexAvg = sorted.length ? sorted.reduce((s, n) => s + n, 0) / sorted.length : null;
     const consistency = roundsPlayed
       ? Math.round((totalCorrect / roundsPlayed) * 100)

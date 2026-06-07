@@ -1,39 +1,23 @@
 ## Problem
 
-In the shared daily results, only Visual Style renders correctly. Speed Stars, Consistency, Peak, and Decoded show 0/—.
-
-## Root cause
-
-`buildShareMetrics` in `src/pages/Index.tsx` reads from the `dailyStats` React state. That state is initialized to all zeros on every page mount and is only incremented while the user plays a round in the current session (`setDailyStats(updateStats)` at line 602).
-
-When the user reaches the Daily Summary after a refresh, after returning later in the day, or by navigating directly to `/summary`, `alreadyFinished` is restored from localStorage but `dailyStats` stays at its initial zero values. Visual Styles works because it's derived from `getTodayData().rounds`, not from `dailyStats`.
-
-`starsEarned` and `totalFocusSeconds` (passed separately into `generateShareText`) have the same issue — they're session-only state, never rehydrated.
+After a reload, the shared results show `Peak: N in 0.0s` and `Reflex Avg` is lost because `RoundAttempt` doesn't persist recall time. `dailyStats.peakComplexity.seconds` and `dailyStats.correctTimes` only live in session state.
 
 ## Fix
 
-Derive all share metrics from the persisted round data instead of from session-only React state.
+### 1. `src/lib/game.ts`
+- Add optional `recallMs?: number` to `RoundAttempt`.
+- Extend `saveRoundAttempt(...)` signature to accept `recallMs?: number` and store it on the attempt.
 
-### File: `src/pages/Index.tsx`
+### 2. `src/pages/Index.tsx`
+- At every `saveRoundAttempt(...)` call site, pass the round's measured recall time in ms.
+- In `buildShareMetrics`, derive from `roundsForStyles`:
+  - **Peak**: among attempts where `isCorrect`, find the one with the largest tile count (count of non-null entries in `solution`); tie-break by fastest `recallMs`. Seconds = `recallMs / 1000`. If no `recallMs` present (legacy), fall back to `dailyStats.peakComplexity` when tile counts match, else `0`.
+  - **Reflex Avg**: collect `recallMs / 1000` for every correct attempt with `recallMs`, sort ascending, average the 3 fastest. Fall back to `dailyStats.correctTimes` derivation when none are persisted.
 
-1. **`buildShareMetrics`** — Compute `consistency`, `reflexAvg`, `peakComplexity`, and `tilesDecoded` directly from `roundsForStyles` (the same persisted `rounds` already used for Visual Styles):
-   - `roundsPlayed` = total attempts across all rounds
-   - `totalCorrect` = count of attempts where `isCorrect`
-   - `tilesDecoded` = sum, for each correct attempt, of tiles in `attempt.grid` matching `attempt.solution` (or the round solution)
-   - `peakComplexity` = largest solved round's tile count (tie-break: fastest recall time if available; otherwise just first)
-   - `correctTimes` = `attempt.recallMs / 1000` for correct attempts when present; reflex avg = mean of the 3 fastest
-   - `consistency` = `Math.round(totalCorrect / roundsPlayed * 100)`
+No changes to UI, game flow, or other metrics already fixed (consistency, tilesDecoded).
 
-2. **`share` and `shareWhatsApp`** — also derive `starsEarned` and `totalFocusSeconds` from saved data so the share text is correct after a reload:
-   - `starsEarned` = count of attempts flagged as speed attempts in saved data (or fall back to the current `starsEarned` state if the field isn't persisted)
-   - `totalFocusSeconds` = sum of persisted observation seconds per attempt, or fall back to current state
+## Verification
 
-3. If any of these fields (recall time, speed flag, observation seconds) are not currently saved on `RoundAttempt`, gracefully fall back to the existing session-state values so the in-session share still works and the post-reload share at least shows the metrics that are available.
-
-### Verification
-
-- Play a daily game to completion, refresh the page, open the share text, and confirm Speed Stars / Consistency / Peak / Decoded are populated (not 0 / —).
-- Share immediately after finishing in the same session and confirm values are unchanged from before.
-- Visual Style line continues to render correctly.
-
-No UI, styling, or game logic changes — only the share-metrics computation.
+- Play a round, refresh `/summary`, open share text → `Peak: N in X.Xs` with real seconds; `Reflex Avg` populated.
+- Share immediately after finishing in the same session → values unchanged.
+- Legacy saves without `recallMs` still render without crashing (may show `0.0s` / `—` only for those old attempts).
