@@ -3,6 +3,17 @@ import { posthog } from '@/lib/posthog';
 
 export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'knicks';
 
+export const VISUAL_THEME_OPTIONS: { value: VisualTheme; label: string }[] = [
+  { value: 'colors', label: 'Colors' },
+  { value: 'patterns', label: 'Patterns' },
+  { value: 'shapes', label: 'Shapes' },
+  { value: 'knicks', label: 'Knicks' },
+];
+
+export function getVisualThemeLabel(theme: VisualTheme): string {
+  return VISUAL_THEME_OPTIONS.find((o) => o.value === theme)?.label ?? theme;
+}
+
 const THEME_KEY = 'chromatic-visual-theme';
 const LEGACY_KEY = 'chromatic-accessibility';
 
