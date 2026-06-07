@@ -1,13 +1,8 @@
-import { useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
+import { useVisualTheme, VISUAL_THEME_OPTIONS, type VisualTheme } from '@/hooks/useAccessibility';
 import { posthog } from '@/lib/posthog';
 import { cn } from '@/lib/utils';
 
-const OPTIONS: { value: VisualTheme; label: string }[] = [
-  { value: 'colors', label: 'Colors' },
-  { value: 'patterns', label: 'Patterns' },
-  { value: 'shapes', label: 'Shapes' },
-  { value: 'knicks', label: 'Knicks' },
-];
+const OPTIONS = VISUAL_THEME_OPTIONS;
 
 export function VisualThemeToggle() {
   const { theme, setTheme } = useVisualTheme();
