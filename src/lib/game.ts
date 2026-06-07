@@ -468,7 +468,6 @@ export function generateShareText(
 ): string {
   const { dayName, colorCount } = getDayInfo();
   const dayNum = getDayNumber();
-  const anySolved = rounds.some(r => r.solved);
 
   const getDifficultyName = (count: number): string => {
     if (count <= 2) return 'Minimalist';
