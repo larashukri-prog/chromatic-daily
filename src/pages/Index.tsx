@@ -758,6 +758,7 @@ const Index = () => {
       reflexAvg,
       peak: dailyStats.peakComplexity,
       tilesDecoded: dailyStats.tilesDecoded,
+      visualStyles: buildPlayedVisualStyles(),
     };
   };
 
