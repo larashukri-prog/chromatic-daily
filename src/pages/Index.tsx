@@ -748,6 +748,18 @@ const Index = () => {
   }, [a11y, activeColors.length]);
 
   const buildShareMetrics = () => {
+    const data = getTodayData();
+    const roundsForStyles = data?.rounds ?? savedRounds;
+    const seen: VisualTheme[] = [];
+    for (const round of roundsForStyles) {
+      for (const attempt of round.attempts) {
+        const t = attempt.visualTheme as VisualTheme | undefined;
+        if (t && !seen.includes(t)) seen.push(t);
+      }
+    }
+    const visualStyles = (seen.length ? seen : [visualTheme])
+      .map(getVisualThemeLabel)
+      .join(', ');
     const sorted = [...dailyStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
     const reflexAvg = sorted.length ? sorted.reduce((s, n) => s + n, 0) / sorted.length : null;
     const consistency = dailyStats.roundsPlayed
@@ -758,7 +770,7 @@ const Index = () => {
       reflexAvg,
       peak: dailyStats.peakComplexity,
       tilesDecoded: dailyStats.tilesDecoded,
-      visualStyles: buildPlayedVisualStyles(),
+      visualStyles,
     };
   };
 
