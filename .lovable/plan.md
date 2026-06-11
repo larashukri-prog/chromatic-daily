@@ -1,23 +1,28 @@
-## Problem
+## Replace 3 Knicks visual-style images
 
-After a reload, the shared results show `Peak: N in 0.0s` and `Reflex Avg` is lost because `RoundAttempt` doesn't persist recall time. `dailyStats.peakComplexity.seconds` and `dailyStats.correctTimes` only live in session state.
+Swap three of the Knicks PNGs with the newly uploaded ones, keeping the same hex-color mapping. No logic, no UI, no other assets touched.
 
-## Fix
+### Replacements
 
-### 1. `src/lib/game.ts`
-- Add optional `recallMs?: number` to `RoundAttempt`.
-- Extend `saveRoundAttempt(...)` signature to accept `recallMs?: number` and store it on the attempt.
+| Slot (hex / color) | Old image | New image |
+|---|---|---|
+| `#2563EB` Blue | `mask_8.png` (jersey #23) | `Mask_group_10.png` (jersey #8) |
+| `#F198C4` Pink | `mask_7.png` (#23 portrait) | `Mask_group_11.png` (new portrait) |
+| `#FDE047` Yellow | `mask_3.png` (KNICKS wordmark roundel) | `Vector.png` (ANUNOBY roundel) |
 
-### 2. `src/pages/Index.tsx`
-- At every `saveRoundAttempt(...)` call site, pass the round's measured recall time in ms.
-- In `buildShareMetrics`, derive from `roundsForStyles`:
-  - **Peak**: among attempts where `isCorrect`, find the one with the largest tile count (count of non-null entries in `solution`); tie-break by fastest `recallMs`. Seconds = `recallMs / 1000`. If no `recallMs` present (legacy), fall back to `dailyStats.peakComplexity` when tile counts match, else `0`.
-  - **Reflex Avg**: collect `recallMs / 1000` for every correct attempt with `recallMs`, sort ascending, average the 3 fastest. Fall back to `dailyStats.correctTimes` derivation when none are persisted.
+### Steps
 
-No changes to UI, game flow, or other metrics already fixed (consistency, tilesDecoded).
+1. Upload the 3 user files to Lovable Assets CDN with stable filenames:
+   - `/mnt/user-uploads/Mask_group_10.png` → `src/assets/knicks/jersey_8.png.asset.json`
+   - `/mnt/user-uploads/Mask_group_11.png` → `src/assets/knicks/portrait_anunoby.png.asset.json`
+   - `/mnt/user-uploads/Vector.png` → `src/assets/knicks/roundel_anunoby.png.asset.json`
+2. Update `src/components/KnicksOverlay.tsx`:
+   - Replace imports for `mask_3`, `mask_7`, `mask_8` with the three new asset JSONs.
+   - Update the `KNICKS_IMAGE_FOR_HEX` entries for `#FDE047`, `#F198C4`, `#2563EB` and refresh inline comments.
+3. Delete the three now-unused asset pointers via `assets--delete_asset`:
+   - `src/assets/knicks/mask_3.png.asset.json`
+   - `src/assets/knicks/mask_7.png.asset.json`
+   - `src/assets/knicks/mask_8.png.asset.json`
+4. Verify by viewing the preview on a day that surfaces these colors (or via Practice).
 
-## Verification
-
-- Play a round, refresh `/summary`, open share text → `Peak: N in X.Xs` with real seconds; `Reflex Avg` populated.
-- Share immediately after finishing in the same session → values unchanged.
-- Legacy saves without `recallMs` still render without crashing (may show `0.0s` / `—` only for those old attempts).
+Nothing else (game logic, other 6 Knicks images, anchors, share text) changes.
