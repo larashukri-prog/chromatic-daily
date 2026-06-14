@@ -1539,7 +1539,7 @@ const Index = () => {
                       <Sparkles className="w-4 h-4" /> Next Level
                     </Button>
                   ) : (
-                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
                       <RotateCcw className="w-4 h-4" /> Try Again
                     </Button>
                   )}
@@ -1547,7 +1547,7 @@ const Index = () => {
               ) : (
                 <>
                   {canContinue && (
-                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
                       <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                     </Button>
                   )}
