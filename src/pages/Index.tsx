@@ -1271,10 +1271,10 @@ const Index = () => {
                 <Button
                   onClick={handleReady}
                   className={cn(
-                    'w-full rounded-xl h-12 text-sm tracking-wide text-primary-foreground',
+                    'w-full rounded-xl h-12 text-sm tracking-wide text-white',
                     fifaMode
-                      ? 'bg-[#326295] hover:bg-[#264d75]'
-                      : 'bg-primary hover:bg-primary/90'
+                      ? 'bg-black hover:bg-black/90'
+                      : 'bg-black hover:bg-black/90'
                   )}
                 >
                   I'm ready
