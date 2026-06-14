@@ -174,7 +174,7 @@ const Index = () => {
 
   const fireFifaCelebration = useCallback(() => {
     try {
-      const colors = ['#1D428A', '#F58426'];
+      const colors = ['#326295', '#FFD700'];
       const canvas = document.createElement('canvas');
       canvas.style.position = 'fixed';
       canvas.style.inset = '0';
@@ -580,7 +580,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'fifa' ? 'Swish! Run it back?' : 'Great memory! Ready for the next one?')
+            ? (visualTheme === 'fifa' ? 'Goal! Run it back?' : 'Great memory! Ready for the next one?')
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -649,7 +649,7 @@ const Index = () => {
       const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
       setResultMessage(msg);
 
-      // Go Knicks!: fire blue/orange confetti only when the player wins the
+      // FIFA: fire blue/gold confetti only when the player wins the
       // round that finishes the daily game.
       const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
       if (visualTheme === 'fifa' && correct && isDailyDone) {
@@ -1191,8 +1191,8 @@ const Index = () => {
                     const isBlack = upHex === '#000000';
                     // In shapes mode, anchors keep their true fill (black/white);
                     // chromatic colors render on white with a shape overlay.
-                    // In knicks mode, anchors render solid Knicks blue/orange;
-                    // chromatic colors render on white with the Knicks image overlay.
+                    // In FIFA mode, anchors render as Cup (white) and Ball (black);
+                    // chromatic colors render on white with the FIFA flag overlay.
                     let bg = c.hex;
                     if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
                     else if (fifaMode) bg = '#FFFFFF';
@@ -1273,7 +1273,7 @@ const Index = () => {
                   className={cn(
                     'w-full rounded-xl h-12 text-sm tracking-wide text-primary-foreground',
                     fifaMode
-                      ? 'bg-[#006BB6] hover:bg-[#005a9e]'
+                      ? 'bg-[#326295] hover:bg-[#264d75]'
                       : 'bg-primary hover:bg-primary/90'
                   )}
                 >
@@ -1291,7 +1291,7 @@ const Index = () => {
                     className={cn(
                       'rounded-xl flex-1 gap-2 text-primary-foreground',
                       fifaMode
-                        ? 'bg-[#006BB6] hover:bg-[#005a9e]'
+                        ? 'bg-[#326295] hover:bg-[#264d75]'
                         : 'bg-primary hover:bg-primary/90'
                     )}
                   >
@@ -1535,11 +1535,11 @@ const Index = () => {
               {isFreeplay ? (
                 <>
                   {isCorrect ? (
-                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
                       <Sparkles className="w-4 h-4" /> Next Level
                     </Button>
                   ) : (
-                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> Try Again
                     </Button>
                   )}
@@ -1547,7 +1547,7 @@ const Index = () => {
               ) : (
                 <>
                   {canContinue && (
-                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                     </Button>
                   )}
