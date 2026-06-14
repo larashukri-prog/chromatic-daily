@@ -15,7 +15,7 @@ import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
-import { KnicksOverlay } from '@/components/KnicksOverlay';
+import { FifaOverlay } from '@/components/FifaOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -117,7 +117,7 @@ const Index = () => {
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
   const pendingMilestone = useRef(false);
-  const knicksCelebrationKey = useRef<string | null>(null);
+  const fifaCelebrationKey = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -172,7 +172,7 @@ const Index = () => {
     } catch { /* noop */ }
   }, []);
 
-  const fireKnicksCelebration = useCallback(() => {
+  const fireFifaCelebration = useCallback(() => {
     try {
       const colors = ['#1D428A', '#F58426'];
       const canvas = document.createElement('canvas');
@@ -206,7 +206,7 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
-  const knicksMode = visualTheme === 'knicks';
+  const fifaMode = visualTheme === 'fifa';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -580,7 +580,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'knicks' ? 'Swish! Run it back?' : 'Great memory! Ready for the next one?')
+            ? (visualTheme === 'fifa' ? 'Swish! Run it back?' : 'Great memory! Ready for the next one?')
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -652,11 +652,11 @@ const Index = () => {
       // Go Knicks!: fire blue/orange confetti only when the player wins the
       // round that finishes the daily game.
       const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
-      if (visualTheme === 'knicks' && correct && isDailyDone) {
+      if (visualTheme === 'fifa' && correct && isDailyDone) {
         const key = `${roundIndex}:${attemptInRound}`;
-        if (knicksCelebrationKey.current !== key) {
-          knicksCelebrationKey.current = key;
-          fireKnicksCelebration();
+        if (fifaCelebrationKey.current !== key) {
+          fifaCelebrationKey.current = key;
+          fireFifaCelebration();
         }
       }
 
@@ -1195,11 +1195,11 @@ const Index = () => {
                     // chromatic colors render on white with the Knicks image overlay.
                     let bg = c.hex;
                     if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                    else if (knicksMode) bg = '#FFFFFF';
+                    else if (fifaMode) bg = '#FFFFFF';
                     const showAsWhite =
                       (shapesMode && !isBlack) ||
-                      isWhite && !knicksMode ||
-                      knicksMode;
+                      isWhite && !fifaMode ||
+                      fifaMode;
                     return (
                     <button
                       key={c.hex}
@@ -1238,7 +1238,7 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
-                      {knicksMode && <KnicksOverlay colorHex={c.hex} />}
+                      {fifaMode && <FifaOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
@@ -1272,7 +1272,7 @@ const Index = () => {
                   onClick={handleReady}
                   className={cn(
                     'w-full rounded-xl h-12 text-sm tracking-wide text-primary-foreground',
-                    knicksMode
+                    fifaMode
                       ? 'bg-[#006BB6] hover:bg-[#005a9e]'
                       : 'bg-primary hover:bg-primary/90'
                   )}
@@ -1290,7 +1290,7 @@ const Index = () => {
                     disabled={!canVerify}
                     className={cn(
                       'rounded-xl flex-1 gap-2 text-primary-foreground',
-                      knicksMode
+                      fifaMode
                         ? 'bg-[#006BB6] hover:bg-[#005a9e]'
                         : 'bg-primary hover:bg-primary/90'
                     )}
@@ -1505,12 +1505,12 @@ const Index = () => {
                     let bg: string = c || NEUTRAL;
                     if (c) {
                       if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                      else if (knicksMode) bg = '#FFFFFF';
+                      else if (fifaMode) bg = '#FFFFFF';
                     }
                     const lightBorder =
                       (shapesMode && c && !isBlack) ||
-                      (isWhite && !knicksMode) ||
-                      (knicksMode && !!c);
+                      (isWhite && !fifaMode) ||
+                      (fifaMode && !!c);
                     return (
                       <div
                         key={i}
@@ -1523,7 +1523,7 @@ const Index = () => {
                       >
                         {a11y && <PatternOverlay colorHex={c} size="100%" />}
                         {shapesMode && <ShapeOverlay colorHex={c} />}
-                        {knicksMode && c && <KnicksOverlay colorHex={c} />}
+                        {fifaMode && c && <FifaOverlay colorHex={c} />}
                       </div>
                     );
                   })}
@@ -1535,11 +1535,11 @@ const Index = () => {
               {isFreeplay ? (
                 <>
                   {isCorrect ? (
-                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <Sparkles className="w-4 h-4" /> Next Level
                     </Button>
                   ) : (
-                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> Try Again
                     </Button>
                   )}
@@ -1547,7 +1547,7 @@ const Index = () => {
               ) : (
                 <>
                   {canContinue && (
-                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', knicksMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#006BB6] hover:bg-[#005a9e]' : 'bg-primary hover:bg-primary/90')}>
                       <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                     </Button>
                   )}

@@ -221,7 +221,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const { theme: globalTheme } = useVisualTheme();
   const effectiveTheme = slide.visualTheme ?? globalTheme;
   const shapesMode = effectiveTheme === 'shapes';
-  const knicksMode = effectiveTheme === 'knicks';
+  const fifaMode = effectiveTheme === 'fifa';
   const patternsMode = effectiveTheme === 'patterns';
   const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
@@ -282,11 +282,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 let bg: string = color;
                 if (solution[i]) {
                   if (shapesMode) bg = '#FFFFFF';
-                  else if (knicksMode) bg = '#FFFFFF';
+                  else if (fifaMode) bg = '#FFFFFF';
                 }
                 const lightBorder =
                   (shapesMode && solution[i]) ||
-                  (knicksMode && !!solution[i]);
+                  (fifaMode && !!solution[i]);
                 return (
                   <motion.div
                     key={i}
@@ -302,7 +302,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   >
                     {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {knicksMode && solution[i] && <KnicksOverlay colorHex={solution[i]} />}
+                    {fifaMode && solution[i] && <FifaOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -325,11 +325,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               let pBg: string = cellColor;
               if (playerGrid[i]) {
                 if (shapesMode) pBg = '#FFFFFF';
-                else if (knicksMode) pBg = '#FFFFFF';
+                else if (fifaMode) pBg = '#FFFFFF';
               }
               const pLightBorder =
                 (shapesMode && playerGrid[i]) ||
-                (knicksMode && !!playerGrid[i]);
+                (fifaMode && !!playerGrid[i]);
 
               return (
                 <motion.div
@@ -350,7 +350,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 >
                   {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {knicksMode && playerGrid[i] && <KnicksOverlay colorHex={playerGrid[i]} />}
+                  {fifaMode && playerGrid[i] && <FifaOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
