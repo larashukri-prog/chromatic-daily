@@ -7,7 +7,7 @@ import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { KnicksOverlay } from '@/components/KnicksOverlay';
+import { FifaOverlay } from '@/components/FifaOverlay';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -43,7 +43,7 @@ interface AttemptSlide {
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const { theme: visualTheme } = useVisualTheme();
-  const knicks = visualTheme === 'knicks';
+  const fifa = visualTheme === 'fifa';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -160,12 +160,12 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Rest indicator */}
         <div className="px-6 py-4 text-center border-t border-border">
           <p className="font-semibold text-foreground text-base">
-            {knicks ? 'Game Over — Swish!' : 'Daily Challenge Complete'}
+            {fifa ? 'Full Time — Goal!' : 'Daily Challenge Complete'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
             {dayName === 'Sunday'
-              ? (knicks ? 'Championship Game complete! Tip-off resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
-              : (knicks ? 'Tomorrow’s tip-off brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
+              ? (fifa ? 'Final whistle! Kickoff resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
+              : (fifa ? 'Tomorrow’s kickoff brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
           </p>
         </div>
 
@@ -221,7 +221,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const { theme: globalTheme } = useVisualTheme();
   const effectiveTheme = slide.visualTheme ?? globalTheme;
   const shapesMode = effectiveTheme === 'shapes';
-  const knicksMode = effectiveTheme === 'knicks';
+  const fifaMode = effectiveTheme === 'fifa';
   const patternsMode = effectiveTheme === 'patterns';
   const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
@@ -282,11 +282,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 let bg: string = color;
                 if (solution[i]) {
                   if (shapesMode) bg = '#FFFFFF';
-                  else if (knicksMode) bg = '#FFFFFF';
+                  else if (fifaMode) bg = '#FFFFFF';
                 }
                 const lightBorder =
                   (shapesMode && solution[i]) ||
-                  (knicksMode && !!solution[i]);
+                  (fifaMode && !!solution[i]);
                 return (
                   <motion.div
                     key={i}
@@ -302,7 +302,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   >
                     {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {knicksMode && solution[i] && <KnicksOverlay colorHex={solution[i]} />}
+                    {fifaMode && solution[i] && <FifaOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -325,11 +325,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               let pBg: string = cellColor;
               if (playerGrid[i]) {
                 if (shapesMode) pBg = '#FFFFFF';
-                else if (knicksMode) pBg = '#FFFFFF';
+                else if (fifaMode) pBg = '#FFFFFF';
               }
               const pLightBorder =
                 (shapesMode && playerGrid[i]) ||
-                (knicksMode && !!playerGrid[i]);
+                (fifaMode && !!playerGrid[i]);
 
               return (
                 <motion.div
@@ -350,7 +350,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 >
                   {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {knicksMode && playerGrid[i] && <KnicksOverlay colorHex={playerGrid[i]} />}
+                  {fifaMode && playerGrid[i] && <FifaOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
