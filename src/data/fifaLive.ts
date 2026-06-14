@@ -1,8 +1,10 @@
 import { FIFA_QUALIFIED_TEAMS, toIsoDate, type TeamCode } from './fifaSchedule';
 
-/** TheSportsDB free, public, CORS-enabled. Free key is the literal "3". */
+/** TheSportsDB free, public, CORS-enabled. Free key is the literal "3".
+ *  Free tier rejects the `l=` league parameter, so we fetch all soccer events
+ *  for the day and filter to the FIFA World Cup league client-side. */
 const ENDPOINT = 'https://www.thesportsdb.com/api/v1/json/3/eventsday.php';
-const LEAGUE = 'FIFA World Cup';
+const TARGET_LEAGUE = 'fifa world cup';
 const CACHE_PREFIX = 'fifa-teams-';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -44,6 +46,16 @@ const NAME_TO_ISO: Record<string, TeamCode> = {
   'costa rica': 'cr', 'panama': 'pa', 'jamaica': 'jm',
   'curacao': 'cw', 'curaçao': 'cw',
   'haiti': 'ht', 'honduras': 'hn',
+  'el salvador': 'sv', 'guatemala': 'gt', 'trinidad and tobago': 'tt', 'suriname': 'sr',
+  // UEFA non-qualifiers that may appear in pre-WC friendlies
+  'scotland': 'gb-sct', 'wales': 'gb-wls', 'northern ireland': 'gb-nir',
+  'republic of ireland': 'ie', 'ireland': 'ie',
+  'sweden': 'se', 'finland': 'fi', 'iceland': 'is', 'romania': 'ro',
+  'ukraine': 'ua', 'czech republic': 'cz', 'czechia': 'cz', 'greece': 'gr',
+  'hungary': 'hu', 'slovakia': 'sk', 'slovenia': 'si', 'albania': 'al',
+  'north macedonia': 'mk', 'bulgaria': 'bg', 'georgia': 'ge', 'armenia': 'am',
+  'bosnia and herzegovina': 'ba', 'montenegro': 'me', 'kosovo': 'xk',
+  'cape verde': 'cv',
   // OFC
   'new zealand': 'nz', 'new caledonia': 'nc',
 };
@@ -77,12 +89,14 @@ interface SportsDbEvent {
 
 async function fetchDay(date: Date): Promise<TeamCode[]> {
   const iso = toIsoDate(date);
-  const url = `${ENDPOINT}?d=${iso}&l=${encodeURIComponent(LEAGUE)}`;
+  const url = `${ENDPOINT}?d=${iso}&s=Soccer`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = (await res.json()) as { events?: SportsDbEvent[] | null };
   const teams = new Set<TeamCode>();
   for (const ev of json.events ?? []) {
+    const league = (ev.strLeague ?? '').toLowerCase();
+    if (!league.includes(TARGET_LEAGUE)) continue;
     const h = nameToIso(ev.strHomeTeam);
     const a = nameToIso(ev.strAwayTeam);
     if (h) teams.add(h);
