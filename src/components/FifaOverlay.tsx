@@ -1,5 +1,6 @@
 import cupAsset from '@/assets/fifa/cup.png.asset.json';
 import ballAsset from '@/assets/fifa/ball.png.asset.json';
+import fillerAsset from '@/assets/fifa/filler.png.asset.json';
 
 // Update this array daily with the direct flag image URLs of teams playing.
 const currentDayFlags: string[] = [
@@ -33,7 +34,8 @@ const FLAG_SLOT_HEXES: string[] = [
 type SlotEntry =
   | { kind: 'flagUrl'; url: string }
   | { kind: 'cup' }
-  | { kind: 'ball' };
+  | { kind: 'ball' }
+  | { kind: 'filler' };
 
 /** Tiny deterministic per-date RNG (mulberry32 seeded by YYYYMMDD). */
 function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
@@ -55,12 +57,10 @@ function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
   return a;
 }
 
-/** Build the per-day hex → asset map driven by currentDayFlags.length (N).
- *  - White anchor → Cup; Black anchor → Ball (always).
- *  - N ≥ 9: first 9 URLs fill all chromatic slots.
- *  - N = 8: 8 URLs + 1 random Cup/Ball in remaining chromatic slot.
- *  - N = 7: 7 URLs + both Cup and Ball locked into remaining 2 chromatic slots.
- *  - N < 7: N URLs + Cup + Ball; remaining chromatic slots left empty. */
+/** Build the per-day hex → asset map.
+ *  - White anchor → Cup; Black anchor → Ball (always, ONLY here).
+ *  - Chromatic slots: flags first (date-seeded order), filler image for the rest.
+ *  - Cup and Ball are NEVER placed in chromatic slots. */
 export function getFifaImageMap(
   date: Date = new Date(),
 ): Record<string, SlotEntry> {
@@ -71,29 +71,14 @@ export function getFifaImageMap(
 
   const flags = currentDayFlags.slice(0, FLAG_SLOT_HEXES.length);
   const N = flags.length;
-
-  // Deterministic slot ordering for the day.
   const slotOrder = dateSeededShuffle(FLAG_SLOT_HEXES, date);
 
-  // 1. Place flags into the first N shuffled slots.
   for (let i = 0; i < N; i++) {
     map[slotOrder[i]] = { kind: 'flagUrl', url: flags[i] };
   }
-
-  // 2. Anchor placement into remaining chromatic slots.
-  const remaining = slotOrder.slice(N);
-  if (N >= 9) {
-    // no anchors in chromatic slots
-  } else if (N === 8) {
-    // Random Cup or Ball in the last slot (date-seeded).
-    const pick = dateSeededShuffle(['cup', 'ball'] as const, date)[0];
-    map[remaining[0]] = { kind: pick };
-  } else {
-    // N ≤ 7: lock both Cup + Ball into 2 chromatic slots (date-seeded order).
-    const [a, b] = dateSeededShuffle(['cup', 'ball'] as const, date);
-    if (remaining[0]) map[remaining[0]] = { kind: a };
-    if (remaining[1]) map[remaining[1]] = { kind: b };
-    // Any further remaining slots stay unmapped → overlay returns null.
+  // Remaining chromatic slots get the filler image (never Cup/Ball).
+  for (let i = N; i < slotOrder.length; i++) {
+    map[slotOrder[i]] = { kind: 'filler' };
   }
 
   return map;
@@ -122,6 +107,9 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
   }
   if (entry.kind === 'ball') {
     return <img src={ballAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
+  }
+  if (entry.kind === 'filler') {
+    return <img src={fillerAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
   }
   // Flag URL — fills the slot with a circular crop and subtle border.
   return (
