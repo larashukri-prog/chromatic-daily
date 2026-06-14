@@ -1535,7 +1535,7 @@ const Index = () => {
               {isFreeplay ? (
                 <>
                   {isCorrect ? (
-                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-primary-foreground', fifaMode ? 'bg-[#326295] hover:bg-[#264d75]' : 'bg-primary hover:bg-primary/90')}>
+                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
                       <Sparkles className="w-4 h-4" /> Next Level
                     </Button>
                   ) : (
