@@ -1,47 +1,64 @@
-# FIFA: Manual per-day flag map + new anchor assets
+## Goal
 
-## What changes
+Replace the World Cup theme's daily flag data source with a single hardcoded `currentDayFlags` URL array in `FifaOverlay.tsx` that you edit by hand each day, and update the 9-slot allocation rules around the two anchors (White → Golden Cup, Black → Soccer Ball).
 
-1. **Manual per-day flag schedule** replaces the live TheSportsDB fetch. You give me the daily team list; I hardcode it.
-2. **Anchors swap to your uploaded images**: golden trophy PNG → White, patterned soccer ball PNG → Black. Inline SVG `GoldenCup` and `SoccerBall` components are removed.
+## Changes
 
-## Day 1 of the manual schedule
+### 1. `src/components/FifaOverlay.tsx` — hardcoded URL array
 
-**Monday June 15, 2026** — Spain, Cabo Verde, Belgium, Egypt, Saudi Arabia, Uruguay, Iran, New Zealand (8 teams; 9th slot filled deterministically from the qualified pool so every chromatic color has a flag if it appears).
+Add at the top:
 
-## Files
+```ts
+// Update this array daily with the direct flag image URLs of teams playing.
+const currentDayFlags: string[] = [
+  "https://flagcdn.com/w320/es.png",
+  "https://flagcdn.com/w320/cv.png",
+  "https://flagcdn.com/w320/be.png",
+  "https://flagcdn.com/w320/eg.png",
+  "https://flagcdn.com/w320/sa.png",
+  "https://flagcdn.com/w320/uy.png",
+  "https://flagcdn.com/w320/ir.png",
+  "https://flagcdn.com/w320/nz.png",
+];
+```
 
-- **New** `src/data/fifaDailyFlags.ts`
-  ```ts
-  // ISO alpha-2 codes for flagcdn
-  export const FIFA_DAILY_FLAGS: Record<string, TeamCode[]> = {
-    '2026-06-15': ['es','cv','be','eg','sa','uy','ir','nz'],
-    // add more days here as you provide them
-  };
-  export function getFlagsForDate(date: Date): TeamCode[] | null { ... }
-  ```
-  Key format `YYYY-MM-DD` in local time (matches the rest of the game's daily-key logic).
+(Today's 8 unique teams — your message had `eg` and `uy` duplicated.)
 
-- **Upload anchor assets via `lovable-assets`** (from `/mnt/user-uploads/`):
-  - `src/assets/fifa/cup.png.asset.json`
-  - `src/assets/fifa/ball.png.asset.json`
+### 2. Slot allocation rules (9 chromatic slots + White/Black anchors)
 
-- **Edit** `src/components/FifaOverlay.tsx`:
-  - Remove `GoldenCup` and `SoccerBall` SVG components.
-  - Import the two `.asset.json` pointers and render `<img src={cupAsset.url}>` / `<img src={ballAsset.url}>` for the cup/ball slots (same `absolute inset-0 object-contain` sizing, small padding).
-  - In `getFifaImageMap`: replace the `teamData`/`week`/seeded-shuffle pool with `getFlagsForDate(date) ?? dailySeededShuffle(FIFA_QUALIFIED_TEAMS, date)`. Padding remainder still comes from the qualified pool so all 9 slots are covered.
+Rewrite `getFifaImageMap` so a slot can be `{ kind: 'flagUrl'; url: string }`, `{ kind: 'cup' }`, `{ kind: 'ball' }`, or absent. Driven by `currentDayFlags.length` (N):
 
-- **Edit** `src/components/FifaOverlay.tsx` callsite: drop `useFifaTeams()` usage.
+- White anchor slot always → Cup; Black anchor slot always → Ball.
+- **N ≥ 9**: first 9 URLs fill the 9 chromatic slots.
+- **N = 8**: 8 URLs fill 8 chromatic slots; the 9th chromatic slot is randomly Cup or Ball (date-seeded so it's stable for the day).
+- **N = 7**: 7 URLs fill 7 chromatic slots; remaining 2 chromatic slots are locked to Cup + Ball (date-seeded order).
+- **N < 7** (knockouts): N URLs fill N chromatic slots; 2 more chromatic slots are locked to Cup + Ball; remaining chromatic slots are left empty (overlay returns `null`, raw chromatic color shows).
+- **N = 0**: only the White/Black anchors render Cup/Ball; no chromatic slots get overlays.
 
-- **Delete**:
-  - `src/data/fifaLive.ts`
-  - `src/components/FifaTeamsProvider.tsx`
-  - Provider wrap in `src/App.tsx`
+Chromatic-slot assignment order remains date-seeded so it's stable per day.
 
-## Preserved
+### 3. Visual styling (option B)
 
-Game state machine, 3-round logic, metrics, PostHog payloads, color count progression, deterministic per-date flag → color assignment, `FIFA_QUALIFIED_TEAMS` pool (still used as fallback for undefined days), `isWithinWorldCup`, `dailySeededShuffle`.
+Render flag URLs with:
 
-## Open question
+```tsx
+<img
+  src={entry.url}
+  alt=""
+  aria-hidden
+  loading="lazy"
+  className="w-full h-full rounded-full object-cover border border-gray-200"
+/>
+```
 
-For days you haven't specified yet (e.g. today, June 14), the overlay falls back to a deterministic shuffle of the 48-team qualified pool — same behavior as before. Confirm that's fine, or tell me to render no flags (chromatic colors only) on unspecified days.
+Wrapped in the existing `absolute inset-0` container so it fills the slot at any size.
+
+### 4. Cleanup
+
+- Delete `src/data/fifaDailyFlags.ts`.
+- Remove unused imports from `FifaOverlay.tsx` (`getFlagsForDate`, `FIFA_QUALIFIED_TEAMS`, `TeamCode`). Keep `dailySeededShuffle` for the Cup/Ball coin-flip ordering, or inline a tiny date-seeded picker.
+- `src/data/fifaSchedule.ts` left untouched (other modules may still import constants from it).
+
+## Out of scope
+
+No changes to game logic, color palette, scoring, persistence, analytics, or the Cup/Ball assets.
