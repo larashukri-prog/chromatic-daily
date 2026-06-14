@@ -7,7 +7,7 @@ import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
 import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { KnicksOverlay } from '@/components/KnicksOverlay';
+import { FifaOverlay } from '@/components/FifaOverlay';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -43,7 +43,7 @@ interface AttemptSlide {
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const { theme: visualTheme } = useVisualTheme();
-  const knicks = visualTheme === 'knicks';
+  const fifa = visualTheme === 'fifa';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -160,12 +160,12 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Rest indicator */}
         <div className="px-6 py-4 text-center border-t border-border">
           <p className="font-semibold text-foreground text-base">
-            {knicks ? 'Game Over — Swish!' : 'Daily Challenge Complete'}
+            {fifa ? 'Full Time — Goal!' : 'Daily Challenge Complete'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
             {dayName === 'Sunday'
-              ? (knicks ? 'Championship Game complete! Tip-off resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
-              : (knicks ? 'Tomorrow’s tip-off brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
+              ? (fifa ? 'Final whistle! Kickoff resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
+              : (fifa ? 'Tomorrow’s kickoff brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
           </p>
         </div>
 
