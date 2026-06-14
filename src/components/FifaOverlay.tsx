@@ -1,11 +1,17 @@
-import {
-  FIFA_QUALIFIED_TEAMS,
-  dailySeededShuffle,
-  type TeamCode,
-} from '@/data/fifaSchedule';
-import { getFlagsForDate } from '@/data/fifaDailyFlags';
 import cupAsset from '@/assets/fifa/cup.png.asset.json';
 import ballAsset from '@/assets/fifa/ball.png.asset.json';
+
+// Update this array daily with the direct flag image URLs of teams playing.
+const currentDayFlags: string[] = [
+  "https://flagcdn.com/w320/es.png",
+  "https://flagcdn.com/w320/cv.png",
+  "https://flagcdn.com/w320/be.png",
+  "https://flagcdn.com/w320/eg.png",
+  "https://flagcdn.com/w320/sa.png",
+  "https://flagcdn.com/w320/uy.png",
+  "https://flagcdn.com/w320/ir.png",
+  "https://flagcdn.com/w320/nz.png",
+];
 
 /** Chromatic anchors mapped strictly: White → Golden Cup, Black → Soccer Ball. */
 const WHITE = '#FFFFFF';
@@ -25,19 +31,36 @@ const FLAG_SLOT_HEXES: string[] = [
 ];
 
 type SlotEntry =
-  | { kind: 'flag'; code: TeamCode }
+  | { kind: 'flagUrl'; url: string }
   | { kind: 'cup' }
   | { kind: 'ball' };
 
-const flagUrl = (code: TeamCode) => `https://flagcdn.com/w160/${code.toLowerCase()}.png`;
+/** Tiny deterministic per-date RNG (mulberry32 seeded by YYYYMMDD). */
+function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
+  const seed =
+    date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+  let s = seed >>> 0;
+  const rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-/** Build the per-day hex → asset map.
- *  - White anchor → Cup
- *  - Black anchor → Ball
- *  - All 9 chromatic slots get flag assignments (deterministic per date),
- *    so that whichever colors the daily puzzle generator selects, every slot
- *    has a flag ready. Match-day teams come first; week-fill / qualifier pool
- *    pads the remainder. */
+/** Build the per-day hex → asset map driven by currentDayFlags.length (N).
+ *  - White anchor → Cup; Black anchor → Ball (always).
+ *  - N ≥ 9: first 9 URLs fill all chromatic slots.
+ *  - N = 8: 8 URLs + 1 random Cup/Ball in remaining chromatic slot.
+ *  - N = 7: 7 URLs + both Cup and Ball locked into remaining 2 chromatic slots.
+ *  - N < 7: N URLs + Cup + Ball; remaining chromatic slots left empty. */
 export function getFifaImageMap(
   date: Date = new Date(),
 ): Record<string, SlotEntry> {
@@ -46,27 +69,32 @@ export function getFifaImageMap(
     [BLACK]: { kind: 'ball' },
   };
 
-  // Build the day's flag pool (deduped, mandatory inclusion first).
-  const pool: TeamCode[] = [];
-  const seen = new Set<TeamCode>();
-  const push = (codes: TeamCode[]) => {
-    for (const c of codes) {
-      if (!seen.has(c)) { seen.add(c); pool.push(c); }
-    }
-  };
+  const flags = currentDayFlags.slice(0, FLAG_SLOT_HEXES.length);
+  const N = flags.length;
 
-  const manual = getFlagsForDate(date);
-  if (manual) push(manual);
-  if (pool.length < FLAG_SLOT_HEXES.length) {
-    push(dailySeededShuffle(FIFA_QUALIFIED_TEAMS, date));
+  // Deterministic slot ordering for the day.
+  const slotOrder = dateSeededShuffle(FLAG_SLOT_HEXES, date);
+
+  // 1. Place flags into the first N shuffled slots.
+  for (let i = 0; i < N; i++) {
+    map[slotOrder[i]] = { kind: 'flagUrl', url: flags[i] };
   }
 
-  // Assign to chromatic hex slots in a deterministic order.
-  const ordered = dailySeededShuffle(pool, date).slice(0, FLAG_SLOT_HEXES.length);
-  FLAG_SLOT_HEXES.forEach((hex, i) => {
-    const code = ordered[i] ?? FIFA_QUALIFIED_TEAMS[i % FIFA_QUALIFIED_TEAMS.length];
-    map[hex] = { kind: 'flag', code };
-  });
+  // 2. Anchor placement into remaining chromatic slots.
+  const remaining = slotOrder.slice(N);
+  if (N >= 9) {
+    // no anchors in chromatic slots
+  } else if (N === 8) {
+    // Random Cup or Ball in the last slot (date-seeded).
+    const pick = dateSeededShuffle(['cup', 'ball'] as const, date)[0];
+    map[remaining[0]] = { kind: pick };
+  } else {
+    // N ≤ 7: lock both Cup + Ball into 2 chromatic slots (date-seeded order).
+    const [a, b] = dateSeededShuffle(['cup', 'ball'] as const, date);
+    if (remaining[0]) map[remaining[0]] = { kind: a };
+    if (remaining[1]) map[remaining[1]] = { kind: b };
+    // Any further remaining slots stay unmapped → overlay returns null.
+  }
 
   return map;
 }
@@ -95,14 +123,14 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
   if (entry.kind === 'ball') {
     return <img src={ballAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
   }
-  // Flag — circular crop with subtle ring so white edges don't bleed.
+  // Flag URL — fills the slot with a circular crop and subtle border.
   return (
     <img
-      src={flagUrl(entry.code)}
+      src={entry.url}
       alt=""
       aria-hidden
       loading="lazy"
-      className={`${base} object-cover rounded-full ring-1 ring-black/10 shadow-sm`}
+      className={`${base} w-full h-full rounded-full object-cover border border-gray-200`}
     />
   );
 }
