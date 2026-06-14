@@ -1289,10 +1289,10 @@ const Index = () => {
                     onClick={verify}
                     disabled={!canVerify}
                     className={cn(
-                      'rounded-xl flex-1 gap-2 text-primary-foreground',
+                      'rounded-xl flex-1 gap-2 text-white',
                       fifaMode
-                        ? 'bg-[#326295] hover:bg-[#264d75]'
-                        : 'bg-primary hover:bg-primary/90'
+                        ? 'bg-black hover:bg-black/90'
+                        : 'bg-black hover:bg-black/90'
                     )}
                   >
                     <CheckCircle2 className="w-4 h-4" /> Verify
