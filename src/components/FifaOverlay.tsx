@@ -1,11 +1,11 @@
 import {
   FIFA_QUALIFIED_TEAMS,
   dailySeededShuffle,
-  getTeamsForDate,
-  getTeamsForWeekOf,
   isWithinWorldCup,
   type TeamCode,
 } from '@/data/fifaSchedule';
+import { useFifaTeams } from '@/components/FifaTeamsProvider';
+import type { FifaTeamData } from '@/data/fifaLive';
 
 /** Chromatic anchors mapped strictly: White → Golden Cup, Black → Soccer Ball. */
 const WHITE = '#FFFFFF';
@@ -38,7 +38,10 @@ const flagUrl = (code: TeamCode) => `https://flagcdn.com/w160/${code.toLowerCase
  *    so that whichever colors the daily puzzle generator selects, every slot
  *    has a flag ready. Match-day teams come first; week-fill / qualifier pool
  *    pads the remainder. */
-export function getFifaImageMap(date: Date = new Date()): Record<string, SlotEntry> {
+export function getFifaImageMap(
+  date: Date = new Date(),
+  teamData?: Pick<FifaTeamData, 'today' | 'week'>,
+): Record<string, SlotEntry> {
   const map: Record<string, SlotEntry> = {
     [WHITE]: { kind: 'cup' },
     [BLACK]: { kind: 'ball' },
@@ -53,16 +56,11 @@ export function getFifaImageMap(date: Date = new Date()): Record<string, SlotEnt
     }
   };
 
-  if (isWithinWorldCup(date)) {
-    push(getTeamsForDate(date));            // mandatory: today's teams
-    if (pool.length < FLAG_SLOT_HEXES.length) {
-      push(getTeamsForWeekOf(date));        // pad with this week's teams
-    }
-    if (pool.length < FLAG_SLOT_HEXES.length) {
-      push(dailySeededShuffle(FIFA_QUALIFIED_TEAMS, date));
-    }
-  } else {
-    // Out-of-window: 9 random flags from the qualifier pool, anchors still shown.
+  if (isWithinWorldCup(date) && teamData) {
+    push(teamData.today);                    // mandatory: today's match teams
+    if (pool.length < FLAG_SLOT_HEXES.length) push(teamData.week);
+  }
+  if (pool.length < FLAG_SLOT_HEXES.length) {
     push(dailySeededShuffle(FIFA_QUALIFIED_TEAMS, date));
   }
 
@@ -132,8 +130,9 @@ function GoldenCup({ className = '' }: { className?: string }) {
  *  or the Ball depending on which hex slot is being painted. */
 export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps) {
   if (!colorHex) return null;
+  const teamData = useFifaTeams();
   const up = colorHex.toUpperCase();
-  const map = getFifaImageMap(date ?? new Date());
+  const map = getFifaImageMap(date ?? new Date(), teamData);
   const entry = map[up] ?? map[colorHex];
   if (!entry) return null;
 

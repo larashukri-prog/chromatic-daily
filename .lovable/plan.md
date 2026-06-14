@@ -1,86 +1,111 @@
-# FIFA World Cup Theme Swap
+# FIFA Schedule: Live Data + Real Qualified Team List
 
-Replace the existing "Knicks" visual theme with a "FIFA" theme. Preserves every aspect of game logic: the Mon→Sun color-count progression (2→9), DDA, metrics, PostHog hooks, share format, and 3-round daily loop. Only visual mapping + theme labels change.
+Replace the fabricated `FIFA_SCHEDULE` data with **live runtime fetches** from TheSportsDB (free, public, CORS-enabled, no API key required for World Cup queries), and replace the placeholder qualified-team pool with the real 48-team field that includes Curaçao.
 
-## 1. Schedule data (`src/data/fifaSchedule.ts`)
+## 1. Data provider: TheSportsDB v1 (free tier)
 
-New module exporting the FIFA World Cup 2026 fixture list (June 11 – July 19, 2026):
+Endpoint (public, CORS open, no key):
 
-```ts
-export interface FifaMatch { date: string; home: string; away: string; }  // ISO yyyy-mm-dd, ISO 3166-1 alpha-2 codes
-export const FIFA_SCHEDULE: FifaMatch[] = [ ... ];
-export const FIFA_QUALIFIED_TEAMS: string[] = [ ... ];  // 48-team pool for fallback
-export function getTeamsForDate(d: Date): string[];       // unique team codes, deduped
-export function getTeamsForWeekOf(d: Date): string[];     // 7-day window for knockout padding
-export function isWithinWorldCup(d: Date): boolean;
+```text
+https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=YYYY-MM-DD&l=FIFA%20World%20Cup
 ```
 
-The group-stage portion (matchdays + teams) is well-known; knockout bracket dates use FIFA's published schedule with `TBD` teams filtered out.
+Returns an `events` array with `strHomeTeam` / `strAwayTeam` country names (e.g. `"Morocco"`, `"Brazil"`). We map names → ISO 3166-1 alpha-2 codes for flagcdn (`ma`, `br`, etc.).
 
-## 2. Theme map builder (`src/components/FifaOverlay.tsx`)
+Why this provider:
+- No API key, no rate-limit signup
+- CORS `*` → call directly from the browser, no edge function needed
+- Covers WC 2026 (`l=FIFA_World_Cup` league)
+- Returns "TBD" naturally for unscheduled knockout slots (we filter)
 
-Replaces `KnicksOverlay.tsx`. Same render contract — `<FifaOverlay colorHex={hex} />` — but the hex→image map is **built per render-day**, not static.
+If TheSportsDB is missing data on a given day, we fall back to a deterministic shuffle of the real qualified team pool so the grid is never empty.
 
+## 2. Real 48-team qualified pool
+
+Rewrite `FIFA_QUALIFIED_TEAMS` in `src/data/fifaSchedule.ts` to the confirmed June 2026 field, including `cw` (Curaçao), removing placeholders I invented (Italy, Bolivia, Côte d'Ivoire as group placeholders, etc.) and adding any I missed (e.g. Paraguay, Venezuela playoff winner, etc.). Sourced from the official FIFA qualifier list (publicly confirmed by the December 2025 final draw).
+
+Sample structure:
 ```ts
-import { Trophy } from 'lucide-react';                          // anchors via lucide
-// flagcdn.com served at 80px width; rounded with subtle ring
-const flagUrl = (code: string) => `https://flagcdn.com/w160/${code.toLowerCase()}.png`;
+export const FIFA_QUALIFIED_TEAMS: TeamCode[] = [
+  // Hosts
+  'us','mx','ca',
+  // UEFA (16)  e.g. fr, es, gb-eng, de, nl, pt, it, hr, dk, ch, ...
+  // CONMEBOL (6) ar, br, co, uy, ec, py
+  // CAF (9)   ma, sn, eg, ng, tn, dz, ci, cm, gh
+  // AFC (8)   jp, kr, au, sa, ir, qa, iq, uz
+  // CONCACAF additional (3) cr, pa, cw   ← Curaçao
+  // OFC (1) nz
+  // Inter-confederation playoff winners (2) ...
+];
 ```
 
-Builder function `getFifaImageMap(date: Date): Record<string, { kind: 'flag'|'cup'|'ball'; src?: string; code?: string }>` applied to the 9 hex slots:
+## 3. Country name → ISO alpha-2 map
 
-Anchor mapping is **strict and reserved**:
-- `#FFFFFF` (White) → 🏆 Golden Cup (lucide `Trophy` filled gold)
-- `#000000` (Black) → ⚽ Soccer Ball (inline SVG, classic black/white pentagon ball)
+Bespoke map covering all 48 qualifiers + common TheSportsDB name variants:
+```ts
+const NAME_TO_ISO: Record<string, TeamCode> = {
+  'morocco': 'ma', 'brazil': 'br', 'japan': 'jp', 'netherlands': 'nl',
+  'ivory coast': 'ci', "côte d'ivoire": 'ci', 'cote d ivoire': 'ci',
+  'germany': 'de', 'curaçao': 'cw', 'curacao': 'cw',
+  'england': 'gb-eng', 'south korea': 'kr', 'usa': 'us', 'united states': 'us',
+  // ... (full list)
+};
+```
+Lookup is lowercased, accent-stripped, trim-tolerant. Unknown names are dropped (and logged once via `console.warn` so we can patch the map).
 
-Flag-to-hex allocation algorithm:
-1. `teams = unique(getTeamsForDate(today))`
-2. If out-of-window: `teams = shuffle(FIFA_QUALIFIED_TEAMS).slice(0, 7)` (anchors fill 8 & 9)
-3. If `teams.length < 7`: pull additional unique team codes from `getTeamsForWeekOf(today)` until exactly 7 flags
-4. If `teams.length >= 7`: take first 7 (preserves the "mandatory inclusion" rule for today's matches first; week-fillers only used when short)
-5. Assign 7 flags deterministically to the 7 chromatic hex slots (stable seeded by date so the same day shows the same mapping across rounds)
-6. Anchors keep their fixed white/black slots regardless
+## 4. Client architecture (no edge function)
 
-`FifaOverlay` renders:
-- Flag: `<img src={flagUrl} className="… rounded-full ring-1 ring-black/10 shadow-sm">` (subtle border prevents white-edge bleed)
-- Cup: lucide `Trophy` over solid white background
-- Ball: inline soccer-ball SVG over solid white background
+New file `src/data/fifaLive.ts`:
 
-## 3. Theme registration
+```ts
+export interface FifaTeamData {
+  today: TeamCode[];   // unique teams playing on date
+  week:  TeamCode[];   // unique teams playing in ±3 day window
+  loading: boolean;
+  error: string | null;
+  source: 'api' | 'fallback';
+}
 
-`src/hooks/useAccessibility.tsx`:
-- `VisualTheme` union: `'colors' | 'patterns' | 'shapes' | 'fifa'`
-- Replace `{ value: 'knicks', label: 'Knicks' }` with `{ value: 'fifa', label: 'FIFA' }`
-- Update `loadInitial` migration: if stored value is `'knicks'`, migrate to `'fifa'`
+export async function fetchFifaTeamsForDate(date: Date): Promise<FifaTeamData> { ... }
+```
 
-## 4. Rename `knicks` → `fifa` everywhere
+- Caches results in `localStorage` under `fifa-teams-${YYYY-MM-DD}` with a 24h TTL so the API is hit at most once per calendar day per device.
+- Internally calls the endpoint for `date` and for each of the 6 surrounding days (single `Promise.all`), then dedupes.
+- On any network failure: returns `source: 'fallback'` and lets the overlay use a seeded shuffle of `FIFA_QUALIFIED_TEAMS`.
 
-Mechanical replacement of identifier/literal across:
-- `src/lib/game.ts` — type unions in `RoundAttempt`, `saveRoundAttempt`, `getResultMessage`; rename local `knicks` var to `fifa`
-- `src/components/GameGrid.tsx` — rename var, swap import to `FifaOverlay`
-- `src/components/DailySummary.tsx` — rename vars; copy updates: `'Game Over — Swish!'` → `'Full Time — Goal!'`; `'Championship Game complete! Tip-off resets tomorrow.'` → `'Final whistle! Kickoff resets tomorrow.'`; `'Tomorrow's tip-off…'` → `'Tomorrow's kickoff brings a tougher matchup!'`
-- `src/pages/Index.tsx` — rename `knicksMode`/`knicksCelebrationKey`/`fireKnicksCelebration`, swap import; replace Knicks blue (`#006BB6`) buttons with FIFA primary color (`#326295` — official FIFA blue); update `'Swish! Run it back?'` → `'Goal! Run it back?'`; confetti palette → FIFA blue + gold
-- `KnicksOverlay.tsx` deleted; `src/assets/knicks/*` folder deleted in full (all 10 `.asset.json` pointers + their CDN assets via `assets--delete_asset`)
+New context provider `src/components/FifaTeamsProvider.tsx`:
+- Wraps `<App />` (mounted only when `visualTheme === 'fifa'` to avoid wasted requests)
+- On mount: calls `fetchFifaTeamsForDate(new Date())`, stores result in state
+- Exposes `useFifaTeams()` hook returning `FifaTeamData`
 
-## 5. Share text (`src/lib/game.ts` — `generateShareText`)
+## 5. Update `FifaOverlay`
 
-Visual-style label comes from `getVisualThemeLabel()`. Renaming the option to `'FIFA'` automatically produces `🎨 Visual Style: FIFA` in clipboard output. Score/win-loss/grid emoji format untouched. No other share-text changes.
+`getFifaImageMap(date, teamData?)` now accepts an optional pre-fetched `FifaTeamData`. When called inside `<FifaOverlay>`, it reads from the `useFifaTeams()` hook. Allocation order stays:
+1. `teamData.today` (mandatory inclusion)
+2. Pad from `teamData.week`
+3. Pad from `FIFA_QUALIFIED_TEAMS` shuffle (seeded by date for stability)
 
-## 6. Memory update
+This preserves the deterministic flag-to-color mapping across the 3 daily rounds.
 
-Update `mem://style/color-palette` and add `mem://features/fifa-theme` describing the new schedule-driven mapping. Remove Knicks references from index.
+## 6. Files removed / rewritten
 
-## What is NOT changing
+- `src/data/fifaSchedule.ts` — delete fabricated `FIFA_SCHEDULE`, `GROUPS`, `GROUP_DATES`, `KNOCKOUT`, `buildGroupStage`, `getTeamsForDate`, `getTeamsForWeekOf`. Keep `FIFA_QUALIFIED_TEAMS` (rewritten with real list + Curaçao), `isWithinWorldCup`, `dailySeededShuffle`, types.
+- `src/components/FifaOverlay.tsx` — switch to consuming the provider hook.
+- `src/main.tsx` (or `src/App.tsx`) — wrap with `<FifaTeamsProvider>`.
 
-- `generateSolution` / `generateSolutionDDA` — palette generation unchanged
-- Mon→Sun color-count progression
-- DDA difficulty boosts, round logic, 3-attempts/day, calendar locking
-- Timer scaling, metrics (Reflex Avg / Peak / Consistency / Tiles Decoded)
-- PostHog event names and payload schemas (only the `visual_style` value string changes from `'knicks'` to `'fifa'`)
-- Result modal behavior, onboarding, share grid emoji format
+## 7. UX details
+
+- First paint with `loading: true` uses the qualifier-shuffle fallback so the grid never flashes empty.
+- On successful fetch, the overlay re-renders with the real flags — only matters in the FIFA theme and only once per day.
+- No loading spinner needed; the swap is instant once the response lands (typically <300 ms).
+
+## What stays untouched
+
+- Game logic, color count progression, DDA, metrics, PostHog payloads, share text format
+- Anchor mapping (White → Cup, Black → Ball)
+- `flagcdn.com/w160/{cc}.png` URLs (Curaçao = `cw` works on flagcdn)
 
 ## Technical notes
 
-- flagcdn.com is a stable static CDN (no API key); 2D flat round flag PNGs at `/w160/{cc}.png`. Long-cache headers. No CORS issues for `<img>`.
-- Seeded date-based flag assignment ensures rounds 1/2/3 of the same day show identical flag-to-color mapping, preserving the "memorize then recall" mechanic.
-- Today (June 14, 2026) falls within the World Cup window, so the FIFA theme will show real matchday flags immediately after build.
+- TheSportsDB rate limit on free key `3` is 100 req/min; with the 24 h localStorage cache + 7-day batch we use ≤7 requests per user per day.
+- If the API is ever down for an extended period and the user is OK with it, we can later add a tiny edge-function proxy with server-side caching. Not needed for v1.

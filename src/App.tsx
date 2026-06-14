@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AccessibilityProvider } from "@/hooks/useAccessibility";
+import { FifaTeamsProvider } from "@/components/FifaTeamsProvider";
 import { PatternDefs } from "@/components/PatternDefs";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -13,6 +14,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AccessibilityProvider>
+      <FifaTeamsProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -29,6 +31,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </FifaTeamsProvider>
     </AccessibilityProvider>
   </QueryClientProvider>
 );
