@@ -1,64 +1,50 @@
-## Goal
+# Fix: No more duplicated Cup/Ball, add filler image
 
-Replace the World Cup theme's daily flag data source with a single hardcoded `currentDayFlags` URL array in `FifaOverlay.tsx` that you edit by hand each day, and update the 9-slot allocation rules around the two anchors (White → Golden Cup, Black → Soccer Ball).
+## Problem
+With 8 flags today, the current logic places Cup OR Ball into the 9th chromatic slot — but the White anchor already renders the Cup and the Black anchor already renders the Ball. Result: the same Cup (or Ball) image shows up twice in the 3×3 grid. The user wants Cup and Ball to appear **only** at their anchor positions (White → Cup, Black → Ball), never anywhere else.
 
-## Changes
+## Solution
 
-### 1. `src/components/FifaOverlay.tsx` — hardcoded URL array
+### 1. Upload the attached soccer-ball image as a new "filler" asset
+- Upload `Screen Shot 2026-06-14 at 6.54.46 PM.png` via `lovable-assets` to `src/assets/fifa/filler.png.asset.json`.
+- This is a distinct, separate image used **only** when a chromatic slot has no flag assigned (it is NOT the anchor Ball).
 
-Add at the top:
+### 2. New strict slot rules in `FifaOverlay.tsx`
+Priority order, with no overlap between anchors and chromatic slots:
 
-```ts
-// Update this array daily with the direct flag image URLs of teams playing.
-const currentDayFlags: string[] = [
-  "https://flagcdn.com/w320/es.png",
-  "https://flagcdn.com/w320/cv.png",
-  "https://flagcdn.com/w320/be.png",
-  "https://flagcdn.com/w320/eg.png",
-  "https://flagcdn.com/w320/sa.png",
-  "https://flagcdn.com/w320/uy.png",
-  "https://flagcdn.com/w320/ir.png",
-  "https://flagcdn.com/w320/nz.png",
-];
-```
+- **Anchors (fixed, never change):**
+  - White (`#FFFFFF`) → Cup
+  - Black (`#000000`) → Ball
+- **Chromatic slots (9 colored hexes):**
+  - Filled in date-seeded random order with `currentDayFlags` URLs (priority).
+  - Any remaining unfilled chromatic slot → the new `filler.png` image.
+  - **Cup and Ball are never placed in chromatic slots.**
 
-(Today's 8 unique teams — your message had `eg` and `uy` duplicated.)
+This means:
+| N flags | Chromatic slot contents |
+|---|---|
+| 9+ | 9 flags |
+| 8  | 8 flags + 1 filler |
+| 7  | 7 flags + 2 fillers |
+| ≤6 | N flags + (9−N) fillers |
+| 0  | 9 fillers |
 
-### 2. Slot allocation rules (9 chromatic slots + White/Black anchors)
+The filler image can repeat across slots (it is not the Cup/Ball, so it does not violate the "never duplicate the World Cup" rule). Only Cup and Ball are unique-per-grid.
 
-Rewrite `getFifaImageMap` so a slot can be `{ kind: 'flagUrl'; url: string }`, `{ kind: 'cup' }`, `{ kind: 'ball' }`, or absent. Driven by `currentDayFlags.length` (N):
+### 3. Code changes (`src/components/FifaOverlay.tsx`)
+- Import new `fillerAsset` from `@/assets/fifa/filler.png.asset.json`.
+- Extend `SlotEntry` with `{ kind: 'filler' }`.
+- Rewrite `getFifaImageMap`:
+  - Keep White → cup, Black → ball.
+  - Shuffle the 9 chromatic hexes by date.
+  - Place flags into the first N shuffled slots.
+  - Fill all remaining chromatic slots with `{ kind: 'filler' }`.
+  - Remove the N=8 / N=7 Cup/Ball insertion logic entirely (this was the bug).
+- In the renderer, add a `filler` branch that renders the filler image with the same circular styling used for flags (or `object-contain p-1` like Cup/Ball — see open question).
+- Keep `dateSeededShuffle` for slot order; remove its use for picking Cup/Ball.
 
-- White anchor slot always → Cup; Black anchor slot always → Ball.
-- **N ≥ 9**: first 9 URLs fill the 9 chromatic slots.
-- **N = 8**: 8 URLs fill 8 chromatic slots; the 9th chromatic slot is randomly Cup or Ball (date-seeded so it's stable for the day).
-- **N = 7**: 7 URLs fill 7 chromatic slots; remaining 2 chromatic slots are locked to Cup + Ball (date-seeded order).
-- **N < 7** (knockouts): N URLs fill N chromatic slots; 2 more chromatic slots are locked to Cup + Ball; remaining chromatic slots are left empty (overlay returns `null`, raw chromatic color shows).
-- **N = 0**: only the White/Black anchors render Cup/Ball; no chromatic slots get overlays.
+### 4. Out of scope
+Game mechanics, colors, daily flag list, anchor mapping rule (White=Cup, Black=Ball stays), Cup/Ball assets.
 
-Chromatic-slot assignment order remains date-seeded so it's stable per day.
-
-### 3. Visual styling (option B)
-
-Render flag URLs with:
-
-```tsx
-<img
-  src={entry.url}
-  alt=""
-  aria-hidden
-  loading="lazy"
-  className="w-full h-full rounded-full object-cover border border-gray-200"
-/>
-```
-
-Wrapped in the existing `absolute inset-0` container so it fills the slot at any size.
-
-### 4. Cleanup
-
-- Delete `src/data/fifaDailyFlags.ts`.
-- Remove unused imports from `FifaOverlay.tsx` (`getFlagsForDate`, `FIFA_QUALIFIED_TEAMS`, `TeamCode`). Keep `dailySeededShuffle` for the Cup/Ball coin-flip ordering, or inline a tiny date-seeded picker.
-- `src/data/fifaSchedule.ts` left untouched (other modules may still import constants from it).
-
-## Out of scope
-
-No changes to game logic, color palette, scoring, persistence, analytics, or the Cup/Ball assets.
+## Open question
+Should the new filler image be rendered with the **flag style** (`w-full h-full rounded-full object-cover border border-gray-200` — fills the circle, cropped) or the **Cup/Ball style** (`object-contain p-1` — floats inside the colored circle showing the chromatic background)? Defaulting to the **Cup/Ball style** so the filler reads as a "ball-like" decorative element sitting on the slot color, matching how the anchors look. Tell me if you'd rather it fill the circle edge-to-edge.
