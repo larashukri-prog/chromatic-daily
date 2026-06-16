@@ -1,13 +1,17 @@
-## Replace Ball & Filler Images
+Replace the 8 flag URLs in the `currentDayFlags` array inside `src/components/FifaOverlay.tsx` with the new team flags provided by the user. The White→Cup and Black→Ball anchor mappings remain untouched.
 
-**Goal:** Swap the existing `ball.png` (Black anchor) and `filler.png` assets with the newly uploaded images.
+**New flags (in order):**
+- France (fr)
+- Senegal (sn)
+- Iraq (iq)
+- Norway (no)
+- Argentina (ar)
+- Algeria (dz)
+- Austria (at)
+- Jordan (jo)
 
-**Mapping:**
-- `Mask_group_15.png` (Trionda ball) → new `ball.png` (Black anchor)
-- `Mask_group_14.png` (Classic B&W ball) → new `filler.png` (empty chromatic slots)
-
-**Steps:**
-1. Delete old `src/assets/fifa/ball.png.asset.json` and `src/assets/fifa/filler.png.asset.json` from CDN and repo.
-2. Upload `Mask_group_15.png` as `ball.png` → write new `src/assets/fifa/ball.png.asset.json`.
-3. Upload `Mask_group_14.png` as `filler.png` → write new `src/assets/fifa/filler.png.asset.json`.
-4. No code changes in `FifaOverlay.tsx`; imports already reference filenames, so new URLs are picked up automatically.
+**Technical details:**
+- File: `src/components/FifaOverlay.tsx`
+- Target: `currentDayFlags` array (lines 6-15)
+- Keep `cup.png.asset.json`, `ball.png.asset.json`, and `filler.png.asset.json` references unchanged.
+- The `getFifaImageMap` deterministic shuffle will distribute these new flags across the 9 chromatic slots as before.
