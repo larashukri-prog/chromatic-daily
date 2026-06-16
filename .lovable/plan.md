@@ -1,17 +1,17 @@
-Replace the 8 flag URLs in the `currentDayFlags` array inside `src/components/FifaOverlay.tsx` with the new team flags provided by the user. The White→Cup and Black→Ball anchor mappings remain untouched.
+## Fix Jordanian flag cropping in FIFA grid
 
-**New flags (in order):**
-- France (fr)
-- Senegal (sn)
-- Iraq (iq)
-- Norway (no)
-- Argentina (ar)
-- Algeria (dz)
-- Austria (at)
-- Jordan (jo)
+### Problem
+The Jordanian flag (`jo.png`) has a star on its left side that gets cropped out because `object-cover` crops from the center by default.
 
-**Technical details:**
-- File: `src/components/FifaOverlay.tsx`
-- Target: `currentDayFlags` array (lines 6-15)
-- Keep `cup.png.asset.json`, `ball.png.asset.json`, and `filler.png.asset.json` references unchanged.
-- The `getFifaImageMap` deterministic shuffle will distribute these new flags across the 9 chromatic slots as before.
+### Solution
+Update the flag image rendering in `src/components/FifaOverlay.tsx` to conditionally adjust the `object-position` class:
+
+- If the flag URL includes `jo.png` → apply `object-left` so the star remains visible.
+- For all other flags → apply `object-center` to keep the flag perfectly centered.
+
+### Changes
+**File: `src/components/FifaOverlay.tsx`** (flag rendering block, lines 115–123)
+
+Replace the single static class string for flag images with a conditional expression that appends `object-left` or `object-center` based on the URL. The existing `w-full h-full rounded-full object-cover border border-gray-200` base classes remain unchanged.
+
+No other components, schedules, or anchor mappings are affected.

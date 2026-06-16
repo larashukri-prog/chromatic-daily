@@ -112,13 +112,14 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
     return <img src={fillerAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
   }
   // Flag URL — fills the slot with a circular crop and subtle border.
+  const objectPosition = entry.url.includes('jo.png') ? 'object-left' : 'object-center';
   return (
     <img
       src={entry.url}
       alt=""
       aria-hidden
       loading="lazy"
-      className={`${base} w-full h-full rounded-full object-cover border border-gray-200`}
+      className={`${base} w-full h-full rounded-full object-cover ${objectPosition} border border-gray-200`}
     />
   );
 }
