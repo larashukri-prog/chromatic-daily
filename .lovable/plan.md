@@ -1,18 +1,29 @@
-Update the FIFA theme's daily flag URLs for tomorrow.
+Refactor the `<head>` tag in `index.html` to resolve conflicting metadata, remove redundancies, and add a favicon. Changes are scoped exclusively to `index.html`.
 
-**Change:**
-In `src/components/FifaOverlay.tsx`, replace the `currentDayFlags` array (lines 6-15) with the 10 new URLs provided:
-- https://flagcdn.com/w320/at.png (Austria)
-- https://flagcdn.com/w320/jo.png (Jordan)
-- https://flagcdn.com/w320/pt.png (Portugal)
-- https://flagcdn.com/w320/cd.png (DR Congo)
-- https://flagcdn.com/w320/gb-eng.png (England)
-- https://flagcdn.com/w320/hr.png (Croatia)
-- https://flagcdn.com/w320/gh.png (Ghana)
-- https://flagcdn.com/w320/pa.png (Panama)
-- https://flagcdn.com/w320/uz.png (Uzbekistan)
-- https://flagcdn.com/w320/co.png (Colombia)
+### 1. Delete conflicting JSON-LD schema
+Remove the second `<script type="application/ld+json">` block (lines 56-66) with `@type: "SoftwareApplication"`.
 
-**Unchanged:**
-- White/Black anchor mapping to Cup/Ball remains untouched.
-- The existing conditional `object-left` logic for `jo.png` (line 115) and `object-center` for all other flags stays exactly as is — it will continue working correctly since Jordan (`jo.png`) is still present in the new list.
+### 2. Update the WebApplication schema
+Replace the first `<script type="application/ld+json">` block (lines 44-55) with the following exact code. The `url` field changes from `https://chromaticdaily.com` to `https://chromatic-daily.lovable.app`, and the `description` is expanded.
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Chromatic Daily",
+  "url": "https://chromatic-daily.lovable.app",
+  "applicationCategory": "GameApplication",
+  "genre": "Brain Game, Memory Game, Color Puzzle",
+  "description": "A minimalist daily color memory game designed to stimulate neuroplasticity and cognitive retention through visual tracking. Play instantly in any web browser without app store downloads or sign-ups.",
+  "browserRequirements": "Requires HTML5 support."
+}
+</script>
+```
+
+### 3. Clean up redundancies
+- Remove the outdated TODO comment on line 30 (`<!-- TODO: Update og:title to match your application name -->`).
+- Remove `<meta name="twitter:site" content="@Lovable" />`.
+
+### 4. Add favicon
+Insert `<link rel="icon" type="image/png" href="/apple-touch-icon.png" />` immediately after the existing `<link rel="apple-touch-icon" ...>` tag so the logo appears in browser tabs and Google Search results.
