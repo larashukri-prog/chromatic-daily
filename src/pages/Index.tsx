@@ -1586,6 +1586,13 @@ const Index = () => {
         }
         .animate-shake { animation: shake 0.5s ease-in-out; }
       `}</style>
+
+      {/* Disclaimer: clarifies independence from unrelated iOS app */}
+      <footer className="mt-8 px-6 pb-4 max-w-md mx-auto text-center">
+        <p className="text-[10px] leading-relaxed text-muted-foreground/60">
+          Chromatic Daily is an independent, browser-based color memory puzzle. We are a standalone web application and are not affiliated with, associated with, or related to the 'Chromatic: The Color Game' iOS mobile application or its RGB slider mechanics.
+        </p>
+      </footer>
     </div>
   );
 };
