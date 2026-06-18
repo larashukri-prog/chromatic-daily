@@ -4,16 +4,15 @@ import fillerAsset from '@/assets/fifa/filler.png.asset.json';
 
 // Update this array daily with the direct flag image URLs of teams playing.
 const currentDayFlags: string[] = [
-  "https://flagcdn.com/w320/at.png",
-  "https://flagcdn.com/w320/jo.png",
-  "https://flagcdn.com/w320/pt.png",
-  "https://flagcdn.com/w320/cd.png",
-  "https://flagcdn.com/w320/gb-eng.png",
-  "https://flagcdn.com/w320/hr.png",
-  "https://flagcdn.com/w320/gh.png",
-  "https://flagcdn.com/w320/pa.png",
-  "https://flagcdn.com/w320/uz.png",
   "https://flagcdn.com/w320/co.png",
+  "https://flagcdn.com/w320/cz.png",
+  "https://flagcdn.com/w320/za.png",
+  "https://flagcdn.com/w320/ch.png",
+  "https://flagcdn.com/w320/ba.png",
+  "https://flagcdn.com/w320/ca.png",
+  "https://flagcdn.com/w320/qa.png",
+  "https://flagcdn.com/w320/mx.png",
+  "https://flagcdn.com/w320/kr.png",
 ];
 
 /** Chromatic anchors mapped strictly: White → Golden Cup, Black → Soccer Ball. */
