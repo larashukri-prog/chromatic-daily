@@ -1,9 +1,17 @@
-## SEO Copy Update Plan
+Update the `currentDayFlags` array in `src/components/FifaOverlay.tsx` with the 9 new flag URLs provided by the user for tomorrow's fixtures.
 
-### 1. Update Meta Description in `index.html`
-Replace the current `<meta name="description">` tag with the exact user-provided copy to clarify the browser-based nature of the game and differentiate from iOS apps.
+Changes:
+1. Replace the existing 10 flag URLs in `currentDayFlags` with the 9 new URLs:
+   - https://flagcdn.com/w320/co.png
+   - https://flagcdn.com/w320/cz.png
+   - https://flagcdn.com/w320/za.png
+   - https://flagcdn.com/w320/ch.png
+   - https://flagcdn.com/w320/ba.png
+   - https://flagcdn.com/w320/ca.png
+   - https://flagcdn.com/w320/qa.png
+   - https://flagcdn.com/w320/mx.png
+   - https://flagcdn.com/w320/kr.png
 
-### 2. Add Footer Disclaimer to `src/pages/Index.tsx`
-Insert the provided disclaimer text at the very bottom of the main page layout (after the `<style>` block, before the closing root `</div>`). Style it with `text-[10px] text-muted-foreground/60` to keep it minimalist and crawler-friendly without disrupting the UI aesthetic.
+2. No logic changes required. The existing `jo.png` → `object-left` and all-other-flags → `object-center` positioning rules in the `FifaOverlay` component remain untouched. White and Black anchors (Cup and Ball) also remain unchanged.
 
-No game logic or other UI components will be touched.
+3. The `getFifaImageMap` function already slices to `FLAG_SLOT_HEXES.length` (9), so 9 URLs is the correct count.
