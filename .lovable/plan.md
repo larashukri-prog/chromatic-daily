@@ -1,17 +1,16 @@
-Update the `currentDayFlags` array in `src/components/FifaOverlay.tsx` with the 9 new flag URLs provided by the user for tomorrow's fixtures.
+### Qatar Flag Positioning Fix
 
-Changes:
-1. Replace the existing 10 flag URLs in `currentDayFlags` with the 9 new URLs:
-   - https://flagcdn.com/w320/co.png
-   - https://flagcdn.com/w320/cz.png
-   - https://flagcdn.com/w320/za.png
-   - https://flagcdn.com/w320/ch.png
-   - https://flagcdn.com/w320/ba.png
-   - https://flagcdn.com/w320/ca.png
-   - https://flagcdn.com/w320/qa.png
-   - https://flagcdn.com/w320/mx.png
-   - https://flagcdn.com/w320/kr.png
+**Problem:** The Qatar flag (`qa.png`) currently uses `object-center`, which shows only a tiny sliver of the white stripe. Using `object-left` (like Jordan) would show too much white and overwhelm the maroon.
 
-2. No logic changes required. The existing `jo.png` → `object-left` and all-other-flags → `object-center` positioning rules in the `FifaOverlay` component remain untouched. White and Black anchors (Cup and Ball) also remain unchanged.
+**Goal:** Show roughly a quarter of the circle as white — enough to be clearly visible and recognizable, while keeping the maroon dominant.
 
-3. The `getFifaImageMap` function already slices to `FLAG_SLOT_HEXES.length` (9), so 9 URLs is the correct count.
+**Approach:** Add a custom `object-position` for Qatar only, sitting between `object-center` and `object-left`.
+
+**Changes in `src/components/FifaOverlay.tsx`:**
+- Replace the existing `object-left` / `object-center` ternary with a three-case lookup:
+  - `jo.png` → `object-left` (unchanged)
+  - `qa.png` → `object-[30%_center]` (custom Tailwind arbitrary value, shifting the focal point to reveal ~25% white)
+  - All other flags → `object-center` (unchanged)
+- No other game logic, UI, or styles will be touched.
+
+**Verification:** A quick visual check in the preview to confirm the Qatar flag slot shows a balanced white/maroon crop.
