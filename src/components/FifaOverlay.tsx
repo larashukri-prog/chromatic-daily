@@ -116,7 +116,9 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
     ? 'object-left'
     : entry.url.includes('qa.png')
       ? 'object-[30%_center]'
-      : 'object-center';
+      : entry.url.includes('tr.png')
+        ? 'object-[40%_center]'
+        : 'object-center';
   return (
     <img
       src={entry.url}
