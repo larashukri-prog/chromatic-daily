@@ -4,7 +4,7 @@ import fillerAsset from '@/assets/fifa/filler.png.asset.json';
 
 // Update this array daily with the direct flag image URLs of teams playing.
 const currentDayFlags: string[] = [
-  "https://flagcdn.com/w320/au.png",
+  "https://flagcdn.com/w320/jo.png",
   "https://flagcdn.com/w320/us.png",
   "https://flagcdn.com/w320/nl.png",
   "https://flagcdn.com/w320/se.png",
