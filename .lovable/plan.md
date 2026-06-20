@@ -1,18 +1,23 @@
-## Center the Turkey flag crescent and star
+Update the daily FIFA flag list in `src/components/FifaOverlay.tsx` to the teams playing tomorrow while preserving the White (Cup) and Black (Ball) anchors.
 
-The FIFA overlay currently treats every flag as `object-center` except Jordan (`object-left`) and Qatar (`object-[30%_center]`). The Turkey flag's crescent and star are not reading as centered in the circular crop, so we will add a dedicated object-position rule for `tr.png`.
+Current list:
+- https://flagcdn.com/w320/au.png
+- https://flagcdn.com/w320/us.png
+- https://flagcdn.com/w320/gb-sct.png
+- https://flagcdn.com/w320/ma.png
+- https://flagcdn.com/w320/br.png
+- https://flagcdn.com/w320/ht.png
+- https://flagcdn.com/w320/tr.png
+- https://flagcdn.com/w320/py.png
 
-### Plan
-1. **Update `src/components/FifaOverlay.tsx`**
-   - Add a `tr.png` branch to the existing object-position ternary.
-   - Start with `object-[40%_center]` — a subtle shift toward the hoist side so the crescent/star sit in the visual middle of the circle while keeping red field visible on both sides.
+Replace with the new list provided by the user:
+- https://flagcdn.com/w320/au.png
+- https://flagcdn.com/w320/us.png
+- https://flagcdn.com/w320/nl.png
+- https://flagcdn.com/w320/se.png
+- https://flagcdn.com/w320/de.png
+- https://flagcdn.com/w320/ci.png
+- https://flagcdn.com/w320/ec.png
+- https://flagcdn.com/w320/cw.png
 
-2. **Verify visually**
-   - Run the app and use Playwright to capture a screenshot of the Turkey flag tile.
-   - If the crescent/star still look off-center, iterate the percentage (e.g., 35%, 45%, 50%) based on what the screenshot shows.
-
-3. **Ship the chosen value**
-   - Commit the final percentage once the flag looks centered.
-
-### Out of scope
-- No changes to other flags, anchors, game logic, or the daily flag list.
+No other game logic, anchor mapping, or object-position rules will change.
