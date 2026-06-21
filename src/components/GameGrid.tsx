@@ -89,7 +89,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   return (
-    <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[280px] mx-auto">
+    <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[200px] mx-auto">
       {Array.from({ length: GRID_SIZE }).map((_, i) => (
         <motion.button
           key={i}

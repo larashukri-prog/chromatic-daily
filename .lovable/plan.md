@@ -1,27 +1,26 @@
-# Plan: Update tomorrow's FIFA flag URLs
+# Plan: switch game board to a 2×3 vertical grid
 
-## Goal
-Swap the current FIFA World Cup theme flag URLs in `FifaOverlay.tsx` with the 6 new team flag URLs for tomorrow, preserving the existing image-position anchors.
+## What we’re changing
+Flip the 6-slot game board from its current 3-column × 2-row layout to a 2-column × 3-row layout. All game logic, colors, observation/recall/result flow, and visual styling stay the same — only the board geometry changes.
 
-## What will change
-1. `src/components/FifaOverlay.tsx`
-   - Replace the `currentDayFlags` array entries with the 6 new URLs in the order provided:
-     1. `https://flagcdn.com/w320/jo.png`
-     2. `https://flagcdn.com/w320/dz.png`
-     3. `https://flagcdn.com/w320/fr.png`
-     4. `https://flagcdn.com/w320/iq.png`
-     5. `https://flagcdn.com/w320/ar.png`
-     6. `https://flagcdn.com/w320/sn.png`
-   - Keep the existing `objectPosition` anchor logic for `jo.png` (`object-left`) and the placeholders for `qa.png` / `tr.png`. No new anchors are needed for `dz`, `fr`, `iq`, `ar`, or `sn`.
+## Why
+On phones, a taller/narrower 2×3 board fits the vertical screen better and leaves more room for the "I'm ready" action button below the grid.
 
-## What will not change
-- `FLAG_SLOT_HEXES` and the deterministic date-seeded shuffle that maps flags to color slots.
-- The filler image fallback for any slot without a flag.
-- `fifaSchedule.ts` and the rest of the FIFA/theme logic.
+## Changes
 
-## Verification
-- Run a quick build/typecheck to ensure no syntax errors.
-- Optionally inspect a preview tile to confirm one of the new flags renders (e.g., `jo.png`).
+1. **`src/components/GameGrid.tsx`**
+   - Change `grid-cols-3` to `grid-cols-2` so the 6 slots render as 2 columns and 3 rows.
+   - Tighten the board width slightly (e.g., from `max-w-[280px]` to a narrower token) so the two columns don’t produce oversized tiles on small screens.
+   - Keep all existing gap, aspect-ratio, animation, overlay, and accessibility behavior intact.
 
-## Source of truth
-User-provided flag URLs for tomorrow's fixtures, replacing the existing `currentDayFlags` values.
+2. **`src/pages/Index.tsx` — copy cleanup**
+   - Update remaining user-facing references that say "3x2 grid" to "2x3 grid" so the How to Play / Practice Mode descriptions match the new layout.
+   - Only touch user-visible strings; leave comments/code-only references alone unless they directly describe the layout shape.
+
+3. **Verification**
+   - Confirm the board still centers horizontally above the action buttons on mobile viewport.
+   - Spot-check observation, recall, and result phases to ensure no tile overlap or overflow.
+
+## Out of scope
+- No changes to game rules, difficulty tiers, color counts, stage progression, timers, scoring, or sharing logic.
+- No changes to the color picker, buttons, or modals beyond any necessary positioning tweaks for the taller board.
