@@ -1509,7 +1509,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a round—essential training for the 9-tile Weekend Challenge.</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 3x2 grid.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
