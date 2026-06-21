@@ -19,8 +19,9 @@ import { FifaOverlay } from '@/components/FifaOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
-  getDayDifficultyTier
+  saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
+  getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
+  type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
