@@ -63,9 +63,9 @@ function playSuccessChime() {
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
-  const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
+  const [solution, setSolution] = useState<(string | null)[]>(Array(GRID_SIZE).fill(null));
   const [activeColors, setActiveColors] = useState<{ name: string; hex: string }[]>([]);
-  const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
+  const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(GRID_SIZE).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
   const [timerDuration, setTimerDuration] = useState(5000);
@@ -79,6 +79,10 @@ const Index = () => {
   const [roundIndex, setRoundIndex] = useState(0);
   const [totalAttemptsUsed, setTotalAttemptsUsed] = useState(0);
   const [attemptInRound, setAttemptInRound] = useState(1);
+  // Stage-progression state. roundIndex (0/1/2) maps to stage 1/2/3.
+  // `substage` is only meaningful when roundIndex === 1 (Stage 2 main → 2b drop).
+  const [substage, setSubstage] = useState<'main' | '2b'>('main');
+  const [regenIndex, setRegenIndex] = useState(0);
   const [resultMessage, setResultMessage] = useState('');
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
