@@ -1442,12 +1442,9 @@ const Index = () => {
         <h1>Chromatic Daily | Daily Color Memory & Brain Game</h1>
         <h2>How it Works: Stimulating Neuroplasticity Through Color</h2>
         <p>
-          Chromatic Daily is a minimalist daily color memory game built to train visual recall and
-          cognitive focus. Each day presents a new configuration of color tiles to study, memorize,
-          and reproduce — a short, deliberate exercise designed to stimulate neuroplasticity through
-          color-based pattern recognition. Every day runs a 3-stage progression on a 2x3 grid —
-          Stage 1 (3 elements), Stage 2 (5 elements, falls back to 4 on a miss), and Stage 3
-          (6 elements) — giving the brain a short, progressive workout.
+          Chromatic Daily is a minimalist browser game built to train visual recall and
+          neuroplasticity. Every 24 hours, test your focus against a new 3-stage progressive
+          color grid. No app downloads required.
         </p>
         <h3>Cognitive Benefits of Daily Memory Games</h3>
         <p>
