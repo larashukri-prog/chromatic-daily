@@ -332,7 +332,7 @@ const Index = () => {
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setVerifying(false);
