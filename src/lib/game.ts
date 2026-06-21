@@ -410,50 +410,69 @@ export function getStreaks() {
   };
 }
 
-export function getResultMessage(roundIndex: number, attemptInRound: number, isCorrect: boolean, totalAttemptsUsed: number, theme?: string): string {
-  const remaining = MAX_ROUNDS - totalAttemptsUsed;
+/**
+ * Per-stage result copy.
+ * `nextStage` describes what the game will do AFTER this attempt:
+ *   - 'stage2'  → advancing to Stage 2 main
+ *   - 'stage2b' → Stage 2 main was failed; dropping to 4-element Stage 2b
+ *   - 'stage3'  → advancing to Stage 3
+ *   - 'regen'   → same stage, regenerated puzzle (Stage 1 fail or Stage 2b fail)
+ *   - 'done'    → daily complete (Stage 3 attempt, win or lose)
+ */
+export function getStageResultMessage(
+  stage: StageKey,
+  isCorrect: boolean,
+  nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done',
+  theme?: string,
+): string {
   const fifa = theme === 'fifa';
 
   if (isCorrect) {
-    if (fifa) {
-      if (totalAttemptsUsed >= MAX_ROUNDS && attemptInRound >= 2) {
-        return "Stoppage-Time Winner! ⚽ Final whistle — World-class form!";
-      }
-      if (roundIndex === 0 && attemptInRound === 1) {
-        return remaining > 0
-          ? `Goal! Top corner. You've got ${remaining} round${remaining > 1 ? 's' : ''} left — fresh fixture for Round ${roundIndex + 2}.`
-          : "Goal! Perfect run — World-class form!";
-      }
-      if (totalAttemptsUsed >= MAX_ROUNDS) {
-        return "On Fire! That's the final whistle — match complete.";
-      }
-      return remaining > 0
-        ? `On Fire! ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Next kickoff coming up.`
-        : "Match complete — On Fire today!";
+    if (nextStage === 'stage2') {
+      return fifa
+        ? "Goal! 1–0. Stage 2 kicks off with 5 elements — keep your shape."
+        : "Nailed it. Stage 2 brings 5 elements — let's keep the rhythm going.";
     }
-    if (roundIndex === 0 && attemptInRound === 1) {
-      return remaining > 0
-        ? `Perfect score! You've got ${remaining} round${remaining > 1 ? 's' : ''} left. Here is a completely new challenge for Round ${roundIndex + 2}.`
-        : "Perfect score on every round! Incredible memory!";
+    if (nextStage === 'stage3') {
+      return fifa
+        ? "Brace yourself — Stage 3 is the title decider: 6 elements, full pitch."
+        : "Locked in. Stage 3 fills the whole grid with 6 elements. Final round.";
     }
-    if (roundIndex === 1 && attemptInRound <= 2) {
-      return remaining > 0
-        ? `Spot on! You nailed the configuration on your second try.\n\nYou have one final round remaining. Since you solved that one, I've generated a brand-new color puzzle for your third and last attempt. Ready to finish strong?`
-        : "Got it! That's all 3 rounds done. Game complete!";
+    if (nextStage === 'done') {
+      return fifa
+        ? "Full Time — World-class form! You took the daily."
+        : "Daily complete. Perfect close on Stage 3 — incredible recall.";
     }
-    if (totalAttemptsUsed >= MAX_ROUNDS) {
-      return "Nice work! You cleared the puzzle on your final attempt. Game complete!";
-    }
-    return remaining > 0
-      ? `Got it! That's ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Let's move to your next round with a fresh configuration.`
-      : "Game complete! Great memory work today!";
+    return fifa ? "Goal!" : "Got it!";
   }
 
   // Failed
-  if (remaining > 0) {
-    return `Not quite—but you have ${remaining} attempt${remaining > 1 ? 's' : ''} remaining for this specific puzzle. Look closely at the hints!`;
+  if (nextStage === 'regen') {
+    if (stage === 'stage1') {
+      return fifa
+        ? "Wide of the post. Same stage, brand-new fixture — line it up again."
+        : "Not quite. Same stage, a fresh 3-element puzzle is loading.";
+    }
+    return fifa
+      ? "Off target. Stage 2 retry — another 4-element setup coming up."
+      : "Close. Another Stage 2 (4-element) puzzle is loading — clear it to reach Stage 3.";
   }
-  return "That's all 3 attempts used. Better luck tomorrow!";
+  if (nextStage === 'stage2b') {
+    return fifa
+      ? "Tough one. Dropping to a 4-element Stage 2 — solve it to reach Stage 3."
+      : "Not this time. Stage 2 drops to 4 elements — solve it to unlock Stage 3.";
+  }
+  if (nextStage === 'done') {
+    return fifa
+      ? "Final whistle. Stage 3 slipped away — see you tomorrow."
+      : "That's a wrap. Stage 3 wasn't yours today — fresh challenge tomorrow.";
+  }
+  return "Not quite — try again.";
+}
+
+/** Back-compat alias used by older call sites. */
+export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number, theme?: string): string {
+  return getStageResultMessage('stage1', isCorrect, isCorrect ? 'stage2' : 'regen', theme);
 }
 
 export function generateShareText(
@@ -468,58 +487,43 @@ export function generateShareText(
     visualStyles?: string;
   },
 ): string {
-  const { dayName, colorCount } = getDayInfo();
+  const { dayName } = getDayInfo();
   const dayNum = getDayNumber();
 
-  const getDifficultyName = (count: number): string => {
-    if (count <= 2) return 'Minimalist';
-    if (count <= 4) return 'Standard';
-    if (count <= 6) return 'Complex';
-    return 'Master';
+  // Build per-stage summary lines. Each stage shows the FINAL attempt the player
+  // landed on (Stage 2 may have ended on the 4-element 2b sub-puzzle).
+  const stageHeader = (idx: number, tileCount: number): string => {
+    if (idx === 1) return `Stage 2 · ${tileCount}`;
+    return `Stage ${idx} · ${tileCount}`;
   };
 
   const lines: string[] = [
     `Chromatic #${dayNum}`,
-    `${dayName} | Level: ${getDifficultyName(colorCount)}`,
+    `${dayName} | 3-Stage Daily`,
     '',
   ];
 
-  // Flatten all attempts across rounds, capped at MAX_ROUNDS
-  type FlatAttempt = { grid: (string | null)[]; isCorrect: boolean; solution: (string | null)[] };
-  const allAttempts: FlatAttempt[] = [];
-  for (const round of rounds) {
-    for (const attempt of round.attempts) {
-      if (allAttempts.length < MAX_ROUNDS) {
-        allAttempts.push({ ...attempt, solution: attempt.solution ?? round.solution });
-      }
-    }
-  }
-
   for (let i = 0; i < MAX_ROUNDS; i++) {
-    const a = allAttempts[i];
-    if (a) {
-      const statusIcon = a.isCorrect ? '✅' : '❌';
-      lines.push(`Attempt ${i + 1} ${statusIcon}`);
-      // Direct 1:1 mapping: index 0 = top-left circle = first emoji
-      const grid = Array.from({ length: 9 }, (_, j) => {
-        const sol = a.solution[j];
-        const placed = a.grid[j];
-        // Both empty — no color in this slot
-        if (sol === null && placed === null) return '⚪';
-        // Player placed nothing but solution expected a color — missed
-        if (sol !== null && placed === null) return '🔴';
-        // Player placed a color where solution is empty — wrong placement
-        if (sol === null && placed !== null) return '🔴';
-        // Both have colors — compare (case-insensitive for hex safety)
-        const isMatch = sol!.toLowerCase() === placed!.toLowerCase();
+    const round = rounds.find(r => r.roundIndex === i);
+    const lastAttempt = round?.attempts[round.attempts.length - 1];
+    if (round && lastAttempt) {
+      const sol = lastAttempt.solution ?? round.solution ?? [];
+      const tileCount = sol.filter(s => s !== null).length;
+      const statusIcon = lastAttempt.isCorrect ? '✅' : '❌';
+      lines.push(`${stageHeader(i + 1, tileCount)} ${statusIcon}`);
+      const cells = Array.from({ length: GRID_SIZE }, (_, j) => {
+        const s = sol[j] ?? null;
+        const placed = lastAttempt.grid?.[j] ?? null;
+        if (s === null && placed === null) return '⚪';
+        if (s !== null && placed === null) return '🔴';
+        if (s === null && placed !== null) return '🔴';
+        const isMatch = s!.toLowerCase() === placed!.toLowerCase();
         return isMatch ? '🟢' : '🔴';
       });
-      lines.push(grid.slice(0, 3).join(''));
-      lines.push(grid.slice(3, 6).join(''));
-      lines.push(grid.slice(6, 9).join(''));
+      lines.push(cells.slice(0, 3).join(''));
+      lines.push(cells.slice(3, 6).join(''));
     } else {
-      lines.push(`Attempt ${i + 1} ⬜`);
-      lines.push('⚪⚪⚪');
+      lines.push(`Stage ${i + 1} ⬜`);
       lines.push('⚪⚪⚪');
       lines.push('⚪⚪⚪');
     }
