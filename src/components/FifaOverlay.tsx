@@ -1,5 +1,3 @@
-import cupAsset from '@/assets/fifa/cup.png.asset.json';
-import ballAsset from '@/assets/fifa/ball.png.asset.json';
 import fillerAsset from '@/assets/fifa/filler.png.asset.json';
 
 // Update this array daily with the direct flag image URLs of teams playing.
@@ -14,10 +12,6 @@ const currentDayFlags: string[] = [
   "https://flagcdn.com/w320/es.png",
   "https://flagcdn.com/w320/sa.png",
 ];
-
-/** Chromatic anchors mapped strictly: White → Golden Cup, Black → Soccer Ball. */
-const WHITE = '#FFFFFF';
-const BLACK = '#000000';
 
 /** The 9 chromatic hex slots (in COLORS order) that flags can occupy. */
 const FLAG_SLOT_HEXES: string[] = [
@@ -34,8 +28,6 @@ const FLAG_SLOT_HEXES: string[] = [
 
 type SlotEntry =
   | { kind: 'flagUrl'; url: string }
-  | { kind: 'cup' }
-  | { kind: 'ball' }
   | { kind: 'filler' };
 
 /** Tiny deterministic per-date RNG (mulberry32 seeded by YYYYMMDD). */
@@ -59,16 +51,12 @@ function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
 }
 
 /** Build the per-day hex → asset map.
- *  - White anchor → Cup; Black anchor → Ball (always, ONLY here).
  *  - Chromatic slots: flags first (date-seeded order), filler image for the rest.
- *  - Cup and Ball are NEVER placed in chromatic slots. */
+ */
 export function getFifaImageMap(
   date: Date = new Date(),
 ): Record<string, SlotEntry> {
-  const map: Record<string, SlotEntry> = {
-    [WHITE]: { kind: 'cup' },
-    [BLACK]: { kind: 'ball' },
-  };
+  const map: Record<string, SlotEntry> = {};
 
   const flags = currentDayFlags.slice(0, FLAG_SLOT_HEXES.length);
   const N = flags.length;
@@ -103,12 +91,6 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
 
   const base = `absolute inset-0 w-full h-full pointer-events-none ${className}`;
 
-  if (entry.kind === 'cup') {
-    return <img src={cupAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
-  }
-  if (entry.kind === 'ball') {
-    return <img src={ballAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
-  }
   if (entry.kind === 'filler') {
     return <img src={fillerAsset.url} alt="" aria-hidden className={`${base} object-contain p-1`} />;
   }
@@ -133,4 +115,4 @@ export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps
 
 /** Back-compat shape echoing the old KNICKS_IMAGE_FOR_HEX map. Some callers
  *  used to read the map directly; kept here so referencing code keeps working. */
-export const FIFA_IMAGE_FOR_HEX_KEYS = [...FLAG_SLOT_HEXES, WHITE, BLACK];
+export const FIFA_IMAGE_FOR_HEX_KEYS = [...FLAG_SLOT_HEXES];

@@ -27,11 +27,6 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
 
 const NEUTRAL = '#D1D5DB';
 
-const ANCHORS = [
-  { name: 'Black', hex: '#000000', hue: -1 },
-  { name: 'White', hex: '#FFFFFF', hue: -2 },
-];
-
 export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
@@ -111,8 +106,7 @@ function generateFallbackSolution(): { solution: (string | null)[]; activeColors
 
 /**
  * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex).
- * Anchors (Black/White) are appended when colorCount >= 5 so the FIFA theme keeps
- * Cup/Ball on the higher-tile stages.
+ * All tiles are drawn from the chromatic palette only — no black/white anchors.
  */
 export function generateStageSolution(
   stage: StageKey,
@@ -125,12 +119,7 @@ export function generateStageSolution(
     const rand = seededRandom(seed);
 
     const shuffled = [...COLORS].sort(() => rand() - 0.5);
-    let chosen: { name: string; hex: string; hue: number }[];
-    if (colorCount >= 5) {
-      chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
-    } else {
-      chosen = shuffled.slice(0, colorCount);
-    }
+    const chosen = shuffled.slice(0, colorCount);
 
     const coloredPositions = getNonAdjacentPositions(chosen, colorCount, rand);
     const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
