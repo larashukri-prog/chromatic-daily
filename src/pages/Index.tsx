@@ -255,7 +255,9 @@ const Index = () => {
       setDailyStats(initialStats);
       setRoundIndex(0);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolution(0);
+      setSubstage('main');
+      setRegenIndex(0);
+      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
       setSolution(sol);
       setActiveColors(ac);
       return;
@@ -270,17 +272,55 @@ const Index = () => {
       if (lastRound) {
         const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
         setSolution(lastRound.solution);
-        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setPlayerGrid(lastAttempt?.grid ?? Array(GRID_SIZE).fill(null));
         setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
         setIsCorrect(lastRound.solved);
         setRoundIndex(lastRound.roundIndex);
         setPhase('result');
       }
     } else {
-      setRoundIndex(info.roundIndex);
-      const currentRoundData = info.rounds.find((r) => r.roundIndex === info.roundIndex);
-      setAttemptInRound((currentRoundData?.attempts.length ?? 0) + 1);
-      const { solution: sol, activeColors: ac } = generateSolution(info.roundIndex);
+      // Derive the active stage / substage / regen from persisted rounds.
+      const s1 = info.rounds.find((r) => r.roundIndex === 0);
+      const s2 = info.rounds.find((r) => r.roundIndex === 1);
+      let stage: StageKey = 'stage1';
+      let sub: 'main' | '2b' = 'main';
+      let regen = 0;
+      let rIdx = 0;
+      if (s2) {
+        rIdx = 1;
+        if (s2.solved) {
+          stage = 'stage3';
+          rIdx = 2;
+        } else {
+          const last = s2.attempts[s2.attempts.length - 1];
+          if (last?.substage === '2b') {
+            stage = 'stage2b';
+            sub = '2b';
+            regen = (last.regenIndex ?? 0) + 1;
+          } else {
+            // Stage 2 main failed → drop to 2b
+            stage = 'stage2b';
+            sub = '2b';
+            regen = 0;
+          }
+        }
+      } else if (s1) {
+        if (s1.solved) {
+          stage = 'stage2';
+          sub = 'main';
+          rIdx = 1;
+        } else {
+          const last = s1.attempts[s1.attempts.length - 1];
+          stage = 'stage1';
+          regen = (last?.regenIndex ?? 0) + 1;
+          rIdx = 0;
+        }
+      }
+      setRoundIndex(rIdx);
+      setSubstage(sub);
+      setRegenIndex(regen);
+      setAttemptInRound(1);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, regen);
       setSolution(sol);
       setActiveColors(ac);
     }
