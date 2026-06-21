@@ -1518,11 +1518,13 @@ const Index = () => {
               <div className="space-y-3">
                 <div>
                   <p className="font-medium text-foreground mb-1">3-Stage Daily</p>
-                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements). Miss Stage 1 and you replay with a fresh 3-element puzzle. Miss Stage 2 and the difficulty drops to 4 elements until you clear it. Stage 3 is one shot — solve it to win the day.</p>
+                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements).&nbsp;</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">3x2 Grid</p>
-                  <p>Six slots arranged in two rows of three. Every stage uses the same board — only the number of colored elements changes.</p>
+                  <p className="font-medium text-foreground mb-1">
+</p>
+                  <p>
+</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
