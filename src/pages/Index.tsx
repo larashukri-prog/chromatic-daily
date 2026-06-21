@@ -654,13 +654,26 @@ const Index = () => {
     // Daily mode — accumulate the same metrics for the daily summary.
     setDailyStats(updateStats);
 
-    // Daily mode verification
+    // Daily mode verification — stage-aware persistence.
     const newTotalUsed = totalAttemptsUsed + 1;
-    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme, Math.round(recallSeconds * 1000));
+    const substageForSave: 'main' | '2b' | undefined =
+      roundIndex === 1 ? substage : undefined;
+    const savedData = saveRoundAttempt(
+      roundIndex,
+      correct,
+      playerGrid,
+      solution,
+      visualTheme,
+      Math.round(recallSeconds * 1000),
+      substageForSave,
+      regenIndex,
+    );
 
     console.log('[Chromatic] Round verified:', {
+      stage: currentStageKey,
       roundIndex,
-      attemptInRound,
+      substage: substageForSave,
+      regenIndex,
       isCorrect: correct,
       totalAttemptsUsed: newTotalUsed,
       effectiveColorCount,
@@ -681,39 +694,46 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct, speed_bonus: isSpeedRound });
+      posthog.capture('Round Verified', {
+        round_number: roundIndex + 1,
+        stage: currentStageKey,
+        substage: substageForSave,
+        is_correct: correct,
+        speed_bonus: isSpeedRound,
+      });
 
       if (correct && isSpeedRound) {
         setStarsEarned(prev => prev + 1);
       }
 
-      if (roundIndex === 0 && correct && attemptInRound === 1) {
-        setDdaLevel('hard');
-        const tier = getDayDifficultyTier(baseColorCount);
-        if (tier !== 'hard') {
-          toast('Level Up! Round 2 is getting harder... 🔥', { duration: 3000 });
+      // Determine the NEXT stage based on outcome (drives the message + flow).
+      const nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done' = (() => {
+        if (currentStageKey === 'stage3') return 'done';
+        if (correct) {
+          if (currentStageKey === 'stage1') return 'stage2';
+          // stage2 or stage2b solved → stage3
+          return 'stage3';
         }
-      }
+        if (currentStageKey === 'stage1') return 'regen';
+        if (currentStageKey === 'stage2') return 'stage2b';
+        // stage2b failed → regen another 2b
+        return 'regen';
+      })();
 
-      if (!correct && ddaLevel === 'hard') {
-        setDdaLevel('standard');
-      }
-
-      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
+      const msg = getStageResultMessage(currentStageKey, correct, nextStage, visualTheme);
       setResultMessage(msg);
 
-      // FIFA: fire blue/gold confetti only when the player wins the
-      // round that finishes the daily game.
-      const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+      // FIFA: fire blue/gold confetti when the player WINS Stage 3.
+      const isDailyDone = currentStageKey === 'stage3';
       if (visualTheme === 'fifa' && correct && isDailyDone) {
-        const key = `${roundIndex}:${attemptInRound}`;
+        const key = `stage3:win`;
         if (fifaCelebrationKey.current !== key) {
           fifaCelebrationKey.current = key;
           fireFifaCelebration();
         }
       }
 
-      const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+      const done = currentStageKey === 'stage3'; // win OR loss ends the daily
       if (done || savedData.finished) {
         setAlreadyFinished(true);
       }
@@ -728,24 +748,52 @@ const Index = () => {
     }, 1500);
   };
 
-  const canContinue = phase === 'result' && totalAttemptsUsed < MAX_ROUNDS && !alreadyFinished;
+  const canContinue = phase === 'result' && currentStageKey !== 'stage3' && !alreadyFinished;
 
   const nextAttempt = () => {
     setShowResult(false);
 
+    // Compute the next stage based on current state + last outcome.
+    let nextStage: StageKey = currentStageKey;
+    let nextRoundIdx = roundIndex;
+    let nextSubstage: 'main' | '2b' = substage;
+    let nextRegen = regenIndex;
+
     if (isCorrect) {
-      const newRound = roundIndex + 1;
-      setRoundIndex(newRound);
-      setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolutionDDA(newRound, ddaLevel);
-      setSolution(sol);
-      setActiveColors(ac);
+      if (currentStageKey === 'stage1') {
+        nextStage = 'stage2';
+        nextRoundIdx = 1;
+        nextSubstage = 'main';
+        nextRegen = 0;
+      } else if (currentStageKey === 'stage2' || currentStageKey === 'stage2b') {
+        nextStage = 'stage3';
+        nextRoundIdx = 2;
+        nextSubstage = 'main';
+        nextRegen = 0;
+      }
     } else {
-      setAttemptInRound((prev) => prev + 1);
-      const { solution: sol, activeColors: ac } = generateSolutionDDA(roundIndex, ddaLevel);
-      setSolution(sol);
-      setActiveColors(ac);
+      if (currentStageKey === 'stage1') {
+        nextStage = 'stage1';
+        nextRegen = regenIndex + 1;
+      } else if (currentStageKey === 'stage2') {
+        // Drop to 4-element Stage 2b
+        nextStage = 'stage2b';
+        nextSubstage = '2b';
+        nextRegen = 0;
+      } else if (currentStageKey === 'stage2b') {
+        nextStage = 'stage2b';
+        nextSubstage = '2b';
+        nextRegen = regenIndex + 1;
+      }
     }
+
+    setRoundIndex(nextRoundIdx);
+    setSubstage(nextSubstage);
+    setRegenIndex(nextRegen);
+    setAttemptInRound(1);
+    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, nextRegen);
+    setSolution(sol);
+    setActiveColors(ac);
 
     startObservation();
   };
