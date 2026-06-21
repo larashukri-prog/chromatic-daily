@@ -1570,10 +1570,10 @@ const Index = () => {
                     Neural Match
                   </span>
                   <span className="text-[10px] font-semibold text-foreground">
-                    {Math.round((result.filter(Boolean).length / 9) * 100)}%
+                    {Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)}%
                   </span>
                 </div>
-                <Progress value={Math.round((result.filter(Boolean).length / 9) * 100)} className="h-1.5" />
+                <Progress value={Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)} className="h-1.5" />
               </div>
             )}
 
@@ -1582,7 +1582,7 @@ const Index = () => {
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 3, 6].map((row) => (
+              {[0, 3].map((row) => (
                 <div key={row}>
                   {solution
                     .slice(row, row + 3)
