@@ -235,12 +235,8 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Anchor-aware color picker: include Black & White on Sunday or in Practice Mode
-  const isSunday = new Date().getDay() === 0;
-  const includeAnchors = isSunday || isFreeplay;
-  const pickerColors = includeAnchors
-    ? [...COLORS, { name: 'Black', hex: '#000000' }, { name: 'White', hex: '#FFFFFF' }]
-    : COLORS;
+  // Picker shows the six chromatic colors only — no Black/White anchors.
+  const pickerColors = COLORS;
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {

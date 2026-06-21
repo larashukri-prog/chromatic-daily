@@ -2,26 +2,20 @@
 
 const COLORS = [
   { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Orange', hex: '#FD9349', hue: 25 },
   { name: 'Yellow', hex: '#FDE047', hue: 50 },
   { name: 'Teal', hex: '#2DD4D4', hue: 180 },
-  { name: 'Orange', hex: '#FD9349', hue: 25 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#7AC00F', hue: 82 },
-  { name: 'Green', hex: '#3F6212', hue: 90 },
-  { name: 'Pink', hex: '#F198C4', hue: 330 },
-  { name: 'Blue', hex: '#2563EB', hue: 220 },
 ];
 
 /** Hard-coded fallback palette in case the randomizer fails */
 const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
   { name: 'Red', hex: '#EF4444', hue: 0 },
-  { name: 'Blue', hex: '#2563EB', hue: 220 },
-  { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
   { name: 'Orange', hex: '#FD9349', hue: 25 },
-  { name: 'Green', hex: '#3F6212', hue: 90 },
-  { name: 'Pink', hex: '#F198C4', hue: 330 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#7AC00F', hue: 82 },
 ];
 

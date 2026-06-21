@@ -13,17 +13,14 @@ const currentDayFlags: string[] = [
   "https://flagcdn.com/w320/sa.png",
 ];
 
-/** The 9 chromatic hex slots (in COLORS order) that flags can occupy. */
+/** The six chromatic hex slots (in COLORS order) that flags can occupy. */
 const FLAG_SLOT_HEXES: string[] = [
   '#EF4444', // Red
+  '#FD9349', // Orange
   '#FDE047', // Yellow
   '#2DD4D4', // Teal
-  '#FD9349', // Orange
   '#8B5CF6', // Purple
   '#7AC00F', // Lime
-  '#3F6212', // Green
-  '#F198C4', // Pink
-  '#2563EB', // Blue
 ];
 
 type SlotEntry =

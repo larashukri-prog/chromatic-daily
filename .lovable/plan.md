@@ -1,31 +1,30 @@
 ## Goal
 
-Remove Black (`#000000`) and White (`#FFFFFF`) from the palette and strip the FIFA Cup/Ball overlays. Daily stages will draw all tiles from the regular chromatic palette only. All other visuals (flags on chromatic tiles, animations, layout, daily-seed determinism, persistence) stay identical.
-
-## Palette impact
-
-Current chromatic palette has 6 colors (Purple, Teal, Orange, Green, Pink, Lime). Stage 3 needs 6 colored tiles, which exactly equals the palette size — Stage 3 will always use all 6 colors (order still shuffled deterministically per day). Stage 1 (3) and Stage 2/2b (5/4) still get a deterministic random subset.
+Constrain the active palette to exactly six colors — **Red, Orange, Yellow, Teal, Purple, Lime** — and stop injecting Black/White into the color picker. Patterns and shapes will map 1:1 to these six.
 
 ## Changes
 
 1. **`src/lib/game.ts`**
-   - Delete the `ANCHORS` array and the `colorCount >= 5` branch in `generateStageSolution`; always pick `shuffled.slice(0, colorCount)`.
-   - Update the comment block above `generateStageSolution` to drop the Black/White/Cup/Ball reference.
+   - Reduce `COLORS` to six entries in this order: Red `#EF4444`, Orange `#FD9349`, Yellow `#FDE047`, Teal `#2DD4D4`, Purple `#8B5CF6`, Lime `#7AC00F`.
+   - Reduce `FALLBACK_PALETTE` to the same six (same order).
 
-2. **`src/lib/freeplay.ts`**
-   - Delete the `ANCHORS` array and the anchor-append branch; practice mode picks `chromaticCount` colors straight from the palette.
-   - Update the file header comment.
+2. **`src/pages/Index.tsx`**
+   - Drop the `isSunday || isFreeplay` anchor branch. `pickerColors` becomes just `COLORS`, so Black/White never appear in the picker.
 
-3. **`src/components/FifaOverlay.tsx`**
-   - Remove `WHITE`/`BLACK` constants and the Cup/Ball assignment logic in `assignFifaTheme`; every colored slot now gets a flag overlay (or filler if flags run out — which won't happen at 6 max colors).
-   - Drop Cup/Ball rendering from the hex-keyed overlay renderer and any imports/assets that become unused.
-   - Remove unused Cup/Ball image imports (asset files left on disk, not deleted, in case you want them later).
+3. **`src/components/PatternDefs.tsx`**
+   - Trim `PATTERN_IDS` to six (drop the last three: checkerboard, concentric-circles, zigzag) so each pattern lines up with one of the six colors by index.
+   - Update `DARK_COLORS` to only the kept dark color (`#8B5CF6` Purple). Remove Green/Blue entries.
 
-4. **Memory**
-   - Update `mem://features/fifa-theme` so the "Cup=White, Ball=Black" rule is removed; FIFA theme is now flags-only.
-   - Update `mem://style/color-palette` to reflect 6 chromatic colors with no black/white anchors.
-   - Update `mem://index.md` Core if any line references the anchor mapping.
+4. **`src/components/ShapeOverlay.tsx`**
+   - Trim `SHAPE_FOR_HEX` to the six kept hexes (Red→Heart, Orange→Tree, Yellow→Star, Teal→Cat, Purple→Moon, Lime→Fish). Remove the Green/Pink/Blue rows and their unused icon imports.
+
+5. **`src/components/FifaOverlay.tsx`**
+   - Trim `FLAG_SLOT_HEXES` to the six kept hexes (same order as `COLORS`) so flag overlays only target active colors.
+
+6. **Memory**
+   - Update `mem://style/color-palette` to the new six-color list (no Black/White, no Green/Pink/Blue).
+   - Update `mem://index.md` if needed.
 
 ## Out of scope
 
-Color hex values of the 6 remaining colors, neutral gray, patterns/shapes, glassmorphism, fonts, timer, Ready/Speed Star, PostHog, error boundary, accessibility patterns, daily seed math, persistence shape, share-text emoji grid.
+Daily 3-stage progression logic, seed math, persistence shape, share-text emoji grid, glassmorphism/typography/animations, FIFA flag URLs, neutral gray.
