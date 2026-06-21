@@ -811,7 +811,7 @@ const Index = () => {
     });
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setActiveSlot(null);
@@ -821,7 +821,7 @@ const Index = () => {
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setActiveSlot(null);
@@ -876,7 +876,7 @@ const Index = () => {
         const sol = attempt.solution ?? round.solution ?? [];
         let matched = 0;
         let tiles = 0;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < GRID_SIZE; i++) {
           const s = sol[i];
           if (s !== null && s !== undefined) tiles += 1;
           const p = attempt.grid?.[i];
