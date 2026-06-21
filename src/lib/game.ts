@@ -450,7 +450,7 @@ export function getStageResultMessage(
 
 /** Back-compat alias used by older call sites. */
 export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number, theme?: string): string {
-  return getStageResultMessage('stage1', isCorrect, isCorrect ? 'stage2' : 'regen', theme);
+  return getStageResultMessage('stage1', isCorrect, 'stage2', theme);
 }
 
 export function generateShareText(
