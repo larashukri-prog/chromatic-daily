@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { NEUTRAL, RoundData, generateSolution } from '@/lib/game';
+import { NEUTRAL, RoundData, generateSolution, GRID_SIZE } from '@/lib/game';
 import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
@@ -59,22 +59,23 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
     : '—';
   const tilesDecoded = stats?.tilesDecoded ?? 0;
 
-  // Flatten all attempts across rounds into individual slides
+  // One slide per stage (Stage 1/2/3), showing the player's FINAL attempt for
+  // that stage. Stage 2 may have ended on the 4-element 2b sub-puzzle.
   const slides: AttemptSlide[] = [];
-  for (const round of rounds) {
-    for (const attempt of round.attempts) {
+  for (let i = 0; i < maxRounds; i++) {
+    const round = rounds.find((r) => r.roundIndex === i);
+    const last = round?.attempts[round.attempts.length - 1];
+    if (round && last) {
       slides.push({
-        attemptGrid: attempt.grid,
-        solution: attempt.solution ?? round.solution,
-        isCorrect: attempt.isCorrect,
+        attemptGrid: last.grid,
+        solution: last.solution ?? round.solution,
+        isCorrect: last.isCorrect,
         roundIndex: round.roundIndex,
-        visualTheme: attempt.visualTheme as VisualTheme | undefined,
+        visualTheme: last.visualTheme as VisualTheme | undefined,
       });
+    } else {
+      slides.push(null as any);
     }
-  }
-  // Pad to always show maxRounds slides
-  while (slides.length < maxRounds) {
-    slides.push(null as any);
   }
   const totalSlides = maxRounds;
 
@@ -233,7 +234,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
     return playerGrid[i] === c;
   });
   const correctTiles = result.filter(Boolean).length;
-  const neuralMatch = Math.round((correctTiles / 9) * 100);
+  const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
 
   return (
     <div className="text-center">
@@ -245,7 +246,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
           <XCircle className="w-4 h-4 text-destructive" />
         )}
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Attempt {slideIndex + 1} of {totalSlides}
+          Stage {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
       {slide.isCorrect ? (
@@ -262,7 +263,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </div>
       )}
 
-      {/* 3x3 grid */}
+      {/* 3x2 grid */}
       <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -273,7 +274,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             transition={{ duration: 0.3 }}
             className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4"
           >
-            {Array.from({ length: 9 }).map((_, i) => {
+            {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
                 const color = solution[i] ?? NEUTRAL;
                 const up = solution[i]?.toUpperCase();
@@ -377,12 +378,12 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
       <div className="flex items-center justify-center gap-2 mb-1">
         <span className="w-4 h-4 rounded-full bg-muted inline-block" />
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Round {slideIndex + 1} of {totalSlides}
+          Stage {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
       <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4">
-        {Array.from({ length: 9 }).map((_, i) => (
+        {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <motion.div
             key={i}
             initial={{ scale: 0.8, opacity: 0 }}
