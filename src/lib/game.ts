@@ -36,6 +36,40 @@ export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
 
+/** 3x2 grid — 3 columns x 2 rows = 6 slots total. */
+export const GRID_SIZE = 6;
+
+/** Stage identifiers for the daily 3-stage progression. */
+export type StageKey = 'stage1' | 'stage2' | 'stage2b' | 'stage3';
+
+/** Color counts per stage. Stage 2 falls back to 2b (4 elements) on failure. */
+export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
+  stage1: 3,
+  stage2: 5,
+  stage2b: 4,
+  stage3: 6,
+};
+
+/** Seed offsets so every user worldwide gets the same puzzle per stage. */
+const STAGE_SEED_OFFSETS: Record<StageKey, number> = {
+  stage1: 1000,
+  stage2: 2000,
+  stage2b: 2500,
+  stage3: 3000,
+};
+
+/** Stage 1-based numeric index (1 / 2 / 3) for any stage key (2b counts as 2). */
+export function stageNumber(stage: StageKey): 1 | 2 | 3 {
+  if (stage === 'stage1') return 1;
+  if (stage === 'stage3') return 3;
+  return 2;
+}
+
+/** Map a stage to the persisted roundIndex slot (0/1/2). */
+export function stageToRoundIndex(stage: StageKey): number {
+  return stageNumber(stage) - 1;
+}
+
 // Seeded random based on date for consistent daily puzzle
 function seededRandom(seed: number) {
   let s = seed;
@@ -53,66 +87,78 @@ function getDateSeed(): number {
 export function getDayInfo() {
   const now = new Date();
   const day = now.getDay();
-  const countMap: Record<number, number> = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 0: 9 };
   const nameMap: Record<number, string> = { 0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday' };
   return {
     dayOfWeek: day,
     dayName: nameMap[day],
-    colorCount: countMap[day],
+    // Retained for back-compat. The daily flow no longer scales by weekday;
+    // every day runs the same 3-stage progression (3 → 5/4 → 6).
+    colorCount: STAGE_COLOR_COUNTS.stage3,
   };
 }
 
 /** Fallback solution using hard-coded palette when generation fails */
 function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  const { colorCount } = getDayInfo();
+  const colorCount = STAGE_COLOR_COUNTS.stage1;
   const chosen = FALLBACK_PALETTE.slice(0, colorCount);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
-  const solution: (string | null)[] = Array(9).fill(null);
+  const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
   positions.forEach((pos, i) => {
     solution[pos] = chosen[i].hex;
   });
   return { solution, activeColors: chosen, colorCount };
 }
 
-export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+/**
+ * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex).
+ * Anchors (Black/White) are appended when colorCount >= 5 so the FIFA theme keeps
+ * Cup/Ball on the higher-tile stages.
+ */
+export function generateStageSolution(
+  stage: StageKey,
+  regenIndex: number = 0,
+): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const { colorCount, dayOfWeek } = getDayInfo();
+    const colorCount = STAGE_COLOR_COUNTS[stage];
     const baseSeed = getDateSeed();
-    const seed = baseSeed + roundIndex * 7919;
+    const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
+    const shuffled = [...COLORS].sort(() => rand() - 0.5);
     let chosen: { name: string; hex: string; hue: number }[];
-    if (dayOfWeek === 0) {
-      // Sunday: 7 chromatic + 2 anchors (black & white) = 9 total
-      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    if (colorCount >= 5) {
       chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
     } else {
-      const shuffled = [...COLORS].sort(() => rand() - 0.5);
       chosen = shuffled.slice(0, colorCount);
     }
 
-    const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
-    const coloredPositions = positions.slice(0, colorCount);
-
-    const solution: (string | null)[] = Array(9).fill(null);
+    const coloredPositions = getNonAdjacentPositions(chosen, colorCount, rand);
+    const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
     coloredPositions.forEach((pos, i) => {
       solution[pos] = chosen[i].hex;
     });
 
     return { solution, activeColors: chosen, colorCount };
   } catch (err) {
-    console.error('[Chromatic] generateSolution failed, using fallback palette:', err);
+    console.error('[Chromatic] generateStageSolution failed, using fallback:', err);
     return generateFallbackSolution();
   }
+}
+
+/** Back-compat shim. Maps the legacy round index to a stage key. */
+export function generateSolution(roundIndex: number = 0) {
+  const stage: StageKey =
+    roundIndex >= 2 ? 'stage3' : roundIndex === 1 ? 'stage2' : 'stage1';
+  return generateStageSolution(stage, 0);
 }
 
 export type DDALevel = 'standard' | 'hard';
 
 /** Difficulty tier based on color count */
 export function getDayDifficultyTier(colorCount: number): 'easy' | 'medium' | 'hard' {
-  if (colorCount <= 3) return 'easy';   // Mon (2), Tue (3)
-  if (colorCount <= 5) return 'medium'; // Wed (4), Thu (5)
-  return 'hard';                        // Fri (6), Sat (7), Sun (9)
+  if (colorCount <= 3) return 'easy';
+  if (colorCount <= 5) return 'medium';
+  return 'hard';
 }
 
 /**
@@ -124,20 +170,24 @@ function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
 }
 
 /**
- * For hard days: ensure placed colors on the grid are not adjacent to
- * their palette neighbors. Re-shuffle positions so that neighboring
- * cells (in the 3x3 grid) don't hold hue-similar colors.
+ * Ensure placed colors on the 3x2 grid avoid hue-similar colors in
+ * neighboring cells (including diagonals).
  */
 function getNonAdjacentPositions(
   chosen: typeof COLORS,
   colorCount: number,
   rand: () => number
 ): number[] {
-  // 3x3 adjacency (including diagonals)
+  // 3x2 adjacency (3 cols × 2 rows, including diagonals)
+  // layout indices:  0 1 2
+  //                  3 4 5
   const adjacent: Record<number, number[]> = {
-    0: [1, 3, 4], 1: [0, 2, 3, 4, 5], 2: [1, 4, 5],
-    3: [0, 1, 4, 6, 7], 4: [0, 1, 2, 3, 5, 6, 7, 8], 5: [1, 2, 4, 7, 8],
-    6: [3, 4, 7], 7: [3, 4, 5, 6, 8], 8: [4, 5, 7],
+    0: [1, 3, 4],
+    1: [0, 2, 3, 4, 5],
+    2: [1, 4, 5],
+    3: [0, 1, 4],
+    4: [0, 1, 2, 3, 5],
+    5: [1, 2, 4],
   };
 
   // Try up to 200 random arrangements and pick the best one
@@ -145,7 +195,7 @@ function getNonAdjacentPositions(
   let bestConflicts = Infinity;
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    const allPos = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
+    const allPos = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => rand() - 0.5);
     const positions = allPos.slice(0, colorCount);
 
     // Count neighbor conflicts
@@ -169,71 +219,14 @@ function getNonAdjacentPositions(
 }
 
 /**
- * Dynamic Difficulty Adjustment generator with Cognitive Cap.
- *
- * Easy days (Mon/Tue): Add +1 color for Rounds 2 & 3.
- * Medium days (Wed/Thu): Add +1 color for Rounds 2 & 3, avoid center.
- * Hard days (Fri/Sat/Sun): Keep same colors, enforce spatial separation
- *   (no hue-similar colors in adjacent cells).
+ * Back-compat shim — daily flow now uses generateStageSolution. Kept so older
+ * call sites (and the Practice DDA pathway) continue to work.
  */
 export function generateSolutionDDA(
   roundIndex: number,
-  ddaLevel: DDALevel
+  _ddaLevel: DDALevel
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  try {
-    if (ddaLevel === 'standard' || roundIndex === 0) {
-      return generateSolution(roundIndex);
-    }
-
-    const { colorCount: baseCount, dayOfWeek } = getDayInfo();
-    const tier = getDayDifficultyTier(baseCount);
-    const baseSeed = getDateSeed();
-    const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
-    const ddaSeed = baseSeed + roundIndex * 13337 + 42;
-    const ddaRand = seededRandom(ddaSeed);
-
-    if (tier === 'hard') {
-      const colorCount = baseCount;
-      let chosen: { name: string; hex: string; hue: number }[];
-      if (dayOfWeek === 0) {
-        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-        chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
-      } else {
-        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-        chosen = shuffled.slice(0, colorCount);
-      }
-      const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
-
-      const solution: (string | null)[] = Array(9).fill(null);
-      coloredPositions.forEach((pos, i) => {
-        solution[pos] = chosen[i].hex;
-      });
-      return { solution, activeColors: chosen, colorCount };
-    }
-
-    const colorCount = Math.min(baseCount + 1, 9);
-    const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-    const chosen = shuffled.slice(0, colorCount);
-
-    let coloredPositions: number[];
-    if (tier === 'medium' && roundIndex === 1) {
-      const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
-      coloredPositions = nonCenter.slice(0, colorCount);
-    } else {
-      const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
-      coloredPositions = allPositions.slice(0, colorCount);
-    }
-
-    const solution: (string | null)[] = Array(9).fill(null);
-    coloredPositions.forEach((pos, i) => {
-      solution[pos] = chosen[i].hex;
-    });
-
-    return { solution, activeColors: chosen, colorCount };
-  } catch (err) {
-    console.error('[Chromatic] generateSolutionDDA failed, using fallback:', err);
-    return generateFallbackSolution();
-  }
+  return generateSolution(roundIndex);
 }
 
 export function getDayNumber(): number {
