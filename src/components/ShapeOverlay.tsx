@@ -1,23 +1,16 @@
 import {
-  FaHeart, FaStar, FaCat, FaTree, FaMoon,
-  FaFish, FaGhost, FaDroplet, FaSnowflake,
+  FaHeart, FaStar, FaCat, FaTree, FaMoon, FaFish,
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 
-// 1:1 hex → icon mapping for the 9 chromatic colors.
-// Black and White anchors intentionally have no icon — they render as
-// solid black / solid white cells to match Colors mode and reduce
-// cognitive load in Shapes mode.
+// 1:1 hex → icon mapping for the six chromatic colors.
 export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#EF4444': FaHeart,      // Red
+  '#FD9349': FaTree,       // Orange
   '#FDE047': FaStar,       // Yellow
   '#2DD4D4': FaCat,        // Teal
-  '#FD9349': FaTree,       // Orange
   '#8B5CF6': FaMoon,       // Purple
   '#7AC00F': FaFish,       // Lime
-  '#3F6212': FaGhost,      // Dark Green
-  '#F198C4': FaDroplet,    // Pink
-  '#2563EB': FaSnowflake,  // Blue
 };
 
 interface ShapeOverlayProps {

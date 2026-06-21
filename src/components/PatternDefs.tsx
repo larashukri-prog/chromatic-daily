@@ -4,7 +4,7 @@ const DARK = 'rgba(0,0,0,0.85)';
 const LIGHT = 'rgba(255,255,255,0.9)';
 
 // Hex values of dark-background colors that need white strokes
-const DARK_COLORS = new Set(['#8B5CF6', '#3F6212', '#2563EB']); // Purple, Dark Olive Green, Blue
+const DARK_COLORS = new Set(['#8B5CF6']); // Purple
 
 export const PATTERN_IDS = [
   'pattern-solid',
@@ -13,9 +13,6 @@ export const PATTERN_IDS = [
   'pattern-diagonal-45',
   'pattern-crosshatch',
   'pattern-polka-dots',
-  'pattern-checkerboard',
-  'pattern-concentric-circles',
-  'pattern-zigzag',
 ];
 
 export function getPatternId(colorHex: string): string {
