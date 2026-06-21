@@ -1157,7 +1157,7 @@ const Index = () => {
             <>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Round {Math.min(roundIndex + 1, MAX_ROUNDS)} of {MAX_ROUNDS}
+                  Stage {stageNum} of {MAX_ROUNDS}
                 </span>
               </div>
               <div className="flex gap-1.5">
@@ -1172,7 +1172,7 @@ const Index = () => {
                 })}
               </div>
               <span className="text-xs text-muted-foreground">
-                {totalAttemptsUsed}/{MAX_ROUNDS} used
+                {effectiveColorCount} tiles
               </span>
             </>
           )}
