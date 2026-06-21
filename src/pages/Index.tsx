@@ -452,7 +452,7 @@ const Index = () => {
     setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setShowResult(false);
@@ -496,7 +496,7 @@ const Index = () => {
       if (lastRound) {
         const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
         setSolution(lastRound.solution);
-        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setPlayerGrid(lastAttempt?.grid ?? Array(GRID_SIZE).fill(null));
         setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
         setIsCorrect(lastRound.solved);
         setRoundIndex(lastRound.roundIndex);
@@ -517,14 +517,15 @@ const Index = () => {
   // Auto-transition final result to daily summary after 2 seconds (daily only)
   useEffect(() => {
     if (isFreeplay) return; // No auto-dismiss in freeplay
-    const isFinal = phase === 'result' && (totalAttemptsUsed >= MAX_ROUNDS || alreadyFinished);
+    // Final = the Stage 3 attempt (win or loss) is on screen.
+    const isFinal = phase === 'result' && (currentStageKey === 'stage3' || alreadyFinished);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, totalAttemptsUsed, alreadyFinished, isFreeplay]);
+  }, [showResult, phase, currentStageKey, alreadyFinished, isFreeplay]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
