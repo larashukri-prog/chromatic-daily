@@ -1445,7 +1445,7 @@ const Index = () => {
           Chromatic Daily is a minimalist daily color memory game built to train visual recall and
           cognitive focus. Each day presents a new configuration of color tiles to study, memorize,
           and reproduce — a short, deliberate exercise designed to stimulate neuroplasticity through
-          color-based pattern recognition. Every day runs a 3-stage progression on a 3x2 grid —
+          color-based pattern recognition. Every day runs a 3-stage progression on a 2x3 grid —
           Stage 1 (3 elements), Stage 2 (5 elements, falls back to 4 on a miss), and Stage 3
           (6 elements) — giving the brain a short, progressive workout.
         </p>
@@ -1505,7 +1505,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 3x2 grid.</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 2x3 grid.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
@@ -1528,7 +1528,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
-                  <p>Unlocked any time. Same 3x2 grid, unlimited rounds — sharpen your eye and master the mix.</p>
+                  <p>Unlocked any time. Same 2x3 grid, unlimited rounds — sharpen your eye and master the mix.</p>
                 </div>
                 <div className="pt-2" />
               </div>
