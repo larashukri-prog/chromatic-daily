@@ -246,6 +246,10 @@ export interface RoundAttempt {
   solution: (string | null)[];
   visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa';
   recallMs?: number;
+  /** Stage 2 sub-puzzle the attempt was played on. */
+  substage?: 'main' | '2b';
+  /** Regeneration index used for this attempt (0 = first puzzle for the stage). */
+  regenIndex?: number;
 }
 
 export interface RoundData {
