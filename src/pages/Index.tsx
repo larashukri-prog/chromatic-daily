@@ -1449,17 +1449,17 @@ const Index = () => {
           Chromatic Daily is a minimalist daily color memory game built to train visual recall and
           cognitive focus. Each day presents a new configuration of color tiles to study, memorize,
           and reproduce — a short, deliberate exercise designed to stimulate neuroplasticity through
-          color-based pattern recognition. Difficulty scales across the week, from two colors on
-          Monday up to a nine-color master grid on Sunday, giving the brain a progressive,
-          repeatable workout.
+          color-based pattern recognition. Every day runs a 3-stage progression on a 3x2 grid —
+          Stage 1 (3 elements), Stage 2 (5 elements, falls back to 4 on a miss), and Stage 3
+          (6 elements) — giving the brain a short, progressive workout.
         </p>
         <h3>Cognitive Benefits of Daily Memory Games</h3>
         <p>
           Regular practice with brain games and memory games has been linked to stronger working
           memory, sharper visual attention, and improved processing speed. Chromatic Daily focuses
           specifically on color memory: a low-friction, high-signal way to engage neuroplasticity
-          every day. Three short attempts, a clean interface, and no streaks or pressure — just a
-          daily color puzzle designed to keep cognition active.
+          every day. Three stages, a clean interface, and no pressure — just a daily color puzzle
+          designed to keep cognition active.
         </p>
       </section>
 
@@ -1521,16 +1521,16 @@ const Index = () => {
               <p className="font-semibold text-foreground mb-2 text-base">The Journey</p>
               <div className="space-y-3">
                 <div>
-                  <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
-                  <p>You have three chances to master the day's configuration. Success unlocks a new, harder challenge.</p>
+                  <p className="font-medium text-foreground mb-1">3-Stage Daily</p>
+                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements). Miss Stage 1 and you replay with a fresh 3-element puzzle. Miss Stage 2 and the difficulty drops to 4 elements until you clear it. Stage 3 is one shot — solve it to win the day.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">{"\n"}</p>
-                  <p>{"\n"}</p>
+                  <p className="font-medium text-foreground mb-1">3x2 Grid</p>
+                  <p>Six slots arranged in two rows of three. Every stage uses the same board — only the number of colored elements changes.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
-                  <p>Unlocked once your daily attempts are used. Dive in for unlimited rounds to sharpen your eye and master the mix.</p>
+                  <p>Unlocked any time. Same 3x2 grid, unlimited rounds — sharpen your eye and master the mix.</p>
                 </div>
                 <div className="pt-2" />
               </div>
