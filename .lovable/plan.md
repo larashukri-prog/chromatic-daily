@@ -1,26 +1,29 @@
-# Plan: propagate 2×3 grid to all remaining surfaces
+## Plan
 
-Switch every remaining 3-column rendering of the 6-slot board to 2 columns × 3 rows so the layout is consistent everywhere — including the "Not Quite" try-again card, the Daily Summary carousel, the Unplayed stage placeholder, and the emoji grid in shared results.
+### 1. Update `index.html` meta tags
+Replace the existing description tags with the exact 156-character string provided, and align Twitter description to match:
 
-## Changes
+- `<meta name="description" content="..." />` (line 9)
+- `<meta property="og:description" content="..." />` (line 39)
+- `<meta name="twitter:description" content="..." />` (line 40)
 
-1. **`src/pages/Index.tsx` — "Correct Pattern" preview in result card**
-   - `grid-cols-3 max-w-[120px]` → `grid-cols-2` with narrower max width (~`max-w-[90px]`) so tiles stay small.
-   - Update the inline emoji grid above it (currently `[0, 3].map` slicing rows of 3) to render 3 rows of 2: iterate `[0, 2, 4]` and slice 2 cells each, so the share-preview emoji block matches the new shape.
+New value:
+```text
+<meta name="description" content="Chromatic Daily is a minimalist browser game explicitly designed for daily neuroplasticity training. Beat the 3-stage color grid with zero app downloads." />
+```
 
-2. **`src/components/DailySummary.tsx`**
-   - Played-stage grid (line 275): `grid-cols-3` → `grid-cols-2`, keep `max-w-[200px]` (or narrow slightly) so tiles aren't oversized.
-   - Unplayed-stage grid (line 385): same change.
-   - Update the `{/* 3x2 grid */}` comment to `{/* 2x3 grid */}`.
+### 2. Update hidden on-page SEO copy in `src/pages/Index.tsx`
+Replace the sr-only paragraph at lines 1444–1451 (currently containing "Each day presents a new configuration of color tiles...") with the new copy:
 
-3. **`src/lib/game.ts` — `generateShareText` emoji block**
-   - Currently emits two rows of 3 emojis (`cells.slice(0,3)` + `cells.slice(3,6)`) per stage, and the unplayed fallback uses `⚪⚪⚪` twice.
-   - Change to three rows of 2 emojis: `slice(0,2)`, `slice(2,4)`, `slice(4,6)`; unplayed fallback becomes three `⚪⚪` lines.
-   - Update the "3x2 grid" comments in this file to "2x3 grid" for accuracy.
+```text
+Chromatic Daily is a minimalist browser game built to train visual recall and neuroplasticity. Every 24 hours, test your focus against a new 3-stage progressive color grid. No app downloads required.
+```
 
-4. **`src/lib/freeplay.ts`**
-   - Update the "3x2 grid" comment to "2x3 grid".
+### Technical details
+- No dependency installs or backend changes.
+- The change is limited to `index.html` and one paragraph in `src/pages/Index.tsx`.
+- Character count of the new meta description will be verified to match the requested 156-character string before editing.
 
-## Out of scope
-- No changes to game logic, color counts, adjacency rules, stage progression, scoring, or sharing copy beyond the emoji layout itself.
-- No visual restyle of the result card or summary beyond the column-count flip and width tweak.
+### Files changed
+- `index.html`
+- `src/pages/Index.tsx`
