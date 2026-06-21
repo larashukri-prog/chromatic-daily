@@ -1424,8 +1424,8 @@ const Index = () => {
                   <p>You have three chances to master the day's configuration. Success unlocks a new, harder challenge.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">Daily Scaling</p>
-                  <p>The difficulty increases throughout the week, starting with 2 colors on Monday and peaking with the 9-color Master Grid on Sunday.</p>
+                  <p className="font-medium text-foreground mb-1">{"\n"}</p>
+                  <p>{"\n"}</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
