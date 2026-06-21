@@ -25,7 +25,7 @@ export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
 
-/** 3x2 grid — 3 columns x 2 rows = 6 slots total. */
+/** 2x3 grid — 2 columns x 3 rows = 6 slots total. */
 export const GRID_SIZE = 6;
 
 /** Stage identifiers for the daily 3-stage progression. */
@@ -153,7 +153,7 @@ function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
 }
 
 /**
- * Ensure placed colors on the 3x2 grid avoid hue-similar colors in
+ * Ensure placed colors on the 2x3 grid avoid hue-similar colors in
  * neighboring cells (including diagonals).
  */
 function getNonAdjacentPositions(
@@ -161,7 +161,7 @@ function getNonAdjacentPositions(
   colorCount: number,
   rand: () => number
 ): number[] {
-  // 3x2 adjacency (3 cols × 2 rows, including diagonals)
+  // 2x3 adjacency (2 cols × 3 rows, including diagonals)
   // layout indices:  0 1 2
   //                  3 4 5
   const adjacent: Record<number, number[]> = {
@@ -503,12 +503,14 @@ export function generateShareText(
         const isMatch = s!.toLowerCase() === placed!.toLowerCase();
         return isMatch ? '🟢' : '🔴';
       });
-      lines.push(cells.slice(0, 3).join(''));
-      lines.push(cells.slice(3, 6).join(''));
+      lines.push(cells.slice(0, 2).join(''));
+      lines.push(cells.slice(2, 4).join(''));
+      lines.push(cells.slice(4, 6).join(''));
     } else {
       lines.push(`Stage ${i + 1} ⬜`);
-      lines.push('⚪⚪⚪');
-      lines.push('⚪⚪⚪');
+      lines.push('⚪⚪');
+      lines.push('⚪⚪');
+      lines.push('⚪⚪');
     }
     lines.push('');
   }

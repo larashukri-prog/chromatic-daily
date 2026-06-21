@@ -1580,10 +1580,10 @@ const Index = () => {
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 3].map((row) => (
+              {[0, 2, 4].map((row) => (
                 <div key={row}>
                   {solution
-                    .slice(row, row + 3)
+                    .slice(row, row + 2)
                     .map((c, i) => {
                       if (c === null) return '⚪';
                       return playerGrid[row + i] === c ? '🟢' : '⚫';
@@ -1596,7 +1596,7 @@ const Index = () => {
             {!isCorrect && (
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
-                <div className="grid grid-cols-3 gap-2 max-w-[120px] mx-auto">
+                <div className="grid grid-cols-2 gap-2 max-w-[90px] mx-auto">
                   {solution.map((c, i) => {
                     const up = c?.toUpperCase();
                     const isBlack = up === '#000000';
