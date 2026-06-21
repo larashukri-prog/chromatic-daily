@@ -563,7 +563,7 @@ const Index = () => {
 
   const clearGrid = () => {
     if (phase !== 'recall') return;
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setSelectedColor(null);
     setActiveSlot(null);
   };
