@@ -1,7 +1,7 @@
 import { COLORS, GRID_SIZE } from '@/lib/game';
 
 /**
- * Compute color count for a given session round (1-based) on the 3x2 grid (6 slots).
+ * Compute color count for a given session round (1-based) on the 2x3 grid (6 slots).
  * Tiers:
  *  Round 1–2:  2 colors
  *  Round 3–6:  3 colors

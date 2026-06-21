@@ -263,7 +263,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </div>
       )}
 
-      {/* 3x2 grid */}
+      {/* 2x3 grid */}
       <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -272,7 +272,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4"
+            className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[160px] mx-auto mb-4"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
@@ -382,7 +382,7 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
-      <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[200px] mx-auto mb-4">
+      <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[160px] mx-auto mb-4">
         {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <motion.div
             key={i}
