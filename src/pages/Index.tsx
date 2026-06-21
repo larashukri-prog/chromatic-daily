@@ -19,8 +19,9 @@ import { FifaOverlay } from '@/components/FifaOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
-  saveRoundAttempt, getResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
-  getDayDifficultyTier
+  saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
+  getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
+  type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
@@ -62,9 +63,9 @@ function playSuccessChime() {
 
 const Index = () => {
   const [phase, setPhase] = useState<GamePhase>('idle');
-  const [solution, setSolution] = useState<(string | null)[]>(Array(9).fill(null));
+  const [solution, setSolution] = useState<(string | null)[]>(Array(GRID_SIZE).fill(null));
   const [activeColors, setActiveColors] = useState<{ name: string; hex: string }[]>([]);
-  const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(9).fill(null));
+  const [playerGrid, setPlayerGrid] = useState<(string | null)[]>(Array(GRID_SIZE).fill(null));
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [timerProgress, setTimerProgress] = useState(100);
   const [timerDuration, setTimerDuration] = useState(5000);
@@ -78,6 +79,10 @@ const Index = () => {
   const [roundIndex, setRoundIndex] = useState(0);
   const [totalAttemptsUsed, setTotalAttemptsUsed] = useState(0);
   const [attemptInRound, setAttemptInRound] = useState(1);
+  // Stage-progression state. roundIndex (0/1/2) maps to stage 1/2/3.
+  // `substage` is only meaningful when roundIndex === 1 (Stage 2 main → 2b drop).
+  const [substage, setSubstage] = useState<'main' | '2b'>('main');
+  const [regenIndex, setRegenIndex] = useState(0);
   const [resultMessage, setResultMessage] = useState('');
   const [savedRounds, setSavedRounds] = useState<RoundData[]>([]);
   const [verifying, setVerifying] = useState(false);
@@ -210,6 +215,13 @@ const Index = () => {
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
+
+  // Derive the active stage key from roundIndex + substage.
+  const currentStageKey: StageKey =
+    roundIndex === 0 ? 'stage1'
+    : roundIndex === 1 ? (substage === '2b' ? 'stage2b' : 'stage2')
+    : 'stage3';
+  const stageNum: 1 | 2 | 3 = (roundIndex + 1) as 1 | 2 | 3;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
 
@@ -243,7 +255,9 @@ const Index = () => {
       setDailyStats(initialStats);
       setRoundIndex(0);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolution(0);
+      setSubstage('main');
+      setRegenIndex(0);
+      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
       setSolution(sol);
       setActiveColors(ac);
       return;
@@ -258,17 +272,55 @@ const Index = () => {
       if (lastRound) {
         const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
         setSolution(lastRound.solution);
-        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setPlayerGrid(lastAttempt?.grid ?? Array(GRID_SIZE).fill(null));
         setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
         setIsCorrect(lastRound.solved);
         setRoundIndex(lastRound.roundIndex);
         setPhase('result');
       }
     } else {
-      setRoundIndex(info.roundIndex);
-      const currentRoundData = info.rounds.find((r) => r.roundIndex === info.roundIndex);
-      setAttemptInRound((currentRoundData?.attempts.length ?? 0) + 1);
-      const { solution: sol, activeColors: ac } = generateSolution(info.roundIndex);
+      // Derive the active stage / substage / regen from persisted rounds.
+      const s1 = info.rounds.find((r) => r.roundIndex === 0);
+      const s2 = info.rounds.find((r) => r.roundIndex === 1);
+      let stage: StageKey = 'stage1';
+      let sub: 'main' | '2b' = 'main';
+      let regen = 0;
+      let rIdx = 0;
+      if (s2) {
+        rIdx = 1;
+        if (s2.solved) {
+          stage = 'stage3';
+          rIdx = 2;
+        } else {
+          const last = s2.attempts[s2.attempts.length - 1];
+          if (last?.substage === '2b') {
+            stage = 'stage2b';
+            sub = '2b';
+            regen = (last.regenIndex ?? 0) + 1;
+          } else {
+            // Stage 2 main failed → drop to 2b
+            stage = 'stage2b';
+            sub = '2b';
+            regen = 0;
+          }
+        }
+      } else if (s1) {
+        if (s1.solved) {
+          stage = 'stage2';
+          sub = 'main';
+          rIdx = 1;
+        } else {
+          const last = s1.attempts[s1.attempts.length - 1];
+          stage = 'stage1';
+          regen = (last?.regenIndex ?? 0) + 1;
+          rIdx = 0;
+        }
+      }
+      setRoundIndex(rIdx);
+      setSubstage(sub);
+      setRegenIndex(regen);
+      setAttemptInRound(1);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, regen);
       setSolution(sol);
       setActiveColors(ac);
     }
@@ -280,7 +332,7 @@ const Index = () => {
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setVerifying(false);
@@ -400,7 +452,7 @@ const Index = () => {
     setShowSessionReport(false);
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setShowResult(false);
@@ -444,7 +496,7 @@ const Index = () => {
       if (lastRound) {
         const lastAttempt = lastRound.attempts[lastRound.attempts.length - 1];
         setSolution(lastRound.solution);
-        setPlayerGrid(lastAttempt?.grid ?? Array(9).fill(null));
+        setPlayerGrid(lastAttempt?.grid ?? Array(GRID_SIZE).fill(null));
         setResult(lastRound.solution.map((c, i) => (lastAttempt?.grid[i] ?? null) === c));
         setIsCorrect(lastRound.solved);
         setRoundIndex(lastRound.roundIndex);
@@ -465,14 +517,15 @@ const Index = () => {
   // Auto-transition final result to daily summary after 2 seconds (daily only)
   useEffect(() => {
     if (isFreeplay) return; // No auto-dismiss in freeplay
-    const isFinal = phase === 'result' && (totalAttemptsUsed >= MAX_ROUNDS || alreadyFinished);
+    // Final = the Stage 3 attempt (win or loss) is on screen.
+    const isFinal = phase === 'result' && (currentStageKey === 'stage3' || alreadyFinished);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, totalAttemptsUsed, alreadyFinished, isFreeplay]);
+  }, [showResult, phase, currentStageKey, alreadyFinished, isFreeplay]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
@@ -510,7 +563,7 @@ const Index = () => {
 
   const clearGrid = () => {
     if (phase !== 'recall') return;
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setSelectedColor(null);
     setActiveSlot(null);
   };
@@ -601,13 +654,26 @@ const Index = () => {
     // Daily mode — accumulate the same metrics for the daily summary.
     setDailyStats(updateStats);
 
-    // Daily mode verification
+    // Daily mode verification — stage-aware persistence.
     const newTotalUsed = totalAttemptsUsed + 1;
-    const savedData = saveRoundAttempt(roundIndex, correct, playerGrid, solution, visualTheme, Math.round(recallSeconds * 1000));
+    const substageForSave: 'main' | '2b' | undefined =
+      roundIndex === 1 ? substage : undefined;
+    const savedData = saveRoundAttempt(
+      roundIndex,
+      correct,
+      playerGrid,
+      solution,
+      visualTheme,
+      Math.round(recallSeconds * 1000),
+      substageForSave,
+      regenIndex,
+    );
 
     console.log('[Chromatic] Round verified:', {
+      stage: currentStageKey,
       roundIndex,
-      attemptInRound,
+      substage: substageForSave,
+      regenIndex,
       isCorrect: correct,
       totalAttemptsUsed: newTotalUsed,
       effectiveColorCount,
@@ -628,39 +694,46 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('Round Verified', { round_number: roundIndex + 1, is_correct: correct, speed_bonus: isSpeedRound });
+      posthog.capture('Round Verified', {
+        round_number: roundIndex + 1,
+        stage: currentStageKey,
+        substage: substageForSave,
+        is_correct: correct,
+        speed_bonus: isSpeedRound,
+      });
 
       if (correct && isSpeedRound) {
         setStarsEarned(prev => prev + 1);
       }
 
-      if (roundIndex === 0 && correct && attemptInRound === 1) {
-        setDdaLevel('hard');
-        const tier = getDayDifficultyTier(baseColorCount);
-        if (tier !== 'hard') {
-          toast('Level Up! Round 2 is getting harder... 🔥', { duration: 3000 });
+      // Determine the NEXT stage based on outcome (drives the message + flow).
+      const nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done' = (() => {
+        if (currentStageKey === 'stage3') return 'done';
+        if (correct) {
+          if (currentStageKey === 'stage1') return 'stage2';
+          // stage2 or stage2b solved → stage3
+          return 'stage3';
         }
-      }
+        if (currentStageKey === 'stage1') return 'regen';
+        if (currentStageKey === 'stage2') return 'stage2b';
+        // stage2b failed → regen another 2b
+        return 'regen';
+      })();
 
-      if (!correct && ddaLevel === 'hard') {
-        setDdaLevel('standard');
-      }
-
-      const msg = getResultMessage(roundIndex, attemptInRound, correct, newTotalUsed, visualTheme);
+      const msg = getStageResultMessage(currentStageKey, correct, nextStage, visualTheme);
       setResultMessage(msg);
 
-      // FIFA: fire blue/gold confetti only when the player wins the
-      // round that finishes the daily game.
-      const isDailyDone = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+      // FIFA: fire blue/gold confetti when the player WINS Stage 3.
+      const isDailyDone = currentStageKey === 'stage3';
       if (visualTheme === 'fifa' && correct && isDailyDone) {
-        const key = `${roundIndex}:${attemptInRound}`;
+        const key = `stage3:win`;
         if (fifaCelebrationKey.current !== key) {
           fifaCelebrationKey.current = key;
           fireFifaCelebration();
         }
       }
 
-      const done = newTotalUsed >= MAX_ROUNDS || (correct && roundIndex >= MAX_ROUNDS - 1);
+      const done = currentStageKey === 'stage3'; // win OR loss ends the daily
       if (done || savedData.finished) {
         setAlreadyFinished(true);
       }
@@ -675,24 +748,52 @@ const Index = () => {
     }, 1500);
   };
 
-  const canContinue = phase === 'result' && totalAttemptsUsed < MAX_ROUNDS && !alreadyFinished;
+  const canContinue = phase === 'result' && currentStageKey !== 'stage3' && !alreadyFinished;
 
   const nextAttempt = () => {
     setShowResult(false);
 
+    // Compute the next stage based on current state + last outcome.
+    let nextStage: StageKey = currentStageKey;
+    let nextRoundIdx = roundIndex;
+    let nextSubstage: 'main' | '2b' = substage;
+    let nextRegen = regenIndex;
+
     if (isCorrect) {
-      const newRound = roundIndex + 1;
-      setRoundIndex(newRound);
-      setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateSolutionDDA(newRound, ddaLevel);
-      setSolution(sol);
-      setActiveColors(ac);
+      if (currentStageKey === 'stage1') {
+        nextStage = 'stage2';
+        nextRoundIdx = 1;
+        nextSubstage = 'main';
+        nextRegen = 0;
+      } else if (currentStageKey === 'stage2' || currentStageKey === 'stage2b') {
+        nextStage = 'stage3';
+        nextRoundIdx = 2;
+        nextSubstage = 'main';
+        nextRegen = 0;
+      }
     } else {
-      setAttemptInRound((prev) => prev + 1);
-      const { solution: sol, activeColors: ac } = generateSolutionDDA(roundIndex, ddaLevel);
-      setSolution(sol);
-      setActiveColors(ac);
+      if (currentStageKey === 'stage1') {
+        nextStage = 'stage1';
+        nextRegen = regenIndex + 1;
+      } else if (currentStageKey === 'stage2') {
+        // Drop to 4-element Stage 2b
+        nextStage = 'stage2b';
+        nextSubstage = '2b';
+        nextRegen = 0;
+      } else if (currentStageKey === 'stage2b') {
+        nextStage = 'stage2b';
+        nextSubstage = '2b';
+        nextRegen = regenIndex + 1;
+      }
     }
+
+    setRoundIndex(nextRoundIdx);
+    setSubstage(nextSubstage);
+    setRegenIndex(nextRegen);
+    setAttemptInRound(1);
+    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, nextRegen);
+    setSolution(sol);
+    setActiveColors(ac);
 
     startObservation();
   };
@@ -710,7 +811,7 @@ const Index = () => {
     });
     setSolution(puzzle.solution);
     setActiveColors(puzzle.activeColors);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setActiveSlot(null);
@@ -720,7 +821,7 @@ const Index = () => {
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
-    setPlayerGrid(Array(9).fill(null));
+    setPlayerGrid(Array(GRID_SIZE).fill(null));
     setResult(null);
     setSelectedColor(null);
     setActiveSlot(null);
@@ -775,7 +876,7 @@ const Index = () => {
         const sol = attempt.solution ?? round.solution ?? [];
         let matched = 0;
         let tiles = 0;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < GRID_SIZE; i++) {
           const s = sol[i];
           if (s !== null && s !== undefined) tiles += 1;
           const p = attempt.grid?.[i];
@@ -1056,7 +1157,7 @@ const Index = () => {
             <>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Round {Math.min(roundIndex + 1, MAX_ROUNDS)} of {MAX_ROUNDS}
+                  Stage {stageNum} of {MAX_ROUNDS}
                 </span>
               </div>
               <div className="flex gap-1.5">
@@ -1071,7 +1172,7 @@ const Index = () => {
                 })}
               </div>
               <span className="text-xs text-muted-foreground">
-                {totalAttemptsUsed}/{MAX_ROUNDS} used
+                {effectiveColorCount} tiles
               </span>
             </>
           )}
@@ -1348,17 +1449,17 @@ const Index = () => {
           Chromatic Daily is a minimalist daily color memory game built to train visual recall and
           cognitive focus. Each day presents a new configuration of color tiles to study, memorize,
           and reproduce — a short, deliberate exercise designed to stimulate neuroplasticity through
-          color-based pattern recognition. Difficulty scales across the week, from two colors on
-          Monday up to a nine-color master grid on Sunday, giving the brain a progressive,
-          repeatable workout.
+          color-based pattern recognition. Every day runs a 3-stage progression on a 3x2 grid —
+          Stage 1 (3 elements), Stage 2 (5 elements, falls back to 4 on a miss), and Stage 3
+          (6 elements) — giving the brain a short, progressive workout.
         </p>
         <h3>Cognitive Benefits of Daily Memory Games</h3>
         <p>
           Regular practice with brain games and memory games has been linked to stronger working
           memory, sharper visual attention, and improved processing speed. Chromatic Daily focuses
           specifically on color memory: a low-friction, high-signal way to engage neuroplasticity
-          every day. Three short attempts, a clean interface, and no streaks or pressure — just a
-          daily color puzzle designed to keep cognition active.
+          every day. Three stages, a clean interface, and no pressure — just a daily color puzzle
+          designed to keep cognition active.
         </p>
       </section>
 
@@ -1408,7 +1509,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a round—essential training for the 9-tile Weekend Challenge.</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 3x2 grid.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
@@ -1420,16 +1521,16 @@ const Index = () => {
               <p className="font-semibold text-foreground mb-2 text-base">The Journey</p>
               <div className="space-y-3">
                 <div>
-                  <p className="font-medium text-foreground mb-1">3 Daily Attempts</p>
-                  <p>You have three chances to master the day's configuration. Success unlocks a new, harder challenge.</p>
+                  <p className="font-medium text-foreground mb-1">3-Stage Daily</p>
+                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements). Miss Stage 1 and you replay with a fresh 3-element puzzle. Miss Stage 2 and the difficulty drops to 4 elements until you clear it. Stage 3 is one shot — solve it to win the day.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground mb-1">{"\n"}</p>
-                  <p>{"\n"}</p>
+                  <p className="font-medium text-foreground mb-1">3x2 Grid</p>
+                  <p>Six slots arranged in two rows of three. Every stage uses the same board — only the number of colored elements changes.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
-                  <p>Unlocked once your daily attempts are used. Dive in for unlimited rounds to sharpen your eye and master the mix.</p>
+                  <p>Unlocked any time. Same 3x2 grid, unlimited rounds — sharpen your eye and master the mix.</p>
                 </div>
                 <div className="pt-2" />
               </div>
@@ -1469,10 +1570,10 @@ const Index = () => {
                     Neural Match
                   </span>
                   <span className="text-[10px] font-semibold text-foreground">
-                    {Math.round((result.filter(Boolean).length / 9) * 100)}%
+                    {Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)}%
                   </span>
                 </div>
-                <Progress value={Math.round((result.filter(Boolean).length / 9) * 100)} className="h-1.5" />
+                <Progress value={Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)} className="h-1.5" />
               </div>
             )}
 
@@ -1481,7 +1582,7 @@ const Index = () => {
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 3, 6].map((row) => (
+              {[0, 3].map((row) => (
                 <div key={row}>
                   {solution
                     .slice(row, row + 3)

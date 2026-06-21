@@ -36,6 +36,40 @@ export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
 
+/** 3x2 grid — 3 columns x 2 rows = 6 slots total. */
+export const GRID_SIZE = 6;
+
+/** Stage identifiers for the daily 3-stage progression. */
+export type StageKey = 'stage1' | 'stage2' | 'stage2b' | 'stage3';
+
+/** Color counts per stage. Stage 2 falls back to 2b (4 elements) on failure. */
+export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
+  stage1: 3,
+  stage2: 5,
+  stage2b: 4,
+  stage3: 6,
+};
+
+/** Seed offsets so every user worldwide gets the same puzzle per stage. */
+const STAGE_SEED_OFFSETS: Record<StageKey, number> = {
+  stage1: 1000,
+  stage2: 2000,
+  stage2b: 2500,
+  stage3: 3000,
+};
+
+/** Stage 1-based numeric index (1 / 2 / 3) for any stage key (2b counts as 2). */
+export function stageNumber(stage: StageKey): 1 | 2 | 3 {
+  if (stage === 'stage1') return 1;
+  if (stage === 'stage3') return 3;
+  return 2;
+}
+
+/** Map a stage to the persisted roundIndex slot (0/1/2). */
+export function stageToRoundIndex(stage: StageKey): number {
+  return stageNumber(stage) - 1;
+}
+
 // Seeded random based on date for consistent daily puzzle
 function seededRandom(seed: number) {
   let s = seed;
@@ -53,66 +87,78 @@ function getDateSeed(): number {
 export function getDayInfo() {
   const now = new Date();
   const day = now.getDay();
-  const countMap: Record<number, number> = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 0: 9 };
   const nameMap: Record<number, string> = { 0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday' };
   return {
     dayOfWeek: day,
     dayName: nameMap[day],
-    colorCount: countMap[day],
+    // Retained for back-compat. The daily flow no longer scales by weekday;
+    // every day runs the same 3-stage progression (3 → 5/4 → 6).
+    colorCount: STAGE_COLOR_COUNTS.stage3,
   };
 }
 
 /** Fallback solution using hard-coded palette when generation fails */
 function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  const { colorCount } = getDayInfo();
+  const colorCount = STAGE_COLOR_COUNTS.stage1;
   const chosen = FALLBACK_PALETTE.slice(0, colorCount);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
-  const solution: (string | null)[] = Array(9).fill(null);
+  const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
   positions.forEach((pos, i) => {
     solution[pos] = chosen[i].hex;
   });
   return { solution, activeColors: chosen, colorCount };
 }
 
-export function generateSolution(roundIndex: number = 0): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+/**
+ * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex).
+ * Anchors (Black/White) are appended when colorCount >= 5 so the FIFA theme keeps
+ * Cup/Ball on the higher-tile stages.
+ */
+export function generateStageSolution(
+  stage: StageKey,
+  regenIndex: number = 0,
+): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const { colorCount, dayOfWeek } = getDayInfo();
+    const colorCount = STAGE_COLOR_COUNTS[stage];
     const baseSeed = getDateSeed();
-    const seed = baseSeed + roundIndex * 7919;
+    const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
+    const shuffled = [...COLORS].sort(() => rand() - 0.5);
     let chosen: { name: string; hex: string; hue: number }[];
-    if (dayOfWeek === 0) {
-      // Sunday: 7 chromatic + 2 anchors (black & white) = 9 total
-      const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    if (colorCount >= 5) {
       chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
     } else {
-      const shuffled = [...COLORS].sort(() => rand() - 0.5);
       chosen = shuffled.slice(0, colorCount);
     }
 
-    const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
-    const coloredPositions = positions.slice(0, colorCount);
-
-    const solution: (string | null)[] = Array(9).fill(null);
+    const coloredPositions = getNonAdjacentPositions(chosen, colorCount, rand);
+    const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
     coloredPositions.forEach((pos, i) => {
       solution[pos] = chosen[i].hex;
     });
 
     return { solution, activeColors: chosen, colorCount };
   } catch (err) {
-    console.error('[Chromatic] generateSolution failed, using fallback palette:', err);
+    console.error('[Chromatic] generateStageSolution failed, using fallback:', err);
     return generateFallbackSolution();
   }
+}
+
+/** Back-compat shim. Maps the legacy round index to a stage key. */
+export function generateSolution(roundIndex: number = 0) {
+  const stage: StageKey =
+    roundIndex >= 2 ? 'stage3' : roundIndex === 1 ? 'stage2' : 'stage1';
+  return generateStageSolution(stage, 0);
 }
 
 export type DDALevel = 'standard' | 'hard';
 
 /** Difficulty tier based on color count */
 export function getDayDifficultyTier(colorCount: number): 'easy' | 'medium' | 'hard' {
-  if (colorCount <= 3) return 'easy';   // Mon (2), Tue (3)
-  if (colorCount <= 5) return 'medium'; // Wed (4), Thu (5)
-  return 'hard';                        // Fri (6), Sat (7), Sun (9)
+  if (colorCount <= 3) return 'easy';
+  if (colorCount <= 5) return 'medium';
+  return 'hard';
 }
 
 /**
@@ -124,20 +170,24 @@ function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
 }
 
 /**
- * For hard days: ensure placed colors on the grid are not adjacent to
- * their palette neighbors. Re-shuffle positions so that neighboring
- * cells (in the 3x3 grid) don't hold hue-similar colors.
+ * Ensure placed colors on the 3x2 grid avoid hue-similar colors in
+ * neighboring cells (including diagonals).
  */
 function getNonAdjacentPositions(
   chosen: typeof COLORS,
   colorCount: number,
   rand: () => number
 ): number[] {
-  // 3x3 adjacency (including diagonals)
+  // 3x2 adjacency (3 cols × 2 rows, including diagonals)
+  // layout indices:  0 1 2
+  //                  3 4 5
   const adjacent: Record<number, number[]> = {
-    0: [1, 3, 4], 1: [0, 2, 3, 4, 5], 2: [1, 4, 5],
-    3: [0, 1, 4, 6, 7], 4: [0, 1, 2, 3, 5, 6, 7, 8], 5: [1, 2, 4, 7, 8],
-    6: [3, 4, 7], 7: [3, 4, 5, 6, 8], 8: [4, 5, 7],
+    0: [1, 3, 4],
+    1: [0, 2, 3, 4, 5],
+    2: [1, 4, 5],
+    3: [0, 1, 4],
+    4: [0, 1, 2, 3, 5],
+    5: [1, 2, 4],
   };
 
   // Try up to 200 random arrangements and pick the best one
@@ -145,7 +195,7 @@ function getNonAdjacentPositions(
   let bestConflicts = Infinity;
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    const allPos = Array.from({ length: 9 }, (_, i) => i).sort(() => rand() - 0.5);
+    const allPos = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => rand() - 0.5);
     const positions = allPos.slice(0, colorCount);
 
     // Count neighbor conflicts
@@ -169,71 +219,14 @@ function getNonAdjacentPositions(
 }
 
 /**
- * Dynamic Difficulty Adjustment generator with Cognitive Cap.
- *
- * Easy days (Mon/Tue): Add +1 color for Rounds 2 & 3.
- * Medium days (Wed/Thu): Add +1 color for Rounds 2 & 3, avoid center.
- * Hard days (Fri/Sat/Sun): Keep same colors, enforce spatial separation
- *   (no hue-similar colors in adjacent cells).
+ * Back-compat shim — daily flow now uses generateStageSolution. Kept so older
+ * call sites (and the Practice DDA pathway) continue to work.
  */
 export function generateSolutionDDA(
   roundIndex: number,
-  ddaLevel: DDALevel
+  _ddaLevel: DDALevel
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  try {
-    if (ddaLevel === 'standard' || roundIndex === 0) {
-      return generateSolution(roundIndex);
-    }
-
-    const { colorCount: baseCount, dayOfWeek } = getDayInfo();
-    const tier = getDayDifficultyTier(baseCount);
-    const baseSeed = getDateSeed();
-    const primaryRand = seededRandom(baseSeed + roundIndex * 7919);
-    const ddaSeed = baseSeed + roundIndex * 13337 + 42;
-    const ddaRand = seededRandom(ddaSeed);
-
-    if (tier === 'hard') {
-      const colorCount = baseCount;
-      let chosen: { name: string; hex: string; hue: number }[];
-      if (dayOfWeek === 0) {
-        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-        chosen = [...shuffled.slice(0, colorCount - 2), ...ANCHORS];
-      } else {
-        const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-        chosen = shuffled.slice(0, colorCount);
-      }
-      const coloredPositions = getNonAdjacentPositions(chosen, colorCount, ddaRand);
-
-      const solution: (string | null)[] = Array(9).fill(null);
-      coloredPositions.forEach((pos, i) => {
-        solution[pos] = chosen[i].hex;
-      });
-      return { solution, activeColors: chosen, colorCount };
-    }
-
-    const colorCount = Math.min(baseCount + 1, 9);
-    const shuffled = [...COLORS].sort(() => primaryRand() - 0.5);
-    const chosen = shuffled.slice(0, colorCount);
-
-    let coloredPositions: number[];
-    if (tier === 'medium' && roundIndex === 1) {
-      const nonCenter = [0, 1, 2, 3, 5, 6, 7, 8].sort(() => ddaRand() - 0.5);
-      coloredPositions = nonCenter.slice(0, colorCount);
-    } else {
-      const allPositions = Array.from({ length: 9 }, (_, i) => i).sort(() => ddaRand() - 0.5);
-      coloredPositions = allPositions.slice(0, colorCount);
-    }
-
-    const solution: (string | null)[] = Array(9).fill(null);
-    coloredPositions.forEach((pos, i) => {
-      solution[pos] = chosen[i].hex;
-    });
-
-    return { solution, activeColors: chosen, colorCount };
-  } catch (err) {
-    console.error('[Chromatic] generateSolutionDDA failed, using fallback:', err);
-    return generateFallbackSolution();
-  }
+  return generateSolution(roundIndex);
 }
 
 export function getDayNumber(): number {
@@ -253,6 +246,10 @@ export interface RoundAttempt {
   solution: (string | null)[];
   visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa';
   recallMs?: number;
+  /** Stage 2 sub-puzzle the attempt was played on. */
+  substage?: 'main' | '2b';
+  /** Regeneration index used for this attempt (0 = first puzzle for the stage). */
+  regenIndex?: number;
 }
 
 export interface RoundData {
@@ -321,10 +318,13 @@ export function getCurrentRoundInfo(): { roundIndex: number; totalAttemptsUsed: 
   if (!data) return { roundIndex: 0, totalAttemptsUsed: 0, finished: false, rounds: [] };
 
   const totalUsed = data.rounds.reduce((sum, r) => sum + r.attempts.length, 0);
-  // Current round = number of solved rounds (each solve advances to next puzzle)
+  // Daily ends the moment Stage 3 records an attempt (win OR lose).
+  const stage3Round = data.rounds.find(r => r.roundIndex === 2);
+  const stage3Attempted = !!stage3Round && stage3Round.attempts.length > 0;
+  // Current round = next unsolved stage; if everything solved, point to last.
   const solvedCount = data.rounds.filter(r => r.solved).length;
   const currentRound = Math.min(solvedCount, MAX_ROUNDS - 1);
-  const finished = data.finished || totalUsed >= MAX_ROUNDS;
+  const finished = data.finished || stage3Attempted;
 
   return { roundIndex: currentRound, totalAttemptsUsed: totalUsed, finished, rounds: data.rounds };
 }
@@ -335,7 +335,9 @@ export function saveRoundAttempt(
   playerGrid: (string | null)[],
   solution: (string | null)[],
   visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa',
-  recallMs?: number
+  recallMs?: number,
+  substage?: 'main' | '2b',
+  regenIndex?: number,
 ): StoredData {
   const today = getTodayString();
   const existing = loadData();
@@ -350,13 +352,13 @@ export function saveRoundAttempt(
     rounds.push(round);
   }
 
-  round.attempts.push({ grid: playerGrid, isCorrect, solution, visualTheme, recallMs });
+  round.attempts.push({ grid: playerGrid, isCorrect, solution, visualTheme, recallMs, substage, regenIndex });
   round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
-  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
-  const allSolved = rounds.filter(r => r.solved).length >= MAX_ROUNDS;
-  const finished = totalAttempts >= MAX_ROUNDS || allSolved;
+  // Daily is over the moment Stage 3 records an attempt (win or loss).
+  const stage3 = rounds.find(r => r.roundIndex === 2);
+  const finished = !!stage3 && stage3.attempts.length > 0;
 
   // Streak logic — only update when finishing for the first time today
   let currentStreak = existing?.currentStreak ?? 0;
@@ -365,12 +367,12 @@ export function saveRoundAttempt(
   if (finished) {
     const alreadyFinishedToday = isToday && existing?.finished;
     if (!alreadyFinishedToday) {
-      // First time finishing today — calculate streak
-      const anySolved = rounds.some(r => r.solved);
-      if (anySolved) {
+      // Streak only advances when the player WINS Stage 3.
+      const wonDaily = !!stage3?.solved;
+      if (wonDaily) {
         const prevPlayed = existing?.lastPlayed;
         const playedYesterday = prevPlayed === getYesterdayString();
-        const hadSolveYesterday = existing?.rounds?.some(r => r.solved);
+        const hadSolveYesterday = existing?.rounds?.find(r => r.roundIndex === 2)?.solved ?? false;
         if (playedYesterday && hadSolveYesterday) {
           currentStreak = (existing?.currentStreak ?? 0) + 1;
         } else if (isToday) {
@@ -408,50 +410,69 @@ export function getStreaks() {
   };
 }
 
-export function getResultMessage(roundIndex: number, attemptInRound: number, isCorrect: boolean, totalAttemptsUsed: number, theme?: string): string {
-  const remaining = MAX_ROUNDS - totalAttemptsUsed;
+/**
+ * Per-stage result copy.
+ * `nextStage` describes what the game will do AFTER this attempt:
+ *   - 'stage2'  → advancing to Stage 2 main
+ *   - 'stage2b' → Stage 2 main was failed; dropping to 4-element Stage 2b
+ *   - 'stage3'  → advancing to Stage 3
+ *   - 'regen'   → same stage, regenerated puzzle (Stage 1 fail or Stage 2b fail)
+ *   - 'done'    → daily complete (Stage 3 attempt, win or lose)
+ */
+export function getStageResultMessage(
+  stage: StageKey,
+  isCorrect: boolean,
+  nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done',
+  theme?: string,
+): string {
   const fifa = theme === 'fifa';
 
   if (isCorrect) {
-    if (fifa) {
-      if (totalAttemptsUsed >= MAX_ROUNDS && attemptInRound >= 2) {
-        return "Stoppage-Time Winner! ⚽ Final whistle — World-class form!";
-      }
-      if (roundIndex === 0 && attemptInRound === 1) {
-        return remaining > 0
-          ? `Goal! Top corner. You've got ${remaining} round${remaining > 1 ? 's' : ''} left — fresh fixture for Round ${roundIndex + 2}.`
-          : "Goal! Perfect run — World-class form!";
-      }
-      if (totalAttemptsUsed >= MAX_ROUNDS) {
-        return "On Fire! That's the final whistle — match complete.";
-      }
-      return remaining > 0
-        ? `On Fire! ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Next kickoff coming up.`
-        : "Match complete — On Fire today!";
+    if (nextStage === 'stage2') {
+      return fifa
+        ? "Goal! 1–0. Stage 2 kicks off with 5 elements — keep your shape."
+        : "Nailed it. Stage 2 brings 5 elements — let's keep the rhythm going.";
     }
-    if (roundIndex === 0 && attemptInRound === 1) {
-      return remaining > 0
-        ? `Perfect score! You've got ${remaining} round${remaining > 1 ? 's' : ''} left. Here is a completely new challenge for Round ${roundIndex + 2}.`
-        : "Perfect score on every round! Incredible memory!";
+    if (nextStage === 'stage3') {
+      return fifa
+        ? "Brace yourself — Stage 3 is the title decider: 6 elements, full pitch."
+        : "Locked in. Stage 3 fills the whole grid with 6 elements. Final round.";
     }
-    if (roundIndex === 1 && attemptInRound <= 2) {
-      return remaining > 0
-        ? `Spot on! You nailed the configuration on your second try.\n\nYou have one final round remaining. Since you solved that one, I've generated a brand-new color puzzle for your third and last attempt. Ready to finish strong?`
-        : "Got it! That's all 3 rounds done. Game complete!";
+    if (nextStage === 'done') {
+      return fifa
+        ? "Full Time — World-class form! You took the daily."
+        : "Daily complete. Perfect close on Stage 3 — incredible recall.";
     }
-    if (totalAttemptsUsed >= MAX_ROUNDS) {
-      return "Nice work! You cleared the puzzle on your final attempt. Game complete!";
-    }
-    return remaining > 0
-      ? `Got it! That's ${roundIndex + 1} round${roundIndex + 1 > 1 ? 's' : ''} down. Let's move to your next round with a fresh configuration.`
-      : "Game complete! Great memory work today!";
+    return fifa ? "Goal!" : "Got it!";
   }
 
   // Failed
-  if (remaining > 0) {
-    return `Not quite—but you have ${remaining} attempt${remaining > 1 ? 's' : ''} remaining for this specific puzzle. Look closely at the hints!`;
+  if (nextStage === 'regen') {
+    if (stage === 'stage1') {
+      return fifa
+        ? "Wide of the post. Same stage, brand-new fixture — line it up again."
+        : "Not quite. Same stage, a fresh 3-element puzzle is loading.";
+    }
+    return fifa
+      ? "Off target. Stage 2 retry — another 4-element setup coming up."
+      : "Close. Another Stage 2 (4-element) puzzle is loading — clear it to reach Stage 3.";
   }
-  return "That's all 3 attempts used. Better luck tomorrow!";
+  if (nextStage === 'stage2b') {
+    return fifa
+      ? "Tough one. Dropping to a 4-element Stage 2 — solve it to reach Stage 3."
+      : "Not this time. Stage 2 drops to 4 elements — solve it to unlock Stage 3.";
+  }
+  if (nextStage === 'done') {
+    return fifa
+      ? "Final whistle. Stage 3 slipped away — see you tomorrow."
+      : "That's a wrap. Stage 3 wasn't yours today — fresh challenge tomorrow.";
+  }
+  return "Not quite — try again.";
+}
+
+/** Back-compat alias used by older call sites. */
+export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number, theme?: string): string {
+  return getStageResultMessage('stage1', isCorrect, isCorrect ? 'stage2' : 'regen', theme);
 }
 
 export function generateShareText(
@@ -466,58 +487,43 @@ export function generateShareText(
     visualStyles?: string;
   },
 ): string {
-  const { dayName, colorCount } = getDayInfo();
+  const { dayName } = getDayInfo();
   const dayNum = getDayNumber();
 
-  const getDifficultyName = (count: number): string => {
-    if (count <= 2) return 'Minimalist';
-    if (count <= 4) return 'Standard';
-    if (count <= 6) return 'Complex';
-    return 'Master';
+  // Build per-stage summary lines. Each stage shows the FINAL attempt the player
+  // landed on (Stage 2 may have ended on the 4-element 2b sub-puzzle).
+  const stageHeader = (idx: number, tileCount: number): string => {
+    if (idx === 1) return `Stage 2 · ${tileCount}`;
+    return `Stage ${idx} · ${tileCount}`;
   };
 
   const lines: string[] = [
     `Chromatic #${dayNum}`,
-    `${dayName} | Level: ${getDifficultyName(colorCount)}`,
+    `${dayName} | 3-Stage Daily`,
     '',
   ];
 
-  // Flatten all attempts across rounds, capped at MAX_ROUNDS
-  type FlatAttempt = { grid: (string | null)[]; isCorrect: boolean; solution: (string | null)[] };
-  const allAttempts: FlatAttempt[] = [];
-  for (const round of rounds) {
-    for (const attempt of round.attempts) {
-      if (allAttempts.length < MAX_ROUNDS) {
-        allAttempts.push({ ...attempt, solution: attempt.solution ?? round.solution });
-      }
-    }
-  }
-
   for (let i = 0; i < MAX_ROUNDS; i++) {
-    const a = allAttempts[i];
-    if (a) {
-      const statusIcon = a.isCorrect ? '✅' : '❌';
-      lines.push(`Attempt ${i + 1} ${statusIcon}`);
-      // Direct 1:1 mapping: index 0 = top-left circle = first emoji
-      const grid = Array.from({ length: 9 }, (_, j) => {
-        const sol = a.solution[j];
-        const placed = a.grid[j];
-        // Both empty — no color in this slot
-        if (sol === null && placed === null) return '⚪';
-        // Player placed nothing but solution expected a color — missed
-        if (sol !== null && placed === null) return '🔴';
-        // Player placed a color where solution is empty — wrong placement
-        if (sol === null && placed !== null) return '🔴';
-        // Both have colors — compare (case-insensitive for hex safety)
-        const isMatch = sol!.toLowerCase() === placed!.toLowerCase();
+    const round = rounds.find(r => r.roundIndex === i);
+    const lastAttempt = round?.attempts[round.attempts.length - 1];
+    if (round && lastAttempt) {
+      const sol = lastAttempt.solution ?? round.solution ?? [];
+      const tileCount = sol.filter(s => s !== null).length;
+      const statusIcon = lastAttempt.isCorrect ? '✅' : '❌';
+      lines.push(`${stageHeader(i + 1, tileCount)} ${statusIcon}`);
+      const cells = Array.from({ length: GRID_SIZE }, (_, j) => {
+        const s = sol[j] ?? null;
+        const placed = lastAttempt.grid?.[j] ?? null;
+        if (s === null && placed === null) return '⚪';
+        if (s !== null && placed === null) return '🔴';
+        if (s === null && placed !== null) return '🔴';
+        const isMatch = s!.toLowerCase() === placed!.toLowerCase();
         return isMatch ? '🟢' : '🔴';
       });
-      lines.push(grid.slice(0, 3).join(''));
-      lines.push(grid.slice(3, 6).join(''));
-      lines.push(grid.slice(6, 9).join(''));
+      lines.push(cells.slice(0, 3).join(''));
+      lines.push(cells.slice(3, 6).join(''));
     } else {
-      lines.push(`Attempt ${i + 1} ⬜`);
-      lines.push('⚪⚪⚪');
+      lines.push(`Stage ${i + 1} ⬜`);
       lines.push('⚪⚪⚪');
       lines.push('⚪⚪⚪');
     }

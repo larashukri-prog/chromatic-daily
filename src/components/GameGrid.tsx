@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { GamePhase, NEUTRAL } from '@/lib/game';
+import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
 import { useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
@@ -90,7 +90,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
 
   return (
     <div className="grid grid-cols-3 gap-4 sm:gap-5 max-w-[280px] mx-auto">
-      {Array.from({ length: 9 }).map((_, i) => (
+      {Array.from({ length: GRID_SIZE }).map((_, i) => (
         <motion.button
           key={i}
           onClick={() => onCircleClick(i)}

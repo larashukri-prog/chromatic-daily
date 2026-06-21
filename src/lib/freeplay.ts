@@ -1,4 +1,4 @@
-import { COLORS } from '@/lib/game';
+import { COLORS, GRID_SIZE } from '@/lib/game';
 
 const ANCHORS = [
   { name: 'Black', hex: '#000000' },
@@ -6,23 +6,19 @@ const ANCHORS = [
 ];
 
 /**
- * Compute color count for a given session round (1-based).
+ * Compute color count for a given session round (1-based) on the 3x2 grid (6 slots).
  * Tiers:
- *  Round 1–2:  2–3 colors  (no anchors)
- *  Round 3–6:  4 colors    (no anchors)
- *  Round 7–20: 5 colors    (anchors)
- *  Round 21–30: 6 colors   (anchors)
- *  Round 31–40: 7 colors   (anchors)
- *  Round 41+:  8–9 colors  (anchors, full Master Grid)
+ *  Round 1–2:  2 colors    (no anchors)
+ *  Round 3–6:  3 colors    (no anchors)
+ *  Round 7–15: 4 colors    (no anchors)
+ *  Round 16+:  5–6 colors  (anchors, full board)
  */
 function getColorCountForRound(roundCount: number): number {
   const r = Math.max(1, Math.floor(roundCount));
-  if (r <= 2) return 2 + Math.floor(Math.random() * 2);          // 2 or 3
-  if (r <= 6) return 4;
-  if (r <= 20) return 5;
-  if (r <= 30) return 6;
-  if (r <= 40) return 7;
-  return 8 + Math.floor(Math.random() * 2);                       // 8 or 9
+  if (r <= 2) return 2;
+  if (r <= 6) return 3;
+  if (r <= 15) return 4;
+  return 5 + Math.floor(Math.random() * 2); // 5 or 6
 }
 
 /**
@@ -49,10 +45,10 @@ export function generateFreePlayPuzzle(roundCount: number = 1): {
   }
 
   // Shuffle positions and pick slots
-  const positions = Array.from({ length: 9 }, (_, i) => i).sort(() => Math.random() - 0.5);
+  const positions = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => Math.random() - 0.5);
   const coloredPositions = positions.slice(0, colorCount);
 
-  const solution: (string | null)[] = Array(9).fill(null);
+  const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
   coloredPositions.forEach((pos, i) => {
     solution[pos] = chosen[i].hex;
   });
