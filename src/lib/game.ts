@@ -318,10 +318,13 @@ export function getCurrentRoundInfo(): { roundIndex: number; totalAttemptsUsed: 
   if (!data) return { roundIndex: 0, totalAttemptsUsed: 0, finished: false, rounds: [] };
 
   const totalUsed = data.rounds.reduce((sum, r) => sum + r.attempts.length, 0);
-  // Current round = number of solved rounds (each solve advances to next puzzle)
+  // Daily ends the moment Stage 3 records an attempt (win OR lose).
+  const stage3Round = data.rounds.find(r => r.roundIndex === 2);
+  const stage3Attempted = !!stage3Round && stage3Round.attempts.length > 0;
+  // Current round = next unsolved stage; if everything solved, point to last.
   const solvedCount = data.rounds.filter(r => r.solved).length;
   const currentRound = Math.min(solvedCount, MAX_ROUNDS - 1);
-  const finished = data.finished || totalUsed >= MAX_ROUNDS;
+  const finished = data.finished || stage3Attempted;
 
   return { roundIndex: currentRound, totalAttemptsUsed: totalUsed, finished, rounds: data.rounds };
 }
@@ -332,7 +335,9 @@ export function saveRoundAttempt(
   playerGrid: (string | null)[],
   solution: (string | null)[],
   visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa',
-  recallMs?: number
+  recallMs?: number,
+  substage?: 'main' | '2b',
+  regenIndex?: number,
 ): StoredData {
   const today = getTodayString();
   const existing = loadData();
@@ -347,13 +352,13 @@ export function saveRoundAttempt(
     rounds.push(round);
   }
 
-  round.attempts.push({ grid: playerGrid, isCorrect, solution, visualTheme, recallMs });
+  round.attempts.push({ grid: playerGrid, isCorrect, solution, visualTheme, recallMs, substage, regenIndex });
   round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
-  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
-  const allSolved = rounds.filter(r => r.solved).length >= MAX_ROUNDS;
-  const finished = totalAttempts >= MAX_ROUNDS || allSolved;
+  // Daily is over the moment Stage 3 records an attempt (win or loss).
+  const stage3 = rounds.find(r => r.roundIndex === 2);
+  const finished = !!stage3 && stage3.attempts.length > 0;
 
   // Streak logic — only update when finishing for the first time today
   let currentStreak = existing?.currentStreak ?? 0;
@@ -362,12 +367,12 @@ export function saveRoundAttempt(
   if (finished) {
     const alreadyFinishedToday = isToday && existing?.finished;
     if (!alreadyFinishedToday) {
-      // First time finishing today — calculate streak
-      const anySolved = rounds.some(r => r.solved);
-      if (anySolved) {
+      // Streak only advances when the player WINS Stage 3.
+      const wonDaily = !!stage3?.solved;
+      if (wonDaily) {
         const prevPlayed = existing?.lastPlayed;
         const playedYesterday = prevPlayed === getYesterdayString();
-        const hadSolveYesterday = existing?.rounds?.some(r => r.solved);
+        const hadSolveYesterday = existing?.rounds?.find(r => r.roundIndex === 2)?.solved ?? false;
         if (playedYesterday && hadSolveYesterday) {
           currentStreak = (existing?.currentStreak ?? 0) + 1;
         } else if (isToday) {
