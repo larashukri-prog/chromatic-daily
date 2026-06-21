@@ -275,42 +275,20 @@ const Index = () => {
         setPhase('result');
       }
     } else {
-      // Derive the active stage / substage / regen from persisted rounds.
+      // Derive the active stage from persisted rounds. One attempt per stage,
+      // win or lose advances to the next stage.
       const s1 = info.rounds.find((r) => r.roundIndex === 0);
       const s2 = info.rounds.find((r) => r.roundIndex === 1);
       let stage: StageKey = 'stage1';
-      let sub: 'main' | '2b' = 'main';
-      let regen = 0;
+      const sub: 'main' | '2b' = 'main';
+      const regen = 0;
       let rIdx = 0;
-      if (s2) {
+      if (s2 && s2.attempts.length > 0) {
+        stage = 'stage3';
+        rIdx = 2;
+      } else if (s1 && s1.attempts.length > 0) {
+        stage = 'stage2';
         rIdx = 1;
-        if (s2.solved) {
-          stage = 'stage3';
-          rIdx = 2;
-        } else {
-          const last = s2.attempts[s2.attempts.length - 1];
-          if (last?.substage === '2b') {
-            stage = 'stage2b';
-            sub = '2b';
-            regen = (last.regenIndex ?? 0) + 1;
-          } else {
-            // Stage 2 main failed → drop to 2b
-            stage = 'stage2b';
-            sub = '2b';
-            regen = 0;
-          }
-        }
-      } else if (s1) {
-        if (s1.solved) {
-          stage = 'stage2';
-          sub = 'main';
-          rIdx = 1;
-        } else {
-          const last = s1.attempts[s1.attempts.length - 1];
-          stage = 'stage1';
-          regen = (last?.regenIndex ?? 0) + 1;
-          rIdx = 0;
-        }
       }
       setRoundIndex(rIdx);
       setSubstage(sub);
@@ -702,18 +680,11 @@ const Index = () => {
         setStarsEarned(prev => prev + 1);
       }
 
-      // Determine the NEXT stage based on outcome (drives the message + flow).
-      const nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done' = (() => {
+      // Determine the NEXT stage based on outcome. Win or lose, advance one stage.
+      const nextStage: 'stage2' | 'stage3' | 'done' = (() => {
         if (currentStageKey === 'stage3') return 'done';
-        if (correct) {
-          if (currentStageKey === 'stage1') return 'stage2';
-          // stage2 or stage2b solved → stage3
-          return 'stage3';
-        }
-        if (currentStageKey === 'stage1') return 'regen';
-        if (currentStageKey === 'stage2') return 'stage2b';
-        // stage2b failed → regen another 2b
-        return 'regen';
+        if (currentStageKey === 'stage1') return 'stage2';
+        return 'stage3';
       })();
 
       const msg = getStageResultMessage(currentStageKey, correct, nextStage, visualTheme);
@@ -755,32 +726,17 @@ const Index = () => {
     let nextSubstage: 'main' | '2b' = substage;
     let nextRegen = regenIndex;
 
-    if (isCorrect) {
-      if (currentStageKey === 'stage1') {
-        nextStage = 'stage2';
-        nextRoundIdx = 1;
-        nextSubstage = 'main';
-        nextRegen = 0;
-      } else if (currentStageKey === 'stage2' || currentStageKey === 'stage2b') {
-        nextStage = 'stage3';
-        nextRoundIdx = 2;
-        nextSubstage = 'main';
-        nextRegen = 0;
-      }
-    } else {
-      if (currentStageKey === 'stage1') {
-        nextStage = 'stage1';
-        nextRegen = regenIndex + 1;
-      } else if (currentStageKey === 'stage2') {
-        // Drop to 4-element Stage 2b
-        nextStage = 'stage2b';
-        nextSubstage = '2b';
-        nextRegen = 0;
-      } else if (currentStageKey === 'stage2b') {
-        nextStage = 'stage2b';
-        nextSubstage = '2b';
-        nextRegen = regenIndex + 1;
-      }
+    // Win or lose: always advance to the next stage. Three stages, three attempts.
+    if (currentStageKey === 'stage1') {
+      nextStage = 'stage2';
+      nextRoundIdx = 1;
+      nextSubstage = 'main';
+      nextRegen = 0;
+    } else if (currentStageKey === 'stage2' || currentStageKey === 'stage2b') {
+      nextStage = 'stage3';
+      nextRoundIdx = 2;
+      nextSubstage = 'main';
+      nextRegen = 0;
     }
 
     setRoundIndex(nextRoundIdx);

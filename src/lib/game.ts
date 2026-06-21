@@ -405,7 +405,7 @@ export function getStreaks() {
 export function getStageResultMessage(
   stage: StageKey,
   isCorrect: boolean,
-  nextStage: 'stage2' | 'stage2b' | 'stage3' | 'regen' | 'done',
+  nextStage: 'stage2' | 'stage3' | 'done',
   theme?: string,
 ): string {
   const fifa = theme === 'fifa';
@@ -429,21 +429,16 @@ export function getStageResultMessage(
     return fifa ? "Goal!" : "Got it!";
   }
 
-  // Failed
-  if (nextStage === 'regen') {
-    if (stage === 'stage1') {
-      return fifa
-        ? "Wide of the post. Same stage, brand-new fixture — line it up again."
-        : "Not quite. Same stage, a fresh 3-element puzzle is loading.";
-    }
+  // Failed — advance to next stage anyway. Three stages, three attempts.
+  if (nextStage === 'stage2') {
     return fifa
-      ? "Off target. Stage 2 retry — another 4-element setup coming up."
-      : "Close. Another Stage 2 (4-element) puzzle is loading — clear it to reach Stage 3.";
+      ? "Wide of the post. Stage 2 kicks off — 5 elements, fresh start."
+      : "Not quite. Stage 2 is next — 5 elements, fresh start.";
   }
-  if (nextStage === 'stage2b') {
+  if (nextStage === 'stage3') {
     return fifa
-      ? "Tough one. Dropping to a 4-element Stage 2 — solve it to reach Stage 3."
-      : "Not this time. Stage 2 drops to 4 elements — solve it to unlock Stage 3.";
+      ? "Off target. Stage 3 is the title decider — 6 elements, full pitch."
+      : "Close. Stage 3 is the final round — 6 elements, full grid.";
   }
   if (nextStage === 'done') {
     return fifa
@@ -455,7 +450,7 @@ export function getStageResultMessage(
 
 /** Back-compat alias used by older call sites. */
 export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number, theme?: string): string {
-  return getStageResultMessage('stage1', isCorrect, isCorrect ? 'stage2' : 'regen', theme);
+  return getStageResultMessage('stage1', isCorrect, 'stage2', theme);
 }
 
 export function generateShareText(
