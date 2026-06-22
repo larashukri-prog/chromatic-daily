@@ -251,6 +251,7 @@ const Index = () => {
       setAttemptInRound(1);
       setSubstage('main');
       setRegenIndex(0);
+      setCurrentStageKey('stage1');
       const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
       setSolution(sol);
       setActiveColors(ac);
