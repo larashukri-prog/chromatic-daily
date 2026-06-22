@@ -1,50 +1,19 @@
-## The bug
+## Plan
 
-In the path **A1✗ → A2✓ → A3**, the third attempt is at stage `stage2` (5 colors). `stageToRoundIndex('stage2')` is **1**, not 2. The "is this the final attempt?" check uses `roundIndex`:
+1. **Make the third attempt terminal by attempt count, not stage tier**
+   - Introduce a single derived guard in `Index.tsx`: daily can continue only when fewer than 3 attempts have been used and `getNextStage(...)` returns a stage.
+   - This prevents `A1 loss → A2 win → A3 win` from advancing to the 6-slot stage, because attempt 3 has already been played.
 
-```ts
-const canContinue = phase === 'result' && roundIndex < 2 && !alreadyFinished;
-const isFinal = phase === 'result' && (roundIndex >= 2 || alreadyFinished);
-```
+2. **Mark the daily finished immediately after the 3rd saved attempt**
+   - In `verify`, treat `newTotalUsed >= MAX_ROUNDS` as done in addition to `nextStageKey === null` and storage’s `finished` flag.
+   - Pass `'done'` into the result message when attempt 3 is reached, even if `getNextStage` would normally point to 6 slots.
 
-So after the A3 (5-color) win, `roundIndex` is still `1`, `canContinue` is `true`, and the "Continue" button advances to a **4th** attempt at `stage3` (6 colors).
+3. **Fix persisted storage to recognize adaptive 3-attempt completion**
+   - Update `saveRoundAttempt` / `getCurrentRoundInfo` so `finished` is true when total saved attempts reaches `MAX_ROUNDS`, not only when roundIndex 2 has an attempt.
+   - This closes reload/resume cases where storage says “not finished” after three adaptive attempts because the last attempt was stored under the 5-slot round.
 
-The `roundIndex < 2` rule only works on the pure win path (`stage1 → stage2 → stage3`), where the 3rd attempt happens to land at `roundIndex 2`. In every adaptive branch where A1 was a loss, the 3rd attempt sits at `roundIndex 1` and the gate fails.
+4. **Remove stale round-index assumptions where they affect continuation**
+   - Keep existing round display/summary behavior intact, but ensure any continue/summary gating uses total attempts and next-stage terminal checks instead of `roundIndex` alone.
 
-## Fix
-
-Stop using `roundIndex` to decide whether the daily is over. Use the adaptive helper that already encodes terminality.
-
-### `src/pages/Index.tsx`
-
-1. **`canContinue`** — replace the `roundIndex < 2` check with a next-stage probe:
-   ```ts
-   const canContinue =
-     phase === 'result' &&
-     !alreadyFinished &&
-     getNextStage(currentStageKey, isCorrect) !== null;
-   ```
-   `getNextStage` already returns `null` for `stage1c`, `stage2r`, and `stage3` regardless of win/loss, which is exactly the "no more attempts" condition.
-
-2. **`isFinal` auto-transition (line 492)** — same change:
-   ```ts
-   const isFinal =
-     phase === 'result' &&
-     (alreadyFinished || getNextStage(currentStageKey, isCorrect) === null);
-   ```
-   This guarantees the result screen auto-transitions to the daily summary on every terminal attempt, not only when `roundIndex` reached 2.
-
-3. **`nextAttempt`** — already calls `getNextStage` and early-returns on `null`, so no change needed there. The `nextRoundIdx` math (`stage1b|stage2 → 1`, `stage1c|stage2r|stage3 → 2`) stays as-is; it's only used for the attempt tracker UI.
-
-No changes to `game.ts`, persistence, share text, summary, or analytics. The adaptive stage table is correct — only the two UI gates that bypassed it need fixing.
-
-### Verification
-
-After the patch, walk the four branches and confirm exactly 3 attempts each:
-
-- A1✓ A2✓ → stage1 → stage2 → stage3 (terminal). `getNextStage` returns null after A3.
-- A1✓ A2✗ → stage1 → stage2 → stage2r (terminal).
-- A1✗ A2✓ → stage1 → stage1b → stage2 (terminal). **This is the failing case today.**
-- A1✗ A2✗ → stage1 → stage1b → stage1c (terminal).
-
-In all four, after the 3rd attempt `getNextStage(currentStageKey, isCorrect)` is `null`, so `canContinue` is false and `isFinal` is true.
+5. **Validate the exact reported path**
+   - Check the code path for `A1✗ → A2✓ → A3✓` and confirm the result modal does not render “Next Round” and the daily summary becomes available.

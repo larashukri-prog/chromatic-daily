@@ -491,14 +491,16 @@ const Index = () => {
     // Final = the Stage 3 attempt (win or loss) is on screen.
     const isFinal =
       phase === 'result' &&
-      (alreadyFinished || getNextStage(currentStageKey, isCorrect) === null);
+      (alreadyFinished ||
+        totalAttemptsUsed >= MAX_ROUNDS ||
+        getNextStage(currentStageKey, isCorrect) === null);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay, currentStageKey, isCorrect]);
+  }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay, currentStageKey, isCorrect, totalAttemptsUsed]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
@@ -695,7 +697,8 @@ const Index = () => {
         }
       }
 
-      const done = nextStageKey === null; // win OR loss on final attempt ends the daily
+      // Daily ends when: stage is terminal, OR we've used all 3 attempts (adaptive paths).
+      const done = nextStageKey === null || newTotalUsed >= MAX_ROUNDS;
       if (done || savedData.finished) {
         setAlreadyFinished(true);
       }
@@ -713,6 +716,7 @@ const Index = () => {
   const canContinue =
     phase === 'result' &&
     !alreadyFinished &&
+    totalAttemptsUsed < MAX_ROUNDS &&
     getNextStage(currentStageKey, isCorrect) !== null;
 
   const nextAttempt = () => {
