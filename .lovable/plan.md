@@ -1,14 +1,18 @@
-## Bug — Color picker chips show no flag for non-active colors
+## Plan
 
-### Root cause
-After yesterday's FIFA fix, `FifaPaletteProvider` at the root of `Index.tsx` is given the **active stage palette** (3 hexes on Stage 1). The flag map is therefore built only for those 3 hexes.
+Fix the FIFA flag rendering regression by making the flag mapping stable between the color picker and the game grid.
 
-The color picker (`src/pages/Index.tsx` line 1231) iterates `pickerColors = COLORS` — the full 6-color palette. For the 3 chips whose hex is not in the active palette, `getFifaImageMap` has no entry, `FifaOverlay` returns `null`, and the chip renders as a plain white circle.
+### What is wrong
+- The picker was wrapped with the full 6-color FIFA palette, so every picker chip gets a flag.
+- The game grid is wrapped with only the current stage colors, so the same hex can map differently—or not map at all—after placement.
+- Result: a flag looks valid in the picker, but the placed slot can render as a white circle.
 
-### Fix
-Wrap only the picker's chip container in its own `FifaPaletteProvider` that uses the **full 6 chromatic hexes** (`FIFA_DEFAULT_PALETTE_HEXES` exported from `FifaPaletteContext`). That keeps the active-palette mapping for the game grid intact while letting every picker chip resolve to a flag.
+### Changes
+1. Update `FifaOverlay` / `getFifaImageMap` so flag assignment is deterministic by the canonical 6 color slots, not by whatever subset a caller provides.
+2. Keep `activeHexes` only as an optional visibility/filter hint where needed, without changing which flag belongs to which color hex.
+3. Ensure Stage 1 still has 3 active flags in the board, while picker chips and placed grid slots use the same hex-to-flag mapping.
+4. Do not alter CSS layout, game progression, saved state, or core game phases.
 
-### Files touched
-- `src/pages/Index.tsx` — import `FifaPaletteProvider` + `FIFA_DEFAULT_PALETTE_HEXES`; wrap the picker `<div className="flex justify-center gap-2 flex-wrap">…</div>` (lines 1230–1288) in `<FifaPaletteProvider activeHexes={FIFA_DEFAULT_PALETTE_HEXES}>…</FifaPaletteProvider>`.
-
-No CSS, layout, or game-state changes.
+### QA
+- Verify FIFA mode recall: select each picker flag and place it into a slot; the slot should show the same flag, not a blank white circle.
+- Verify Stage 1 board still shows flags for all active colors.
