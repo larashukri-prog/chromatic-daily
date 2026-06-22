@@ -1,19 +1,38 @@
-## Summary
-Replace the static end-game subtext in `DailySummary` with conditional win/loss messaging based on whether the player solved at least one round.
+## Plan: Add Daily Salutations to Game Header
 
-## Scope
-- File: `src/components/DailySummary.tsx`
-- Lines ~167–176 ("Rest indicator" block)
-- No CSS, game logic, result counting, or UI structure changes.
+### Goal
+Replace the static "Level: Complex" subtitle in the game header with a dynamic daily salutation that changes based on the current day of the week.
 
-## Changes
-1. Derive `hasWon` from existing `solvedCount` (`rounds.filter(r => r.solved).length > 0`).
-2. Keep the existing header line (`Daily Challenge Complete` / `Full Time — Goal!`) untouched.
-3. Replace the subtext paragraph:
-   - If `hasWon` → `"Perfect sequence. See you tomorrow."`
-   - If `!hasWon` → `"Visual overload. Rest your eyes and come back stronger tomorrow."`
-4. Remove the day-name branching (`Sunday` vs other days) and FIFA-themed branching for this subtext only — the user provided exact strings for both states.
+### Changes
 
-## Technical Details
-- The change is a single conditional text swap inside the already-rendered `<p className="text-sm text-muted-foreground mt-1">`.
-- No new props are added to `DailySummary`; `hasWon` is computed locally from existing `rounds` data.
+1. **Create a salutation map in `src/pages/Index.tsx`**
+   - Add a `DAY_SALUTATIONS` constant (or inline function) keyed by full day name.
+   - Map each day to its phrase:
+     - Monday → "Fresh focus."
+     - Tuesday → "Stay sharp."
+     - Wednesday → "Midweek flow."
+     - Thursday → "Deep attention."
+     - Friday → "Finish strong."
+     - Saturday → "Unwind & play."
+     - Sunday → "Weekly reset."
+
+2. **Update the header subtitle JSX**
+   - Location: `src/pages/Index.tsx` line ~1075.
+   - Replace the current string:
+     ```
+     {dayName} · #{dayNum} · Level: {difficultyName}
+     ```
+   - With:
+     ```
+     {dayName} · #{dayNum} · {salutation}
+     ```
+   - Remove the `getDifficultyName` function and `difficultyName` variable if they are no longer referenced elsewhere.
+
+3. **Preserve visual balance**
+   - Keep the existing `<p>` element and its Tailwind classes (`text-sm text-muted-foreground tracking-wide uppercase`).
+   - The centered flex layout of the parent header `div` remains unchanged, so interpunct spacing stays balanced regardless of salutation length.
+
+### No-Change Areas
+- Game logic, difficulty tiers, DDA, or stage progression.
+- `getDayInfo()`, `getDayNumber()`, `dayName`, and `dayNum` behavior.
+- Header layout, typography, or responsive visibility rules.

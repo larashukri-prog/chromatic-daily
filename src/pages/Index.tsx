@@ -231,6 +231,17 @@ const Index = () => {
   };
   const difficultyName = getDifficultyName(baseColorCount);
 
+  const DAY_SALUTATIONS: Record<string, string> = {
+    Monday: 'Fresh focus.',
+    Tuesday: 'Stay sharp.',
+    Wednesday: 'Midweek flow.',
+    Thursday: 'Deep attention.',
+    Friday: 'Finish strong.',
+    Saturday: 'Unwind & play.',
+    Sunday: 'Weekly reset.',
+  };
+  const daySalutation = DAY_SALUTATIONS[dayName] ?? '';
+
   const isFreeplay = mode === 'freeplay';
 
   // Picker shows the six chromatic colors only — no Black/White anchors.
@@ -1072,7 +1083,7 @@ const Index = () => {
               {showDailySummary ? 'Daily Summary' : 'Chromatic Daily'}
             </h1>
             <p className={`text-sm text-muted-foreground tracking-wide uppercase ${showDailySummary ? 'hidden sm:block' : ''}`}>
-              {dayName} · #{dayNum} · Level: {difficultyName}
+              {dayName} · #{dayNum} · {daySalutation}
             </p>
           </>
         )}
