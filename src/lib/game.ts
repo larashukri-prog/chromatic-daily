@@ -28,35 +28,70 @@ export const MAX_ROUNDS = 3;
 /** 2x3 grid — 2 columns x 3 rows = 6 slots total. */
 export const GRID_SIZE = 6;
 
-/** Stage identifiers for the daily 3-stage progression. */
-export type StageKey = 'stage1' | 'stage2' | 'stage2b' | 'stage3';
+/**
+ * Stage identifiers for the adaptive 3-attempt daily.
+ * Progression rules (win → step up, loss → repeat same tier with fresh puzzle):
+ *   stage1 (3) → win→stage2 (5)        / loss→stage1b (3, fresh)
+ *   stage1b (3) → win→stage2 (5)       / loss→stage1c (3, fresh)
+ *   stage2 (5) → win→stage3 (6)        / loss→stage2r (5, fresh)
+ *   stage1c / stage2r / stage3 are terminal (3rd attempt).
+ */
+export type StageKey =
+  | 'stage1'
+  | 'stage1b'
+  | 'stage1c'
+  | 'stage2'
+  | 'stage2r'
+  | 'stage3';
 
-/** Color counts per stage. Stage 2 falls back to 2b (4 elements) on failure. */
 export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
   stage1: 3,
+  stage1b: 3,
+  stage1c: 3,
   stage2: 5,
-  stage2b: 4,
+  stage2r: 5,
   stage3: 6,
 };
 
 /** Seed offsets so every user worldwide gets the same puzzle per stage. */
 const STAGE_SEED_OFFSETS: Record<StageKey, number> = {
   stage1: 1000,
+  stage1b: 1500,
+  stage1c: 1750,
   stage2: 2000,
-  stage2b: 2500,
+  stage2r: 2500,
   stage3: 3000,
 };
 
-/** Stage 1-based numeric index (1 / 2 / 3) for any stage key (2b counts as 2). */
+/** Attempt number (1 / 2 / 3) this stage represents. */
 export function stageNumber(stage: StageKey): 1 | 2 | 3 {
   if (stage === 'stage1') return 1;
-  if (stage === 'stage3') return 3;
-  return 2;
+  if (stage === 'stage1b' || stage === 'stage2') return 2;
+  return 3; // stage1c, stage2r, stage3
 }
 
 /** Map a stage to the persisted roundIndex slot (0/1/2). */
 export function stageToRoundIndex(stage: StageKey): number {
   return stageNumber(stage) - 1;
+}
+
+/**
+ * Adaptive next-stage selector. Win steps difficulty up, loss repeats the
+ * current tier with a fresh puzzle. Returns null for terminal stages.
+ */
+export function getNextStage(stage: StageKey, wasCorrect: boolean): StageKey | null {
+  switch (stage) {
+    case 'stage1':
+      return wasCorrect ? 'stage2' : 'stage1b';
+    case 'stage1b':
+      return wasCorrect ? 'stage2' : 'stage1c';
+    case 'stage2':
+      return wasCorrect ? 'stage3' : 'stage2r';
+    case 'stage1c':
+    case 'stage2r':
+    case 'stage3':
+      return null;
+  }
 }
 
 // Seeded random based on date for consistent daily puzzle
