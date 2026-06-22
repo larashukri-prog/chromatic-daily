@@ -511,17 +511,26 @@ export function generateShareText(
     '',
   ];
 
+  // Flatten attempts chronologically across rounds. Adaptive paths can store
+  // multiple attempts under the same roundIndex (e.g. stage1b + stage2 both
+  // map to roundIndex 1), so indexing by roundIndex would lose attempts and
+  // render empty placeholders. Rounds are pushed in play order, and attempts
+  // within a round are appended in order, so flatMap yields A1, A2, A3.
+  const allAttempts = rounds.flatMap(r =>
+    r.attempts.map(a => ({ attempt: a, roundSolution: r.solution })),
+  );
+
   for (let i = 0; i < MAX_ROUNDS; i++) {
-    const round = rounds.find(r => r.roundIndex === i);
-    const lastAttempt = round?.attempts[round.attempts.length - 1];
-    if (round && lastAttempt) {
-      const sol = lastAttempt.solution ?? round.solution ?? [];
+    const entry = allAttempts[i];
+    if (entry) {
+      const { attempt, roundSolution } = entry;
+      const sol = attempt.solution ?? roundSolution ?? [];
       const tileCount = sol.filter(s => s !== null).length;
-      const statusIcon = lastAttempt.isCorrect ? '✅' : '❌';
+      const statusIcon = attempt.isCorrect ? '✅' : '❌';
       lines.push(`${stageHeader(i + 1, tileCount)} ${statusIcon}`);
       const cells = Array.from({ length: GRID_SIZE }, (_, j) => {
         const s = sol[j] ?? null;
-        const placed = lastAttempt.grid?.[j] ?? null;
+        const placed = attempt.grid?.[j] ?? null;
         if (s === null && placed === null) return '⚪';
         if (s !== null && placed === null) return '🔴';
         if (s === null && placed !== null) return '🔴';
