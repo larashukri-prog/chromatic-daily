@@ -429,58 +429,56 @@ export function getStreaks() {
 }
 
 /**
- * Per-stage result copy.
- * `nextStage` describes what the game will do AFTER this attempt:
- *   - 'stage2'  → advancing to Stage 2 main
- *   - 'stage2b' → Stage 2 main was failed; dropping to 4-element Stage 2b
- *   - 'stage3'  → advancing to Stage 3
- *   - 'regen'   → same stage, regenerated puzzle (Stage 1 fail or Stage 2b fail)
- *   - 'done'    → daily complete (Stage 3 attempt, win or lose)
+ * Per-stage result copy. Messaging is driven by the NEXT stage's tile count
+ * (or 'done' when the daily ends), so adaptive failure paths read naturally.
  */
 export function getStageResultMessage(
-  stage: StageKey,
+  _stage: StageKey,
   isCorrect: boolean,
-  nextStage: 'stage2' | 'stage3' | 'done',
+  nextStage: StageKey | 'done',
   theme?: string,
 ): string {
   const fifa = theme === 'fifa';
 
-  if (isCorrect) {
-    if (nextStage === 'stage2') {
+  if (nextStage === 'done') {
+    if (isCorrect) {
       return fifa
-        ? "Goal! 1–0. Stage 2 kicks off with 5 elements — keep your shape."
-        : "Nailed it. Stage 2 brings 5 elements — let's keep the rhythm going.";
+        ? 'Full Time — World-class form! You took the daily.'
+        : 'Daily complete. Perfect close — incredible recall.';
     }
-    if (nextStage === 'stage3') {
-      return fifa
-        ? "Brace yourself — Stage 3 is the title decider: 6 elements, full pitch."
-        : "Locked in. Stage 3 fills the whole grid with 6 elements. Final round.";
-    }
-    if (nextStage === 'done') {
-      return fifa
-        ? "Full Time — World-class form! You took the daily."
-        : "Daily complete. Perfect close on Stage 3 — incredible recall.";
-    }
-    return fifa ? "Goal!" : "Got it!";
+    return fifa
+      ? 'Final whistle. The daily slipped away — see you tomorrow.'
+      : "That's a wrap — fresh challenge tomorrow.";
   }
 
-  // Failed — advance to next stage anyway. Three stages, three attempts.
-  if (nextStage === 'stage2') {
-    return fifa
-      ? "Wide of the post. Stage 2 kicks off — 5 elements, fresh start."
-      : "Not quite. Stage 2 is next — 5 elements, fresh start.";
+  const nextCount = STAGE_COLOR_COUNTS[nextStage];
+
+  if (isCorrect) {
+    if (nextCount === 5) {
+      return fifa
+        ? 'Goal! Next up: 5 elements — keep your shape.'
+        : "Nailed it. Next attempt brings 5 elements — keep the rhythm.";
+    }
+    if (nextCount === 6) {
+      return fifa
+        ? 'Brace yourself — final attempt: 6 elements, full pitch.'
+        : 'Locked in. Final attempt fills the grid with 6 elements.';
+    }
+    return fifa ? 'Goal!' : 'Got it!';
   }
-  if (nextStage === 'stage3') {
+
+  // Wrong — repeat the same tier with a fresh puzzle.
+  if (nextCount === 3) {
     return fifa
-      ? "Off target. Stage 3 is the title decider — 6 elements, full pitch."
-      : "Close. Stage 3 is the final round — 6 elements, full grid.";
+      ? 'Wide of the post. Same shape, new pattern — 3 elements again.'
+      : 'Not quite. Same 3 elements, a fresh pattern — give it another go.';
   }
-  if (nextStage === 'done') {
+  if (nextCount === 5) {
     return fifa
-      ? "Final whistle. Stage 3 slipped away — see you tomorrow."
-      : "That's a wrap. Stage 3 wasn't yours today — fresh challenge tomorrow.";
+      ? 'Off target. Another 5-element pattern coming up.'
+      : 'Close. Another 5-element pattern is next.';
   }
-  return "Not quite — try again.";
+  return 'Not quite — try again.';
 }
 
 /** Back-compat alias used by older call sites. */
