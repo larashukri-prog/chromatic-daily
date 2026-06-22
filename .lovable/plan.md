@@ -1,42 +1,50 @@
-## Goal
-Make the 3 daily attempts adaptive so failures don't feel punishing: failure keeps difficulty flat, success ramps it up.
+## The bug
 
-## New progression rules
+In the path **A1✗ → A2✓ → A3**, the third attempt is at stage `stage2` (5 colors). `stageToRoundIndex('stage2')` is **1**, not 2. The "is this the final attempt?" check uses `roundIndex`:
 
-| State entering attempt | Attempt 1 | Attempt 2 | Attempt 3 |
-|---|---|---|---|
-| A1✓, A2✓ | 3 | 5 | 6 |
-| A1✓, A2✗ | 3 | 5 | 5 (different puzzle) |
-| A1✗, A2✓ | 3 | 3 (different style) | 5 |
-| A1✗, A2✗ | 3 | 3 | 3 |
+```ts
+const canContinue = phase === 'result' && roundIndex < 2 && !alreadyFinished;
+const isFinal = phase === 'result' && (roundIndex >= 2 || alreadyFinished);
+```
 
-Rule of thumb: **win → step up; loss → repeat the same tier with a fresh puzzle**.
+So after the A3 (5-color) win, `roundIndex` is still `1`, `canContinue` is `true`, and the "Continue" button advances to a **4th** attempt at `stage3` (6 colors).
 
-## Changes
+The `roundIndex < 2` rule only works on the pure win path (`stage1 → stage2 → stage3`), where the 3rd attempt happens to land at `roundIndex 2`. In every adaptive branch where A1 was a loss, the 3rd attempt sits at `roundIndex 1` and the gate fails.
 
-### 1. `src/lib/game.ts`
-- Add new stage keys: `stage1b` (3 colors), `stage1c` (3 colors, third attempt after two losses), `stage2r` (5 colors, repeat). Retire `stage2b` (4-color fallback) — no longer used.
-- Update `STAGE_COLOR_COUNTS`, `STAGE_SEED_OFFSETS`, `stageNumber`, and `stageToRoundIndex` accordingly.
-- Add helper `getNextStage(currentStage, wasCorrect)`:
-  - `stage1` + win → `stage2` (5)
-  - `stage1` + loss → `stage1b` (3, fresh puzzle)
-  - `stage2` + win → `stage3` (6)
-  - `stage2` + loss → `stage2r` (5 repeat, fresh puzzle)
-  - `stage1b` + win → `stage2` (5)
-  - `stage1b` + loss → `stage1c` (3, fresh puzzle)
-  - `stage1c`, `stage2r`, `stage3` → terminal
-- Update `getStageResultMessage` for the new transitions.
-- Share text already uses `Attempt N` labels — no copy change needed; tile-count differences just show in emoji grid width.
+## Fix
 
-### 2. `src/pages/Index.tsx`
-- Replace the static `currentStageKey` derivation (~lines 220–223) with logic that derives the stage from prior rounds' outcomes in `data.rounds`.
-- Replace hardcoded `nextStage` logic (~684–690 and ~724–746) with `getNextStage(currentStageKey, correct)`.
-- Update `isFinal` / `canContinue`: daily ends after the 3rd attempt regardless of stage key (use `roundIndex === 2`, not `currentStageKey === 'stage3'`).
-- Resume logic (~282–290) walks `data.rounds` in order and applies `getNextStage` to determine which stage to load.
+Stop using `roundIndex` to decide whether the daily is over. Use the adaptive helper that already encodes terminality.
 
-### 3. Out of scope
-- DDA boost, practice mode, share-card layout, summary carousel structure, About modal copy, analytics. Attempt labels in summary/share already read "Attempt 1/2/3" and stay correct.
-- "Different style" already comes from per-puzzle `visualTheme` + regen seed — no extra theming work.
+### `src/pages/Index.tsx`
 
-## Verification
-Local play-through of all four branches via `?reset`, confirming color counts match the table and the summary carousel renders the right tile grids.
+1. **`canContinue`** — replace the `roundIndex < 2` check with a next-stage probe:
+   ```ts
+   const canContinue =
+     phase === 'result' &&
+     !alreadyFinished &&
+     getNextStage(currentStageKey, isCorrect) !== null;
+   ```
+   `getNextStage` already returns `null` for `stage1c`, `stage2r`, and `stage3` regardless of win/loss, which is exactly the "no more attempts" condition.
+
+2. **`isFinal` auto-transition (line 492)** — same change:
+   ```ts
+   const isFinal =
+     phase === 'result' &&
+     (alreadyFinished || getNextStage(currentStageKey, isCorrect) === null);
+   ```
+   This guarantees the result screen auto-transitions to the daily summary on every terminal attempt, not only when `roundIndex` reached 2.
+
+3. **`nextAttempt`** — already calls `getNextStage` and early-returns on `null`, so no change needed there. The `nextRoundIdx` math (`stage1b|stage2 → 1`, `stage1c|stage2r|stage3 → 2`) stays as-is; it's only used for the attempt tracker UI.
+
+No changes to `game.ts`, persistence, share text, summary, or analytics. The adaptive stage table is correct — only the two UI gates that bypassed it need fixing.
+
+### Verification
+
+After the patch, walk the four branches and confirm exactly 3 attempts each:
+
+- A1✓ A2✓ → stage1 → stage2 → stage3 (terminal). `getNextStage` returns null after A3.
+- A1✓ A2✗ → stage1 → stage2 → stage2r (terminal).
+- A1✗ A2✓ → stage1 → stage1b → stage2 (terminal). **This is the failing case today.**
+- A1✗ A2✗ → stage1 → stage1b → stage1c (terminal).
+
+In all four, after the 3rd attempt `getNextStage(currentStageKey, isCorrect)` is `null`, so `canContinue` is false and `isFinal` is true.
