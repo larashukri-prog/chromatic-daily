@@ -8,6 +8,7 @@ import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useA
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
 import { FifaOverlay } from '@/components/FifaOverlay';
+import { FifaPaletteProvider } from '@/components/FifaPaletteContext';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -59,22 +60,26 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
     : '—';
   const tilesDecoded = stats?.tilesDecoded ?? 0;
 
-  // One slide per stage (Stage 1/2/3), showing the player's FINAL attempt for
-  // that stage. Stage 2 may have ended on the 4-element 2b sub-puzzle.
-  const slides: AttemptSlide[] = [];
+  // Flatten attempts chronologically so the carousel always shows
+  // Attempt 1/2/3 regardless of which adaptive stage each lived under
+  // (stages collapse onto only 3 round indices, so a round-indexed view
+  // would leave the 3rd card empty on certain branches).
+  const allAttempts = rounds.flatMap((r) =>
+    r.attempts.map((a) => ({ attempt: a, roundSolution: r.solution })),
+  );
+  const slides: (AttemptSlide | null)[] = [];
   for (let i = 0; i < maxRounds; i++) {
-    const round = rounds.find((r) => r.roundIndex === i);
-    const last = round?.attempts[round.attempts.length - 1];
-    if (round && last) {
+    const entry = allAttempts[i];
+    if (entry) {
       slides.push({
-        attemptGrid: last.grid,
-        solution: last.solution ?? round.solution,
-        isCorrect: last.isCorrect,
-        roundIndex: round.roundIndex,
-        visualTheme: last.visualTheme as VisualTheme | undefined,
+        attemptGrid: entry.attempt.grid,
+        solution: entry.attempt.solution ?? entry.roundSolution,
+        isCorrect: entry.attempt.isCorrect,
+        roundIndex: i,
+        visualTheme: entry.attempt.visualTheme as VisualTheme | undefined,
       });
     } else {
-      slides.push(null as any);
+      slides.push(null);
     }
   }
   const totalSlides = maxRounds;
