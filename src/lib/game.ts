@@ -28,35 +28,70 @@ export const MAX_ROUNDS = 3;
 /** 2x3 grid — 2 columns x 3 rows = 6 slots total. */
 export const GRID_SIZE = 6;
 
-/** Stage identifiers for the daily 3-stage progression. */
-export type StageKey = 'stage1' | 'stage2' | 'stage2b' | 'stage3';
+/**
+ * Stage identifiers for the adaptive 3-attempt daily.
+ * Progression rules (win → step up, loss → repeat same tier with fresh puzzle):
+ *   stage1 (3) → win→stage2 (5)        / loss→stage1b (3, fresh)
+ *   stage1b (3) → win→stage2 (5)       / loss→stage1c (3, fresh)
+ *   stage2 (5) → win→stage3 (6)        / loss→stage2r (5, fresh)
+ *   stage1c / stage2r / stage3 are terminal (3rd attempt).
+ */
+export type StageKey =
+  | 'stage1'
+  | 'stage1b'
+  | 'stage1c'
+  | 'stage2'
+  | 'stage2r'
+  | 'stage3';
 
-/** Color counts per stage. Stage 2 falls back to 2b (4 elements) on failure. */
 export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
   stage1: 3,
+  stage1b: 3,
+  stage1c: 3,
   stage2: 5,
-  stage2b: 4,
+  stage2r: 5,
   stage3: 6,
 };
 
 /** Seed offsets so every user worldwide gets the same puzzle per stage. */
 const STAGE_SEED_OFFSETS: Record<StageKey, number> = {
   stage1: 1000,
+  stage1b: 1500,
+  stage1c: 1750,
   stage2: 2000,
-  stage2b: 2500,
+  stage2r: 2500,
   stage3: 3000,
 };
 
-/** Stage 1-based numeric index (1 / 2 / 3) for any stage key (2b counts as 2). */
+/** Attempt number (1 / 2 / 3) this stage represents. */
 export function stageNumber(stage: StageKey): 1 | 2 | 3 {
   if (stage === 'stage1') return 1;
-  if (stage === 'stage3') return 3;
-  return 2;
+  if (stage === 'stage1b' || stage === 'stage2') return 2;
+  return 3; // stage1c, stage2r, stage3
 }
 
 /** Map a stage to the persisted roundIndex slot (0/1/2). */
 export function stageToRoundIndex(stage: StageKey): number {
   return stageNumber(stage) - 1;
+}
+
+/**
+ * Adaptive next-stage selector. Win steps difficulty up, loss repeats the
+ * current tier with a fresh puzzle. Returns null for terminal stages.
+ */
+export function getNextStage(stage: StageKey, wasCorrect: boolean): StageKey | null {
+  switch (stage) {
+    case 'stage1':
+      return wasCorrect ? 'stage2' : 'stage1b';
+    case 'stage1b':
+      return wasCorrect ? 'stage2' : 'stage1c';
+    case 'stage2':
+      return wasCorrect ? 'stage3' : 'stage2r';
+    case 'stage1c':
+    case 'stage2r':
+    case 'stage3':
+      return null;
+  }
 }
 
 // Seeded random based on date for consistent daily puzzle
@@ -394,58 +429,56 @@ export function getStreaks() {
 }
 
 /**
- * Per-stage result copy.
- * `nextStage` describes what the game will do AFTER this attempt:
- *   - 'stage2'  → advancing to Stage 2 main
- *   - 'stage2b' → Stage 2 main was failed; dropping to 4-element Stage 2b
- *   - 'stage3'  → advancing to Stage 3
- *   - 'regen'   → same stage, regenerated puzzle (Stage 1 fail or Stage 2b fail)
- *   - 'done'    → daily complete (Stage 3 attempt, win or lose)
+ * Per-stage result copy. Messaging is driven by the NEXT stage's tile count
+ * (or 'done' when the daily ends), so adaptive failure paths read naturally.
  */
 export function getStageResultMessage(
-  stage: StageKey,
+  _stage: StageKey,
   isCorrect: boolean,
-  nextStage: 'stage2' | 'stage3' | 'done',
+  nextStage: StageKey | 'done',
   theme?: string,
 ): string {
   const fifa = theme === 'fifa';
 
-  if (isCorrect) {
-    if (nextStage === 'stage2') {
+  if (nextStage === 'done') {
+    if (isCorrect) {
       return fifa
-        ? "Goal! 1–0. Stage 2 kicks off with 5 elements — keep your shape."
-        : "Nailed it. Stage 2 brings 5 elements — let's keep the rhythm going.";
+        ? 'Full Time — World-class form! You took the daily.'
+        : 'Daily complete. Perfect close — incredible recall.';
     }
-    if (nextStage === 'stage3') {
-      return fifa
-        ? "Brace yourself — Stage 3 is the title decider: 6 elements, full pitch."
-        : "Locked in. Stage 3 fills the whole grid with 6 elements. Final round.";
-    }
-    if (nextStage === 'done') {
-      return fifa
-        ? "Full Time — World-class form! You took the daily."
-        : "Daily complete. Perfect close on Stage 3 — incredible recall.";
-    }
-    return fifa ? "Goal!" : "Got it!";
+    return fifa
+      ? 'Final whistle. The daily slipped away — see you tomorrow.'
+      : "That's a wrap — fresh challenge tomorrow.";
   }
 
-  // Failed — advance to next stage anyway. Three stages, three attempts.
-  if (nextStage === 'stage2') {
-    return fifa
-      ? "Wide of the post. Stage 2 kicks off — 5 elements, fresh start."
-      : "Not quite. Stage 2 is next — 5 elements, fresh start.";
+  const nextCount = STAGE_COLOR_COUNTS[nextStage];
+
+  if (isCorrect) {
+    if (nextCount === 5) {
+      return fifa
+        ? 'Goal! Next up: 5 elements — keep your shape.'
+        : "Nailed it. Next attempt brings 5 elements — keep the rhythm.";
+    }
+    if (nextCount === 6) {
+      return fifa
+        ? 'Brace yourself — final attempt: 6 elements, full pitch.'
+        : 'Locked in. Final attempt fills the grid with 6 elements.';
+    }
+    return fifa ? 'Goal!' : 'Got it!';
   }
-  if (nextStage === 'stage3') {
+
+  // Wrong — repeat the same tier with a fresh puzzle.
+  if (nextCount === 3) {
     return fifa
-      ? "Off target. Stage 3 is the title decider — 6 elements, full pitch."
-      : "Close. Stage 3 is the final round — 6 elements, full grid.";
+      ? 'Wide of the post. Same shape, new pattern — 3 elements again.'
+      : 'Not quite. Same 3 elements, a fresh pattern — give it another go.';
   }
-  if (nextStage === 'done') {
+  if (nextCount === 5) {
     return fifa
-      ? "Final whistle. Stage 3 slipped away — see you tomorrow."
-      : "That's a wrap. Stage 3 wasn't yours today — fresh challenge tomorrow.";
+      ? 'Off target. Another 5-element pattern coming up.'
+      : 'Close. Another 5-element pattern is next.';
   }
-  return "Not quite — try again.";
+  return 'Not quite — try again.';
 }
 
 /** Back-compat alias used by older call sites. */

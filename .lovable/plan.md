@@ -1,20 +1,42 @@
-## Change scope
+## Goal
+Make the 3 daily attempts adaptive so failures don't feel punishing: failure keeps difficulty flat, success ramps it up.
 
-Rename the per-stage labels in the shared result and on-page Daily Summary carousel from "Stage X · N" / "Stage X of 3" to "Attempt X" / "Attempt X of 3", and remove the "3-Stage Daily" tagline from the shared text.
+## New progression rules
 
-## Edits
+| State entering attempt | Attempt 1 | Attempt 2 | Attempt 3 |
+|---|---|---|---|
+| A1✓, A2✓ | 3 | 5 | 6 |
+| A1✓, A2✗ | 3 | 5 | 5 (different puzzle) |
+| A1✗, A2✓ | 3 | 3 (different style) | 5 |
+| A1✗, A2✗ | 3 | 3 | 3 |
 
-**`src/lib/game.ts`** — `generateShareText`:
-- Remove the `${dayName} | 3-Stage Daily` line; keep `Chromatic #N` plus the day name alone (e.g. `Sunday`).
-- Replace `stageHeader` so every row is `Attempt ${i + 1}` (no tile-count suffix, no special-case for index 1).
-- Update the unplayed fallback from `Stage ${i + 1} ⬜` to `Attempt ${i + 1} ⬜`.
+Rule of thumb: **win → step up; loss → repeat the same tier with a fresh puzzle**.
 
-**`src/components/DailySummary.tsx`** — `SlideContent` header:
-- Change `Stage {slideIndex + 1} of {totalSlides}` to `Attempt {slideIndex + 1} of {totalSlides}`.
-- Apply the same change to the `UnplayedSlide` header for consistency.
+## Changes
 
-## Out of scope
+### 1. `src/lib/game.ts`
+- Add new stage keys: `stage1b` (3 colors), `stage1c` (3 colors, third attempt after two losses), `stage2r` (5 colors, repeat). Retire `stage2b` (4-color fallback) — no longer used.
+- Update `STAGE_COLOR_COUNTS`, `STAGE_SEED_OFFSETS`, `stageNumber`, and `stageToRoundIndex` accordingly.
+- Add helper `getNextStage(currentStage, wasCorrect)`:
+  - `stage1` + win → `stage2` (5)
+  - `stage1` + loss → `stage1b` (3, fresh puzzle)
+  - `stage2` + win → `stage3` (6)
+  - `stage2` + loss → `stage2r` (5 repeat, fresh puzzle)
+  - `stage1b` + win → `stage2` (5)
+  - `stage1b` + loss → `stage1c` (3, fresh puzzle)
+  - `stage1c`, `stage2r`, `stage3` → terminal
+- Update `getStageResultMessage` for the new transitions.
+- Share text already uses `Attempt N` labels — no copy change needed; tile-count differences just show in emoji grid width.
 
-- In-game stage messaging (`getStageResultMessage` copy still references "Stage 2/3" — those are gameplay nudges, not result labels).
-- The "3-Stage Daily" explainer paragraph in the About modal (`src/pages/Index.tsx` ~line 1473) — that's marketing copy describing the format, not the share/summary label.
-- Tile counts, emoji grid, metrics block, share buttons, layout.
+### 2. `src/pages/Index.tsx`
+- Replace the static `currentStageKey` derivation (~lines 220–223) with logic that derives the stage from prior rounds' outcomes in `data.rounds`.
+- Replace hardcoded `nextStage` logic (~684–690 and ~724–746) with `getNextStage(currentStageKey, correct)`.
+- Update `isFinal` / `canContinue`: daily ends after the 3rd attempt regardless of stage key (use `roundIndex === 2`, not `currentStageKey === 'stage3'`).
+- Resume logic (~282–290) walks `data.rounds` in order and applies `getNextStage` to determine which stage to load.
+
+### 3. Out of scope
+- DDA boost, practice mode, share-card layout, summary carousel structure, About modal copy, analytics. Attempt labels in summary/share already read "Attempt 1/2/3" and stay correct.
+- "Different style" already comes from per-puzzle `visualTheme` + regen seed — no extra theming work.
+
+## Verification
+Local play-through of all four branches via `?reset`, confirming color counts match the table and the summary carousel renders the right tile grids.

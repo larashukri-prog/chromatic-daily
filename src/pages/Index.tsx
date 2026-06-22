@@ -21,6 +21,7 @@ import {
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
+  getNextStage,
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
@@ -216,11 +217,8 @@ const Index = () => {
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
 
-  // Derive the active stage key from roundIndex + substage.
-  const currentStageKey: StageKey =
-    roundIndex === 0 ? 'stage1'
-    : roundIndex === 1 ? (substage === '2b' ? 'stage2b' : 'stage2')
-    : 'stage3';
+  // Active stage drives the puzzle; updated whenever we advance attempts.
+  const [currentStageKey, setCurrentStageKey] = useState<StageKey>('stage1');
   const stageNum: 1 | 2 | 3 = (roundIndex + 1) as 1 | 2 | 3;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
@@ -253,6 +251,7 @@ const Index = () => {
       setAttemptInRound(1);
       setSubstage('main');
       setRegenIndex(0);
+      setCurrentStageKey('stage1');
       const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
       setSolution(sol);
       setActiveColors(ac);
@@ -275,26 +274,24 @@ const Index = () => {
         setPhase('result');
       }
     } else {
-      // Derive the active stage from persisted rounds. One attempt per stage,
-      // win or lose advances to the next stage.
-      const s1 = info.rounds.find((r) => r.roundIndex === 0);
-      const s2 = info.rounds.find((r) => r.roundIndex === 1);
+      // Walk persisted rounds in order, applying adaptive next-stage rules.
       let stage: StageKey = 'stage1';
-      const sub: 'main' | '2b' = 'main';
-      const regen = 0;
-      let rIdx = 0;
-      if (s2 && s2.attempts.length > 0) {
-        stage = 'stage3';
-        rIdx = 2;
-      } else if (s1 && s1.attempts.length > 0) {
-        stage = 'stage2';
-        rIdx = 1;
+      for (let i = 0; i < 2; i++) {
+        const r = info.rounds.find((rr) => rr.roundIndex === i);
+        const last = r?.attempts[r.attempts.length - 1];
+        if (!last) break;
+        const next = getNextStage(stage, last.isCorrect);
+        if (!next) break;
+        stage = next;
       }
-      setRoundIndex(rIdx);
-      setSubstage(sub);
-      setRegenIndex(regen);
+      const computedRoundIdx = stage === 'stage1' ? 0
+        : (stage === 'stage1b' || stage === 'stage2') ? 1 : 2;
+      setRoundIndex(computedRoundIdx);
+      setSubstage('main');
+      setRegenIndex(0);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateStageSolution(stage, regen);
+      setCurrentStageKey(stage);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0);
       setSolution(sol);
       setActiveColors(ac);
     }
@@ -492,14 +489,14 @@ const Index = () => {
   useEffect(() => {
     if (isFreeplay) return; // No auto-dismiss in freeplay
     // Final = the Stage 3 attempt (win or loss) is on screen.
-    const isFinal = phase === 'result' && (currentStageKey === 'stage3' || alreadyFinished);
+    const isFinal = phase === 'result' && (roundIndex >= 2 || alreadyFinished);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, currentStageKey, alreadyFinished, isFreeplay]);
+  }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
@@ -680,27 +677,23 @@ const Index = () => {
         setStarsEarned(prev => prev + 1);
       }
 
-      // Determine the NEXT stage based on outcome. Win or lose, advance one stage.
-      const nextStage: 'stage2' | 'stage3' | 'done' = (() => {
-        if (currentStageKey === 'stage3') return 'done';
-        if (currentStageKey === 'stage1') return 'stage2';
-        return 'stage3';
-      })();
-
-      const msg = getStageResultMessage(currentStageKey, correct, nextStage, visualTheme);
+      // Adaptive next stage: win steps up difficulty, loss repeats the tier.
+      const nextStageKey = getNextStage(currentStageKey, correct);
+      const nextStageArg: StageKey | 'done' = nextStageKey ?? 'done';
+      const msg = getStageResultMessage(currentStageKey, correct, nextStageArg, visualTheme);
       setResultMessage(msg);
 
-      // FIFA: fire blue/gold confetti when the player WINS Stage 3.
-      const isDailyDone = currentStageKey === 'stage3';
+      // FIFA: fire blue/gold confetti when the daily is won on the final attempt.
+      const isDailyDone = nextStageKey === null;
       if (visualTheme === 'fifa' && correct && isDailyDone) {
-        const key = `stage3:win`;
+        const key = `final:win`;
         if (fifaCelebrationKey.current !== key) {
           fifaCelebrationKey.current = key;
           fireFifaCelebration();
         }
       }
 
-      const done = currentStageKey === 'stage3'; // win OR loss ends the daily
+      const done = nextStageKey === null; // win OR loss on final attempt ends the daily
       if (done || savedData.finished) {
         setAlreadyFinished(true);
       }
@@ -715,35 +708,23 @@ const Index = () => {
     }, 1500);
   };
 
-  const canContinue = phase === 'result' && currentStageKey !== 'stage3' && !alreadyFinished;
+  const canContinue = phase === 'result' && roundIndex < 2 && !alreadyFinished;
 
   const nextAttempt = () => {
     setShowResult(false);
 
-    // Compute the next stage based on current state + last outcome.
-    let nextStage: StageKey = currentStageKey;
-    let nextRoundIdx = roundIndex;
-    let nextSubstage: 'main' | '2b' = substage;
-    let nextRegen = regenIndex;
+    // Adaptive advance using the last attempt's outcome.
+    const nextStage = getNextStage(currentStageKey, isCorrect);
+    if (!nextStage) return; // terminal — daily is done
+    const nextRoundIdx = nextStage === 'stage1' ? 0
+      : (nextStage === 'stage1b' || nextStage === 'stage2') ? 1 : 2;
 
-    // Win or lose: always advance to the next stage. Three stages, three attempts.
-    if (currentStageKey === 'stage1') {
-      nextStage = 'stage2';
-      nextRoundIdx = 1;
-      nextSubstage = 'main';
-      nextRegen = 0;
-    } else if (currentStageKey === 'stage2' || currentStageKey === 'stage2b') {
-      nextStage = 'stage3';
-      nextRoundIdx = 2;
-      nextSubstage = 'main';
-      nextRegen = 0;
-    }
-
+    setCurrentStageKey(nextStage);
     setRoundIndex(nextRoundIdx);
-    setSubstage(nextSubstage);
-    setRegenIndex(nextRegen);
+    setSubstage('main');
+    setRegenIndex(0);
     setAttemptInRound(1);
-    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, nextRegen);
+    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, 0);
     setSolution(sol);
     setActiveColors(ac);
 
