@@ -336,13 +336,12 @@ export function getCurrentRoundInfo(): { roundIndex: number; totalAttemptsUsed: 
   if (!data) return { roundIndex: 0, totalAttemptsUsed: 0, finished: false, rounds: [] };
 
   const totalUsed = data.rounds.reduce((sum, r) => sum + r.attempts.length, 0);
-  // Daily ends the moment Stage 3 records an attempt (win OR lose).
-  const stage3Round = data.rounds.find(r => r.roundIndex === 2);
-  const stage3Attempted = !!stage3Round && stage3Round.attempts.length > 0;
+  // Daily ends after 3 total attempts (adaptive paths may never reach roundIndex 2).
+  const reachedMax = totalUsed >= MAX_ROUNDS;
   // Current round = next unsolved stage; if everything solved, point to last.
   const solvedCount = data.rounds.filter(r => r.solved).length;
   const currentRound = Math.min(solvedCount, MAX_ROUNDS - 1);
-  const finished = data.finished || stage3Attempted;
+  const finished = data.finished || reachedMax;
 
   return { roundIndex: currentRound, totalAttemptsUsed: totalUsed, finished, rounds: data.rounds };
 }
@@ -374,9 +373,10 @@ export function saveRoundAttempt(
   round.solution = solution; // update to latest solution for this round
   if (isCorrect) round.solved = true;
 
-  // Daily is over the moment Stage 3 records an attempt (win or loss).
+  // Daily is over after MAX_ROUNDS total attempts (adaptive paths may stay on roundIndex 0/1).
+  const totalAttempts = rounds.reduce((sum, r) => sum + r.attempts.length, 0);
+  const finished = totalAttempts >= MAX_ROUNDS;
   const stage3 = rounds.find(r => r.roundIndex === 2);
-  const finished = !!stage3 && stage3.attempts.length > 0;
 
   // Streak logic — only update when finishing for the first time today
   let currentStreak = existing?.currentStreak ?? 0;
