@@ -50,21 +50,16 @@ function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
  */
 export function getFifaImageMap(
   date: Date = new Date(),
-  activeHexes?: string[],
+  _activeHexes?: string[],
 ): Record<string, SlotEntry> {
   const map: Record<string, SlotEntry> = {};
 
-  // Pool of hexes that should receive a real flag. When the caller provides
-  // the active stage palette, restrict flag assignment to those hexes so a
-  // 3-color stage maps 3 flags to 3 active hexes (not 3 random chromatic
-  // slots that may not be in play). Fall back to the full 6 chromatic slots
-  // for previews/pickers that iterate the whole palette.
-  const eligible = (activeHexes && activeHexes.length
-    ? activeHexes
-    : FLAG_SLOT_HEXES
-  ).map((h) => h.toUpperCase());
-
-  const flags = currentDayFlags.slice(0, Math.max(eligible.length, FLAG_SLOT_HEXES.length));
+  // Flag assignment is canonical: every chromatic hex always maps to the
+  // same flag for a given date, regardless of which subset is currently
+  // in play. This guarantees the picker chip and the placed grid slot
+  // render the exact same flag.
+  const eligible = FLAG_SLOT_HEXES.map((h) => h.toUpperCase());
+  const flags = currentDayFlags.slice(0, eligible.length);
   const slotOrder = dateSeededShuffle(eligible, date);
 
   for (let i = 0; i < slotOrder.length; i++) {
@@ -87,10 +82,12 @@ interface FifaOverlayProps {
 /** Hex-keyed image overlay for the FIFA theme. Renders a flag, the Cup,
  *  or the Ball depending on which hex slot is being painted. */
 export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps) {
-  const { activeHexes } = useFifaPalette();
+  // Read context to keep hook order stable, but the mapping itself is
+  // canonical so picker and grid always agree.
+  useFifaPalette();
   if (!colorHex) return null;
   const up = colorHex.toUpperCase();
-  const map = getFifaImageMap(date ?? new Date(), activeHexes);
+  const map = getFifaImageMap(date ?? new Date());
   const entry = map[up] ?? map[colorHex];
   if (!entry) return null;
 
