@@ -1643,7 +1643,7 @@ const Index = () => {
 
 // Wrap in ErrorBoundary
 import { GameErrorBoundary } from '@/components/GameErrorBoundary';
-import { FifaPaletteProvider } from '@/components/FifaPaletteContext';
+import { FifaPaletteProvider, FIFA_DEFAULT_PALETTE_HEXES } from '@/components/FifaPaletteContext';
 const IndexWithErrorBoundary = () => (
   <GameErrorBoundary>
     <Index />
