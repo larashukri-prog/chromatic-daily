@@ -216,11 +216,8 @@ const Index = () => {
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
 
-  // Derive the active stage key from roundIndex + substage.
-  const currentStageKey: StageKey =
-    roundIndex === 0 ? 'stage1'
-    : roundIndex === 1 ? (substage === '2b' ? 'stage2b' : 'stage2')
-    : 'stage3';
+  // Active stage drives the puzzle; updated whenever we advance attempts.
+  const [currentStageKey, setCurrentStageKey] = useState<StageKey>('stage1');
   const stageNum: 1 | 2 | 3 = (roundIndex + 1) as 1 | 2 | 3;
   const dayNum = getDayNumber();
   const [streaks, setStreaks] = useState(getStreaks());
