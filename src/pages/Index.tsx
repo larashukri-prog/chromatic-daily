@@ -273,26 +273,25 @@ const Index = () => {
         setPhase('result');
       }
     } else {
-      // Derive the active stage from persisted rounds. One attempt per stage,
-      // win or lose advances to the next stage.
-      const s1 = info.rounds.find((r) => r.roundIndex === 0);
-      const s2 = info.rounds.find((r) => r.roundIndex === 1);
+      // Walk persisted rounds in order, applying adaptive next-stage rules.
       let stage: StageKey = 'stage1';
-      const sub: 'main' | '2b' = 'main';
-      const regen = 0;
-      let rIdx = 0;
-      if (s2 && s2.attempts.length > 0) {
-        stage = 'stage3';
-        rIdx = 2;
-      } else if (s1 && s1.attempts.length > 0) {
-        stage = 'stage2';
-        rIdx = 1;
+      for (let i = 0; i < 2; i++) {
+        const r = info.rounds.find((rr) => rr.roundIndex === i);
+        const last = r?.attempts[r.attempts.length - 1];
+        if (!last) break;
+        const next = getNextStage(stage, last.isCorrect);
+        if (!next) break;
+        stage = next;
       }
-      setRoundIndex(rIdx);
-      setSubstage(sub);
-      setRegenIndex(regen);
+      const rIdx = i => i; // noop
+      const computedRoundIdx = stage === 'stage1' ? 0
+        : (stage === 'stage1b' || stage === 'stage2') ? 1 : 2;
+      setRoundIndex(computedRoundIdx);
+      setSubstage('main');
+      setRegenIndex(0);
       setAttemptInRound(1);
-      const { solution: sol, activeColors: ac } = generateStageSolution(stage, regen);
+      setCurrentStageKey(stage);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0);
       setSolution(sol);
       setActiveColors(ac);
     }
