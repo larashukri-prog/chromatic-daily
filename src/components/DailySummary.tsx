@@ -246,7 +246,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
           <XCircle className="w-4 h-4 text-destructive" />
         )}
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Stage {slideIndex + 1} of {totalSlides}
+          Attempt {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
       {slide.isCorrect ? (
@@ -378,7 +378,7 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
       <div className="flex items-center justify-center gap-2 mb-1">
         <span className="w-4 h-4 rounded-full bg-muted inline-block" />
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Stage {slideIndex + 1} of {totalSlides}
+          Attempt {slideIndex + 1} of {totalSlides}
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
