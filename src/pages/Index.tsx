@@ -283,7 +283,6 @@ const Index = () => {
         if (!next) break;
         stage = next;
       }
-      const rIdx = i => i; // noop
       const computedRoundIdx = stage === 'stage1' ? 0
         : (stage === 'stage1b' || stage === 'stage2') ? 1 : 2;
       setRoundIndex(computedRoundIdx);
