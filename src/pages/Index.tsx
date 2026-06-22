@@ -1637,6 +1637,7 @@ const Index = () => {
         </p>
       </footer>
     </div>
+    </FifaPaletteProvider>
   );
 };
 
