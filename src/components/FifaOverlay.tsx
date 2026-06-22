@@ -87,8 +87,8 @@ interface FifaOverlayProps {
 /** Hex-keyed image overlay for the FIFA theme. Renders a flag, the Cup,
  *  or the Ball depending on which hex slot is being painted. */
 export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps) {
-  if (!colorHex) return null;
   const { activeHexes } = useFifaPalette();
+  if (!colorHex) return null;
   const up = colorHex.toUpperCase();
   const map = getFifaImageMap(date ?? new Date(), activeHexes);
   const entry = map[up] ?? map[colorHex];
