@@ -169,9 +169,9 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
             {fifa ? 'Full Time — Goal!' : 'Daily Challenge Complete'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {dayName === 'Sunday'
-              ? (fifa ? 'Final whistle! Kickoff resets tomorrow.' : 'Master Challenge Complete! A fresh start begins tomorrow.')
-              : (fifa ? 'Tomorrow’s kickoff brings a tougher matchup!' : 'Tomorrow will be even more challenging!')}
+            {solvedCount > 0
+              ? 'Perfect sequence. See you tomorrow.'
+              : 'Visual overload. Rest your eyes and come back stronger tomorrow.'}
           </p>
         </div>
 
