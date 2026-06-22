@@ -1,18 +1,19 @@
-## Plan
+## Summary
+Replace the static end-game subtext in `DailySummary` with conditional win/loss messaging based on whether the player solved at least one round.
 
-Fix the FIFA flag rendering regression by making the flag mapping stable between the color picker and the game grid.
+## Scope
+- File: `src/components/DailySummary.tsx`
+- Lines ~167–176 ("Rest indicator" block)
+- No CSS, game logic, result counting, or UI structure changes.
 
-### What is wrong
-- The picker was wrapped with the full 6-color FIFA palette, so every picker chip gets a flag.
-- The game grid is wrapped with only the current stage colors, so the same hex can map differently—or not map at all—after placement.
-- Result: a flag looks valid in the picker, but the placed slot can render as a white circle.
+## Changes
+1. Derive `hasWon` from existing `solvedCount` (`rounds.filter(r => r.solved).length > 0`).
+2. Keep the existing header line (`Daily Challenge Complete` / `Full Time — Goal!`) untouched.
+3. Replace the subtext paragraph:
+   - If `hasWon` → `"Perfect sequence. See you tomorrow."`
+   - If `!hasWon` → `"Visual overload. Rest your eyes and come back stronger tomorrow."`
+4. Remove the day-name branching (`Sunday` vs other days) and FIFA-themed branching for this subtext only — the user provided exact strings for both states.
 
-### Changes
-1. Update `FifaOverlay` / `getFifaImageMap` so flag assignment is deterministic by the canonical 6 color slots, not by whatever subset a caller provides.
-2. Keep `activeHexes` only as an optional visibility/filter hint where needed, without changing which flag belongs to which color hex.
-3. Ensure Stage 1 still has 3 active flags in the board, while picker chips and placed grid slots use the same hex-to-flag mapping.
-4. Do not alter CSS layout, game progression, saved state, or core game phases.
-
-### QA
-- Verify FIFA mode recall: select each picker flag and place it into a slot; the slot should show the same flag, not a blank white circle.
-- Verify Stage 1 board still shows flags for all active colors.
+## Technical Details
+- The change is a single conditional text swap inside the already-rendered `<p className="text-sm text-muted-foreground mt-1">`.
+- No new props are added to `DailySummary`; `hasWon` is computed locally from existing `rounds` data.
