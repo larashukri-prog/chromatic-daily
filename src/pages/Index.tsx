@@ -488,14 +488,14 @@ const Index = () => {
   useEffect(() => {
     if (isFreeplay) return; // No auto-dismiss in freeplay
     // Final = the Stage 3 attempt (win or loss) is on screen.
-    const isFinal = phase === 'result' && (currentStageKey === 'stage3' || alreadyFinished);
+    const isFinal = phase === 'result' && (roundIndex >= 2 || alreadyFinished);
     if (showResult && isFinal) {
       const timer = setTimeout(() => {
         setShowResult(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showResult, phase, currentStageKey, alreadyFinished, isFreeplay]);
+  }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay]);
 
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
