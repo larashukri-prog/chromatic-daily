@@ -1,4 +1,5 @@
 import fillerAsset from '@/assets/fifa/filler.png.asset.json';
+import { useFifaPalette } from '@/components/FifaPaletteContext';
 
 // Update this array daily with the direct flag image URLs of teams playing.
 const currentDayFlags: string[] = [
@@ -49,19 +50,28 @@ function dateSeededShuffle<T>(arr: T[], date: Date): T[] {
  */
 export function getFifaImageMap(
   date: Date = new Date(),
+  activeHexes?: string[],
 ): Record<string, SlotEntry> {
   const map: Record<string, SlotEntry> = {};
 
-  const flags = currentDayFlags.slice(0, FLAG_SLOT_HEXES.length);
-  const N = flags.length;
-  const slotOrder = dateSeededShuffle(FLAG_SLOT_HEXES, date);
+  // Pool of hexes that should receive a real flag. When the caller provides
+  // the active stage palette, restrict flag assignment to those hexes so a
+  // 3-color stage maps 3 flags to 3 active hexes (not 3 random chromatic
+  // slots that may not be in play). Fall back to the full 6 chromatic slots
+  // for previews/pickers that iterate the whole palette.
+  const eligible = (activeHexes && activeHexes.length
+    ? activeHexes
+    : FLAG_SLOT_HEXES
+  ).map((h) => h.toUpperCase());
 
-  for (let i = 0; i < N; i++) {
-    map[slotOrder[i]] = { kind: 'flagUrl', url: flags[i] };
-  }
-  // Remaining chromatic slots get the filler image (never Cup/Ball).
-  for (let i = N; i < slotOrder.length; i++) {
-    map[slotOrder[i]] = { kind: 'filler' };
+  const flags = currentDayFlags.slice(0, Math.max(eligible.length, FLAG_SLOT_HEXES.length));
+  const slotOrder = dateSeededShuffle(eligible, date);
+
+  for (let i = 0; i < slotOrder.length; i++) {
+    const flag = flags[i % flags.length];
+    map[slotOrder[i]] = flag
+      ? { kind: 'flagUrl', url: flag }
+      : { kind: 'filler' };
   }
 
   return map;
@@ -77,9 +87,10 @@ interface FifaOverlayProps {
 /** Hex-keyed image overlay for the FIFA theme. Renders a flag, the Cup,
  *  or the Ball depending on which hex slot is being painted. */
 export function FifaOverlay({ colorHex, className = '', date }: FifaOverlayProps) {
+  const { activeHexes } = useFifaPalette();
   if (!colorHex) return null;
   const up = colorHex.toUpperCase();
-  const map = getFifaImageMap(date ?? new Date());
+  const map = getFifaImageMap(date ?? new Date(), activeHexes);
   const entry = map[up] ?? map[colorHex];
   if (!entry) return null;
 
