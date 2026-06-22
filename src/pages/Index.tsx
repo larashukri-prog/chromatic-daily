@@ -21,6 +21,7 @@ import {
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
+  getNextStage,
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
