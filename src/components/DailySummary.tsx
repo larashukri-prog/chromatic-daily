@@ -234,6 +234,16 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
 
+  // Active hexes for this attempt (so FIFA flag mapping matches the puzzle
+  // that was actually played, not the current/global stage palette).
+  const slideActiveHexes = Array.from(
+    new Set(
+      [...solution, ...playerGrid].filter(
+        (h): h is string => typeof h === 'string',
+      ).map((h) => h.toUpperCase()),
+    ),
+  );
+
   const result = solution.map((c, i) => {
     if (c === null) return playerGrid[i] === null;
     return playerGrid[i] === c;
@@ -242,6 +252,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
 
   return (
+    <FifaPaletteProvider activeHexes={slideActiveHexes}>
     <div className="text-center">
       {/* Round header */}
       <div className="flex items-center justify-center gap-2 mb-1">
@@ -374,6 +385,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </button>
       )}
     </div>
+    </FifaPaletteProvider>
   );
 }
 
