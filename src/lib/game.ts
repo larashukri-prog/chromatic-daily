@@ -470,14 +470,11 @@ export function generateShareText(
 
   // Build per-stage summary lines. Each stage shows the FINAL attempt the player
   // landed on (Stage 2 may have ended on the 4-element 2b sub-puzzle).
-  const stageHeader = (idx: number, tileCount: number): string => {
-    if (idx === 1) return `Stage 2 · ${tileCount}`;
-    return `Stage ${idx} · ${tileCount}`;
-  };
+  const stageHeader = (idx: number, _tileCount: number): string => `Attempt ${idx}`;
 
   const lines: string[] = [
     `Chromatic #${dayNum}`,
-    `${dayName} | 3-Stage Daily`,
+    dayName,
     '',
   ];
 
@@ -502,7 +499,7 @@ export function generateShareText(
       lines.push(cells.slice(2, 4).join(''));
       lines.push(cells.slice(4, 6).join(''));
     } else {
-      lines.push(`Stage ${i + 1} ⬜`);
+      lines.push(`Attempt ${i + 1} ⬜`);
       lines.push('⚪⚪');
       lines.push('⚪⚪');
       lines.push('⚪⚪');
