@@ -486,8 +486,6 @@ export function getResultMessage(_roundIndex: number, _attemptInRound: number, i
   return getStageResultMessage('stage1', isCorrect, 'stage2', theme);
 }
 
-export function generateShareText(
-
 export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: string } {
   const wins = rounds.reduce(
     (sum, r) => sum + r.attempts.filter(a => a.isCorrect).length,
@@ -502,7 +500,7 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
   return { label: 'Resilient 💪', sublabel: 'Way to fight back. Try for flawless tomorrow.' };
 }
 
-function _generateShareText_placeholder(
+export function generateShareText(
   rounds: RoundData[],
   starsEarned: number = 0,
   totalFocusSeconds: number = 0,
