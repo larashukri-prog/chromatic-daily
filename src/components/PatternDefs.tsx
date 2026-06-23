@@ -13,6 +13,7 @@ export const PATTERN_IDS = [
   'pattern-diagonal-45',
   'pattern-crosshatch',
   'pattern-polka-dots',
+  'pattern-checkerboard',
 ];
 
 export function getPatternId(colorHex: string): string {

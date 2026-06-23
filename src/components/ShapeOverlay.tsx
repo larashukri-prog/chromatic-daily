@@ -1,5 +1,5 @@
 import {
-  FaHeart, FaStar, FaCat, FaTree, FaMoon, FaFish,
+  FaHeart, FaStar, FaCat, FaTree, FaMoon, FaFish, FaDroplet,
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 
@@ -11,6 +11,7 @@ export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#2DD4D4': FaCat,        // Teal
   '#8B5CF6': FaMoon,       // Purple
   '#7AC00F': FaFish,       // Lime
+  '#EC4899': FaDroplet,    // Pink
 };
 
 interface ShapeOverlayProps {
