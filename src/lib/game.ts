@@ -486,6 +486,20 @@ export function getResultMessage(_roundIndex: number, _attemptInRound: number, i
   return getStageResultMessage('stage1', isCorrect, 'stage2', theme);
 }
 
+export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: string } {
+  const wins = rounds.reduce(
+    (sum, r) => sum + r.attempts.filter(a => a.isCorrect).length,
+    0,
+  );
+  if (wins >= MAX_ROUNDS) {
+    return { label: 'Flawless ✨', sublabel: 'Absolute clarity. See you tomorrow.' };
+  }
+  if (wins <= 0) {
+    return { label: 'Overloaded 😵\u200d💫', sublabel: 'Sequence broken. Fresh start at midnight.' };
+  }
+  return { label: 'Resilient 💪', sublabel: 'Way to fight back. Try for flawless tomorrow.' };
+}
+
 export function generateShareText(
   rounds: RoundData[],
   starsEarned: number = 0,
@@ -508,6 +522,7 @@ export function generateShareText(
   const lines: string[] = [
     `Chromatic #${dayNum}`,
     dayName,
+    getResultBadge(rounds).label,
     '',
   ];
 
