@@ -244,7 +244,7 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Picker shows the six chromatic colors only — no Black/White anchors.
+  // Picker shows all seven chromatic colors at every stage — pool > grid forces recall over elimination.
   const pickerColors = COLORS;
 
   useEffect(() => {
