@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { NEUTRAL, RoundData, generateSolution, GRID_SIZE } from '@/lib/game';
+import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
 import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
@@ -89,6 +89,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
   const next = () => { setSwipeDir(1); setActiveSlide((s) => Math.min(totalSlides - 1, s + 1)); };
 
   const solvedCount = rounds.filter((r) => r.solved).length;
+  const resultBadge = getResultBadge(rounds);
 
   return (
     <div className="w-full max-w-sm mx-auto">
@@ -166,12 +167,10 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         {/* Rest indicator */}
         <div className="px-6 py-4 text-center border-t border-border">
           <p className="font-semibold text-foreground text-base">
-            {fifa ? 'Full Time — Goal!' : 'Daily Challenge Complete'}
+            {resultBadge.label}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {solvedCount > 0
-              ? 'Perfect sequence. See you tomorrow.'
-              : 'Visual overload. Rest your eyes and come back stronger tomorrow.'}
+            {resultBadge.sublabel}
           </p>
         </div>
 
