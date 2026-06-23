@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
-/** The 6 chromatic hex slots that flags can occupy (matches FLAG_SLOT_HEXES). */
+/** The 7 chromatic hex slots that flags can occupy (matches FLAG_SLOT_HEXES). */
 const DEFAULT_HEXES = [
   '#EF4444', // Red
   '#FD9349', // Orange
@@ -8,6 +8,7 @@ const DEFAULT_HEXES = [
   '#2DD4D4', // Teal
   '#8B5CF6', // Purple
   '#7AC00F', // Lime
+  '#EC4899', // Pink
 ];
 
 interface FifaPaletteCtx {

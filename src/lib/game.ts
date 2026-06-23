@@ -7,6 +7,7 @@ const COLORS = [
   { name: 'Teal', hex: '#2DD4D4', hue: 180 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#7AC00F', hue: 82 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
 ];
 
 /** Hard-coded fallback palette in case the randomizer fails */
@@ -17,6 +18,7 @@ const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
   { name: 'Teal', hex: '#2DD4D4', hue: 180 },
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#7AC00F', hue: 82 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
 ];
 
 const NEUTRAL = '#D1D5DB';
