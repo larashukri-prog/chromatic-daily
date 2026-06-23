@@ -508,6 +508,7 @@ export function generateShareText(
   const lines: string[] = [
     `Chromatic #${dayNum}`,
     dayName,
+    getResultBadge(rounds).label,
     '',
   ];
 

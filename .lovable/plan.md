@@ -1,33 +1,41 @@
-## Plan
+## Goal
+Replace the single static end-game headline with one of three result badges, derived from how many of the 3 daily attempts the player won, and mirror that badge in the shared/copied result card. No game logic, scoring, layout, or styling changes — copy only.
 
-### What
-Swap the six flag URLs in `src/components/FifaOverlay.tsx` so tomorrow's matches display the new team flags.
+## Badge logic
+Computed from existing data (`rounds[].attempts[].isCorrect`), counting wins across all attempts played that day (max 3):
 
-### Current URLs (to be replaced)
-```
-https://flagcdn.com/w320/jo.png
-https://flagcdn.com/w320/dz.png
-https://flagcdn.com/w320/fr.png
-https://flagcdn.com/w320/iq.png
-https://flagcdn.com/w320/ar.png
-https://flagcdn.com/w320/sn.png
-```
+- 3 wins out of 3 → **"Flawless ✨"**
+- 0 wins out of 3 → **"Overloaded 😵‍💫"**
+- Any mix (1 or 2 wins) → **"Resilient 💪"**
 
-### New URLs (in order, keeping the same 6-slot anchor)
-```
-https://flagcdn.com/w320/pt.png
-https://flagcdn.com/w320/uz.png
-https://flagcdn.com/w320/gb-eng.png
-https://flagcdn.com/w320/gh.png
-https://flagcdn.com/w320/pa.png
-https://flagcdn.com/w320/hr.png
-```
+A small helper `getResultBadge(rounds)` returns `{ label, sublabel }` so both the summary card and the share text use the same source of truth.
 
-### Technical details
-- Only `src/components/FifaOverlay.tsx` is edited.
-- The `currentDayFlags` array order is preserved so the daily seeded shuffle mapping to color slots stays deterministic.
-- The `objectPosition` special-casing (jo/qa/tr) will be reviewed: none of the new codes match those strings, so all new flags will default to `object-center`. If any flag looks off-center when rendered, an additional position rule can be added.
+Sublabel mapping:
+- Flawless → "Absolute clarity. See you tomorrow."
+- Resilient → "Way to fight back. Try for flawless tomorrow."
+- Overloaded → "Sequence broken. Fresh start at midnight."
 
-### Not in scope
-- No changes to `fifaSchedule.ts`, game logic, DDA, or color mapping.
-- No styling or layout changes beyond the URL swap.
+## Changes
+
+1. **`src/lib/game.ts`**
+   - Add `export function getResultBadge(rounds: RoundData[])` returning `{ label, sublabel }` using the rule above (wins = count of attempts where `isCorrect === true`, total = `MAX_ROUNDS`).
+   - In `generateShareText`, insert the badge label as a new line right after `dayName` (before the blank line):
+     ```
+     Chromatic #123
+     Saturday
+     Flawless ✨
+
+     Attempt 1 ✅
+     ...
+     ```
+   - No other share-text changes.
+
+2. **`src/components/DailySummary.tsx`**
+   - Replace the current headline block (lines 168–175) so it renders the badge label as the bold headline and the matching sublabel beneath it.
+   - Keep the same wrapper, classes, spacing, border, and FIFA conditional structure (the FIFA "Full Time — Goal!" override is replaced by the badge headline per the user's request). All surrounding UI, icons, and layout remain identical.
+
+No changes to: round/attempt tracking, DDA, scoring, stars, stats, dot indicators, carousel, share buttons, free-play button, or any styling tokens.
+
+## Technical notes
+- "Wins" counted at the attempt level (not round level) so collapsed adaptive stages still map correctly to "3 of 3".
+- Badge derivation lives in `game.ts` to keep `DailySummary` presentational and to guarantee the share card and on-screen card never drift.
