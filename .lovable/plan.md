@@ -1,21 +1,16 @@
-## Goal
-Replace the 7 daily FIFA flag URLs in `FifaOverlay.tsx` with the new teams provided for tomorrow.
+## What
+Replace the 7 flag URLs in `src/components/FifaOverlay.tsx` with the new set for tomorrow.
 
-## Changes
+## How
+- Update the `currentDayFlags` array (lines 5-13) from the existing 7 URLs to:
+  1. https://flagcdn.com/w320/cw.png
+  2. https://flagcdn.com/w320/ec.png
+  3. https://flagcdn.com/w320/de.png
+  4. https://flagcdn.com/w320/tn.png
+  5. https://flagcdn.com/w320/us.png
+  6. https://flagcdn.com/w320/uz.png
+  7. https://flagcdn.com/w320/tr.png
 
-### `src/components/FifaOverlay.tsx`
-Update `currentDayFlags` array (lines 5–12):
-
-Old:
-- pt.png, uz.png, gb-eng.png, gh.png, pa.png, hr.png, co.png
-
-New:
-- ch.png (Switzerland)
-- ca.png (Canada)
-- ba.png (Bosnia and Herzegovina)
-- za.png (South Africa)
-- ma.png (Morocco)
-- br.png (Brazil)
-- kr.png (South Korea)
-
-No special `object-position` overrides are needed for any of the new flags. All other logic (date-seeded shuffle, slot mapping, filler fallback) remains unchanged.
+## Notes
+- The `object-position` special-case logic for `tr.png` already exists (line 106) and will continue to work since `tr.png` remains in the list.
+- No other file changes are required. The date-seeded shuffle, slot mapping, filler fallback, and overlay rendering all remain unchanged.
