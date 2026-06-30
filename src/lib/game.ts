@@ -489,15 +489,17 @@ export function getResultMessage(_roundIndex: number, _attemptInRound: number, i
 }
 
 export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: string } {
-  const wins = rounds.reduce(
-    (sum, r) => sum + r.attempts.filter(a => a.isCorrect).length,
-    0,
-  );
+  const attempts = rounds.flatMap((r) => r.attempts);
+  const wins = attempts.filter((a) => a.isCorrect).length;
   if (wins >= MAX_ROUNDS) {
     return { label: 'Flawless ✨', sublabel: 'Absolute clarity. See you tomorrow.' };
   }
   if (wins <= 0) {
     return { label: 'Overloaded 😵\u200d💫', sublabel: 'Sequence broken. Fresh start at midnight.' };
+  }
+  const lastCorrect = attempts[attempts.length - 1]?.isCorrect ?? false;
+  if (!lastCorrect) {
+    return { label: 'So Close! 🤏', sublabel: 'Almost there — come back sharper tomorrow.' };
   }
   return { label: 'Resilient 💪', sublabel: 'Way to fight back. Try for flawless tomorrow.' };
 }
