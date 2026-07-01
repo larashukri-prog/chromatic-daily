@@ -1487,8 +1487,6 @@ const Index = () => {
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
                   <p>
                     Unlocked any time. Same 2x3 grid, unlimited rounds — sharpen your eye and master the mix.
-                    <br /><br /><br /><br /><br />
-                    HAPPT BIRTHDAY FAVORITE 2ND CHILD :)
                   </p>
                 </div>
                 <div className="pt-2" />
