@@ -4,12 +4,12 @@ import { useFifaPalette } from '@/components/FifaPaletteContext';
 // Update this array daily with the direct flag image URLs of teams playing.
 const currentDayFlags: string[] = [
   "https://flagcdn.com/w320/ar.png",
-  "https://flagcdn.com/w320/eg.png",
-  "https://flagcdn.com/w320/ch.png",
-  "https://flagcdn.com/w320/co.png",
-  "https://flagcdn.com/w320/fr.png",
-  "https://flagcdn.com/w320/ma.png",
+  "https://flagcdn.com/w320/be.png",
   "https://flagcdn.com/w320/es.png",
+  "https://flagcdn.com/w320/no.png",
+  "https://flagcdn.com/w320/gb-eng.png",
+  "https://flagcdn.com/w320/ch.png",
+  "https://flagcdn.com/w320/ma.png",
 ];
 
 /** The seven chromatic hex slots (in COLORS order) that flags can occupy. */
