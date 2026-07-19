@@ -1,44 +1,54 @@
-Revert the "Colors" visual style to the original chromatic palette while keeping the MTA theme intact.
+## Goal
 
-### What we will change
+Expand the `Colors`, `Patterns`, and `Shapes` visual styles from a 7-option picker to a 9-option picker by adding two new hues to the chromatic palette. No changes to game rules, progression, MTA theme, sharing, or layout.
 
-1. **Split the global palette in `src/lib/game.ts`**
-   - Introduce `CHROMATIC_COLORS` (the original 7-color palette):
-     - Red `#EF4444`, Orange `#FD9349`, Yellow `#FDE047`, Teal `#2DD4D4`, Purple `#8B5CF6`, Lime `#7AC00F`, Pink `#EC4899`.
-   - Rename the current MTA array to `MTA_COLORS` (9 subway-line colors).
-   - Export both palettes and a helper `getColorsForTheme(theme)`.
-   - Update `generateStageSolution` and `generateFreePlayPuzzle` to accept a palette so the daily puzzle is generated from the theme's own colors.
-   - Keep `COLORS` as a backwards-compat alias pointing to `CHROMATIC_COLORS` so existing share/history code that stores hex values still works for non-MTA games.
+## New colors
 
-2. **Make the active game palette theme-aware in `src/pages/Index.tsx`**
-   - Replace `const pickerColors = COLORS` with a theme-driven selector (`CHROMATIC_COLORS` for colors/patterns/shapes, `MTA_COLORS` for MTA).
-   - Pass the selected palette into `generateStageSolution` on game start, reset, and `nextAttempt`.
-   - Pass the selected palette into `generateFreePlayPuzzle`.
-   - Wrap the picker in `MtaPaletteProvider` only when the active theme is MTA.
+- **Blue** — `#3B82F6` (hue 217)
+- **Brown** — `#8B5C33` (hue 25)
 
-3. **Update visual overlays to support both palettes**
-   - `src/components/PatternDefs.tsx`: restore the 7 chromatic pattern mappings and add a second pattern set for the 9 MTA colors; expose `getPatternIdForTheme(colorHex, theme)`.
-   - `src/components/ShapeOverlay.tsx`: restore the 7 chromatic shape mappings and add mappings for the 9 MTA colors.
-   - `src/components/MtaOverlay.tsx`: keep the MTA letter-to-hex mapping but source from `MTA_COLORS` instead of relying on the global `COLORS` order.
-   - `src/components/MtaPaletteContext.tsx`: source default hexes from `MTA_COLORS`.
+(Distinct from the MTA `Z` brown `#8E5C33`, so hex-based mappings won't collide.)
 
-4. **Verify grid rendering**
-   - `src/components/GameGrid.tsx` already uses the active hex value for fills and the correct overlay by theme, so no logic change is needed beyond confirming the new hexes flow through.
+## Changes
 
-5. **Update project memory**
-   - Refresh `mem://style/color-palette` to list the restored chromatic 7-color palette and note that MTA has its own separate 9-color brand palette.
+### 1. `src/lib/game.ts`
+Append the two new entries to `CHROMATIC_COLORS` (becomes 9). `FALLBACK_PALETTE` derives from it, so it updates automatically. No other logic changes — stage color counts (3/5/6) stay the same; the picker simply offers more distractors.
 
-### What stays the same
-- The 3-attempt adaptive progression, 2x3 grid, daily seeding, and local-storage history format.
-- MTA theme: subway bullets, 9 options, red/yellow celebration.
-- Result copy, salutations, and footer disclaimer.
+```ts
+const CHROMATIC_COLORS: ColorDef[] = [
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Orange', hex: '#FD9349', hue: 25 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Lime', hex: '#7AC00F', hue: 82 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: 'Blue', hex: '#3B82F6', hue: 217 },   // NEW
+  { name: 'Brown', hex: '#8B5C33', hue: 25 },   // NEW
+];
+```
 
-### Files to edit
-- `src/lib/game.ts`
-- `src/lib/freeplay.ts`
-- `src/pages/Index.tsx`
-- `src/components/PatternDefs.tsx`
-- `src/components/ShapeOverlay.tsx`
-- `src/components/MtaOverlay.tsx`
-- `src/components/MtaPaletteContext.tsx`
-- `mem://style/color-palette`
+### 2. `src/components/PatternDefs.tsx`
+`PATTERN_IDS` already has 9 patterns; `getPatternId` maps by index, so the two new colors automatically pick up the last two patterns (`concentric-circles` for Blue, `zigzag` for Brown). Add Blue and Brown to `DARK_COLORS` so their pattern strokes render in white for contrast.
+
+### 3. `src/components/ShapeOverlay.tsx`
+Add the two missing chromatic hex → icon entries to `SHAPE_FOR_HEX`:
+
+- `'#3B82F6': FaBolt`   (Blue → bolt)
+- `'#8B5C33': FaLeaf`   (Brown → leaf)
+
+MTA mappings stay untouched (their own hexes are different).
+
+### 4. `src/pages/Index.tsx`
+No code changes needed — the picker already renders `getColorsForTheme(theme)` in a flex-wrap container, so it will naturally show 9 options for chromatic themes and remain 9 for MTA.
+
+## Out of scope
+
+- MTA theme palette (already 9).
+- Grid size, stage color counts, DDA, sharing emoji layout.
+- Onboarding copy.
+
+## Verification
+
+- Type-check + build.
+- Playwright: load `/play`, switch through Colors / Patterns / Shapes / MTA themes, screenshot each picker to confirm 9 tiles render with correct pattern and icon overlays.

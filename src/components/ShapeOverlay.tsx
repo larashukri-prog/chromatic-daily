@@ -13,6 +13,8 @@ export const SHAPE_FOR_HEX: Record<string, IconType> = {
   '#8B5CF6': FaMoon,       // Purple
   '#7AC00F': FaFish,       // Lime
   '#EC4899': FaDroplet,    // Pink
+  '#3B82F6': FaBolt,       // Blue
+  '#8B5C33': FaLeaf,       // Brown
   // MTA colors
   '#D82233': FaHeart,      // 1 — red
   '#009952': FaTree,       // 5 — green
