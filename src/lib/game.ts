@@ -205,7 +205,7 @@ export function getDayDifficultyTier(colorCount: number): 'easy' | 'medium' | 'h
 /**
  * Check if two colors are "palette neighbors" (hue distance < 50).
  */
-function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
+function areHueNeighbors(a: ColorDef, b: ColorDef): boolean {
   const diff = Math.abs(a.hue - b.hue);
   return Math.min(diff, 360 - diff) < 50;
 }
@@ -215,7 +215,7 @@ function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
  * neighboring cells (including diagonals).
  */
 function getNonAdjacentPositions(
-  chosen: typeof COLORS,
+  chosen: ColorDef[],
   colorCount: number,
   rand: () => number
 ): number[] {
