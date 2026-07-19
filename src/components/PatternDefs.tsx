@@ -7,6 +7,8 @@ const LIGHT = 'rgba(255,255,255,0.9)';
 const DARK_COLORS = new Set([
   // Chromatic dark colors
   '#8B5CF6', // Purple
+  '#3B82F6', // Blue
+  '#8B5C33', // Brown
   // MTA dark colors
   '#0062CF', // A — blue
   '#7C858C', // L — grey

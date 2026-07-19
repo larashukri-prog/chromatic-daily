@@ -15,6 +15,8 @@ const CHROMATIC_COLORS: ColorDef[] = [
   { name: 'Purple', hex: '#8B5CF6', hue: 260 },
   { name: 'Lime', hex: '#7AC00F', hue: 82 },
   { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: 'Blue', hex: '#3B82F6', hue: 217 },
+  { name: 'Brown', hex: '#8B5C33', hue: 25 },
 ];
 
 /** Official MTA subway-line brand colors used by the MTA theme. */
