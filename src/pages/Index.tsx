@@ -303,11 +303,12 @@ const Index = () => {
       setRegenIndex(0);
       setAttemptInRound(1);
       setCurrentStageKey(stage);
-      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0);
+      const palette = getColorsForTheme(visualTheme);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0, palette);
       setSolution(sol);
       setActiveColors(ac);
     }
-  }, []);
+  }, [visualTheme]);
 
 
   const startObservation = useCallback(() => {
