@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { posthog } from '@/lib/posthog';
 
-export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'fifa';
+export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'mta';
 
 export const VISUAL_THEME_OPTIONS: { value: VisualTheme; label: string }[] = [
   { value: 'colors', label: 'Colors' },
   { value: 'patterns', label: 'Patterns' },
   { value: 'shapes', label: 'Shapes' },
-  { value: 'fifa', label: 'FIFA' },
+  { value: 'mta', label: 'MTA' },
 ];
 
 export function getVisualThemeLabel(theme: VisualTheme): string {
@@ -35,9 +35,9 @@ const VisualThemeContext = createContext<VisualThemeContextType>({
 function loadInitial(): VisualTheme {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes' || stored === 'fifa') return stored;
-    // Migrate legacy Knicks theme to FIFA.
-    if (stored === 'knicks') return 'fifa';
+    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes' || stored === 'mta') return stored;
+    // Migrate legacy FIFA / Knicks themes to MTA.
+    if (stored === 'fifa' || stored === 'knicks') return 'mta';
     // Migrate legacy boolean
     const legacy = localStorage.getItem(LEGACY_KEY);
     if (legacy === 'true') return 'patterns';

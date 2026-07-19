@@ -15,7 +15,7 @@ import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
-import { FifaOverlay } from '@/components/FifaOverlay';
+import { MtaOverlay } from '@/components/MtaOverlay';
 import {
   GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -123,7 +123,7 @@ const Index = () => {
   const recallStartTime = useRef<number>(0);
   const milestoneAudio = useRef<HTMLAudioElement | null>(null);
   const pendingMilestone = useRef(false);
-  const fifaCelebrationKey = useRef<string | null>(null);
+  const mtaCelebrationKey = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -178,9 +178,9 @@ const Index = () => {
     } catch { /* noop */ }
   }, []);
 
-  const fireFifaCelebration = useCallback(() => {
+  const fireMtaCelebration = useCallback(() => {
     try {
-      const colors = ['#326295', '#FFD700'];
+      const colors = ['#D82233', '#F6BC26'];
       const canvas = document.createElement('canvas');
       canvas.style.position = 'fixed';
       canvas.style.inset = '0';
@@ -212,7 +212,7 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
-  const fifaMode = visualTheme === 'fifa';
+  const mtaMode = visualTheme === 'mta';
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -244,7 +244,7 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Picker shows all seven chromatic colors at every stage — pool > grid forces recall over elimination.
+  // Picker shows all nine MTA line colors at every stage — pool > grid forces recall over elimination.
   const pickerColors = COLORS;
 
   useEffect(() => {
@@ -619,7 +619,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'fifa' ? 'Goal! Run it back?' : 'Great memory! Ready for the next one?')
+            ? (visualTheme === 'mta' ? 'Right on time. Next train?' : 'Great memory! Ready for the next one?')
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -698,13 +698,13 @@ const Index = () => {
       const msg = getStageResultMessage(currentStageKey, correct, nextStageArg, visualTheme);
       setResultMessage(msg);
 
-      // FIFA: fire blue/gold confetti when the daily is won on the final attempt.
+      // MTA: fire blue/gold confetti when the daily is won on the final attempt.
       const isDailyDone = nextStageKey === null;
-      if (visualTheme === 'fifa' && correct && isDailyDone) {
+      if (visualTheme === 'mta' && correct && isDailyDone) {
         const key = `final:win`;
-        if (fifaCelebrationKey.current !== key) {
-          fifaCelebrationKey.current = key;
-          fireFifaCelebration();
+        if (mtaCelebrationKey.current !== key) {
+          mtaCelebrationKey.current = key;
+          fireMtaCelebration();
         }
       }
 
@@ -1034,7 +1034,7 @@ const Index = () => {
   }, [startFreePlay]);
 
   return (
-    <FifaPaletteProvider activeHexes={activeColors.map((c) => c.hex)}>
+    <MtaPaletteProvider activeHexes={activeColors.map((c) => c.hex)}>
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
         isFreeplay ? 'bg-[hsl(260,30%,97%)]' : 'bg-background'
@@ -1239,23 +1239,23 @@ const Index = () => {
                 >
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
-                <div className="flex justify-center gap-2 flex-wrap">
-                  <FifaPaletteProvider activeHexes={FIFA_DEFAULT_PALETTE_HEXES}>
+                <div className="flex justify-center gap-2 flex-wrap max-w-[320px] mx-auto">
+                  <MtaPaletteProvider activeHexes={MTA_DEFAULT_PALETTE_HEXES}>
                   {pickerColors.map((c) => {
                     const upHex = c.hex.toUpperCase();
                     const isWhite = upHex === '#FFFFFF';
                     const isBlack = upHex === '#000000';
                     // In shapes mode, anchors keep their true fill (black/white);
                     // chromatic colors render on white with a shape overlay.
-                    // In FIFA mode, anchors render as Cup (white) and Ball (black);
-                    // chromatic colors render on white with the FIFA flag overlay.
+                    // In MTA mode, anchors render as Cup (white) and Ball (black);
+                    // chromatic colors render on white with the MTA subway bullet overlay.
                     let bg = c.hex;
                     if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                    else if (fifaMode) bg = '#FFFFFF';
+                    else if (mtaMode) bg = '#FFFFFF';
                     const showAsWhite =
                       (shapesMode && !isBlack) ||
-                      isWhite && !fifaMode ||
-                      fifaMode;
+                      isWhite && !mtaMode ||
+                      mtaMode;
                     return (
                     <button
                       key={c.hex}
@@ -1294,11 +1294,11 @@ const Index = () => {
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
-                      {fifaMode && <FifaOverlay colorHex={c.hex} />}
+                      {mtaMode && <MtaOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
-                  </FifaPaletteProvider>
+                  </MtaPaletteProvider>
                 </div>
               </div>
             )}
@@ -1329,7 +1329,7 @@ const Index = () => {
                   onClick={handleReady}
                   className={cn(
                     'w-full rounded-xl h-12 text-sm tracking-wide text-white',
-                    fifaMode
+                    mtaMode
                       ? 'bg-black hover:bg-black/90'
                       : 'bg-black hover:bg-black/90'
                   )}
@@ -1347,7 +1347,7 @@ const Index = () => {
                     disabled={!canVerify}
                     className={cn(
                       'rounded-xl flex-1 gap-2 text-white',
-                      fifaMode
+                      mtaMode
                         ? 'bg-black hover:bg-black/90'
                         : 'bg-black hover:bg-black/90'
                     )}
@@ -1563,12 +1563,12 @@ const Index = () => {
                     let bg: string = c || NEUTRAL;
                     if (c) {
                       if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                      else if (fifaMode) bg = '#FFFFFF';
+                      else if (mtaMode) bg = '#FFFFFF';
                     }
                     const lightBorder =
                       (shapesMode && c && !isBlack) ||
-                      (isWhite && !fifaMode) ||
-                      (fifaMode && !!c);
+                      (isWhite && !mtaMode) ||
+                      (mtaMode && !!c);
                     return (
                       <div
                         key={i}
@@ -1581,7 +1581,7 @@ const Index = () => {
                       >
                         {a11y && <PatternOverlay colorHex={c} size="100%" />}
                         {shapesMode && <ShapeOverlay colorHex={c} />}
-                        {fifaMode && c && <FifaOverlay colorHex={c} />}
+                        {mtaMode && c && <MtaOverlay colorHex={c} />}
                       </div>
                     );
                   })}
@@ -1652,13 +1652,13 @@ const Index = () => {
         </p>
       </footer>
     </div>
-    </FifaPaletteProvider>
+    </MtaPaletteProvider>
   );
 };
 
 // Wrap in ErrorBoundary
 import { GameErrorBoundary } from '@/components/GameErrorBoundary';
-import { FifaPaletteProvider, FIFA_DEFAULT_PALETTE_HEXES } from '@/components/FifaPaletteContext';
+import { MtaPaletteProvider, MTA_DEFAULT_PALETTE_HEXES } from '@/components/MtaPaletteContext';
 const IndexWithErrorBoundary = () => (
   <GameErrorBoundary>
     <Index />

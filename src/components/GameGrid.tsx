@@ -3,7 +3,7 @@ import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
 import { useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { FifaOverlay } from '@/components/FifaOverlay';
+import { MtaOverlay } from '@/components/MtaOverlay';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -20,7 +20,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const { theme } = useVisualTheme();
   const a11y = theme === 'patterns';
   const shapes = theme === 'shapes';
-  const fifa = theme === 'fifa';
+  const mta = theme === 'mta';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -37,10 +37,10 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   // empty slots stay neutral so the player can still see what's filled in.
   const getDisplayBackground = (index: number): string => {
     const c = getCircleColor(index);
-    if (fifa) {
+    if (mta) {
       if (c === NEUTRAL) return NEUTRAL;
       if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-      // Every FIFA tile renders an icon/flag on a white backdrop, including anchors.
+      // Every MTA tile renders a subway bullet on a white backdrop.
       return '#FFFFFF';
     }
     if (!shapes) return c;
@@ -65,8 +65,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    const fifaLightFill = fifa && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || fifaLightFill) {
+    const mtaLightFill = mta && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
+    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || mtaLightFill) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';
     }
@@ -114,7 +114,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
         >
           {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
           {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
-          {fifa && <FifaOverlay colorHex={getPatternColor(i)} />}
+          {mta && <MtaOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>

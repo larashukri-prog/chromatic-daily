@@ -7,8 +7,8 @@ import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from 
 import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { FifaOverlay } from '@/components/FifaOverlay';
-import { FifaPaletteProvider } from '@/components/FifaPaletteContext';
+import { MtaOverlay } from '@/components/MtaOverlay';
+import { MtaPaletteProvider } from '@/components/MtaPaletteContext';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -44,7 +44,7 @@ interface AttemptSlide {
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const { theme: visualTheme } = useVisualTheme();
-  const fifa = visualTheme === 'fifa';
+  const mta = visualTheme === 'mta';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -226,14 +226,14 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const { theme: globalTheme } = useVisualTheme();
   const effectiveTheme = slide.visualTheme ?? globalTheme;
   const shapesMode = effectiveTheme === 'shapes';
-  const fifaMode = effectiveTheme === 'fifa';
+  const mtaMode = effectiveTheme === 'mta';
   const patternsMode = effectiveTheme === 'patterns';
   const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
 
-  // Active hexes for this attempt (so FIFA flag mapping matches the puzzle
+  // Active hexes for this attempt (so MTA subway bullet mapping matches the puzzle
   // that was actually played, not the current/global stage palette).
   const slideActiveHexes = Array.from(
     new Set(
@@ -251,7 +251,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
 
   return (
-    <FifaPaletteProvider activeHexes={slideActiveHexes}>
+    <MtaPaletteProvider activeHexes={slideActiveHexes}>
     <div className="text-center">
       {/* Round header */}
       <div className="flex items-center justify-center gap-2 mb-1">
@@ -298,11 +298,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 let bg: string = color;
                 if (solution[i]) {
                   if (shapesMode) bg = '#FFFFFF';
-                  else if (fifaMode) bg = '#FFFFFF';
+                  else if (mtaMode) bg = '#FFFFFF';
                 }
                 const lightBorder =
                   (shapesMode && solution[i]) ||
-                  (fifaMode && !!solution[i]);
+                  (mtaMode && !!solution[i]);
                 return (
                   <motion.div
                     key={i}
@@ -318,7 +318,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   >
                     {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
                     {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {fifaMode && solution[i] && <FifaOverlay colorHex={solution[i]} />}
+                    {mtaMode && solution[i] && <MtaOverlay colorHex={solution[i]} />}
                   </motion.div>
                 );
               }
@@ -341,11 +341,11 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               let pBg: string = cellColor;
               if (playerGrid[i]) {
                 if (shapesMode) pBg = '#FFFFFF';
-                else if (fifaMode) pBg = '#FFFFFF';
+                else if (mtaMode) pBg = '#FFFFFF';
               }
               const pLightBorder =
                 (shapesMode && playerGrid[i]) ||
-                (fifaMode && !!playerGrid[i]);
+                (mtaMode && !!playerGrid[i]);
 
               return (
                 <motion.div
@@ -366,7 +366,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 >
                   {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
                   {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {fifaMode && playerGrid[i] && <FifaOverlay colorHex={playerGrid[i]} />}
+                  {mtaMode && playerGrid[i] && <MtaOverlay colorHex={playerGrid[i]} />}
                 </motion.div>
               );
             })}
@@ -384,7 +384,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </button>
       )}
     </div>
-    </FifaPaletteProvider>
+    </MtaPaletteProvider>
   );
 }
 
