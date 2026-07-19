@@ -244,8 +244,8 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Picker shows all nine MTA line colors at every stage — pool > grid forces recall over elimination.
-  const pickerColors = COLORS;
+  // Picker shows the active palette's colors at every stage — pool > grid forces recall over elimination.
+  const pickerColors = mtaMode ? MTA_COLORS : CHROMATIC_COLORS;
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {
