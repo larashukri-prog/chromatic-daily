@@ -1,17 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { MTA_COLORS } from '@/lib/game';
 
-/** The 9 chromatic hex slots that carry MTA subway bullets. */
-const DEFAULT_HEXES = [
-  '#D82233', // 1
-  '#009952', // 5
-  '#0062CF', // A
-  '#EB6800', // F
-  '#F6BC26', // Q
-  '#7C858C', // L
-  '#8E5C33', // Z
-  '#799534', // G
-  '#9A38A1', // 7
-];
+/** The 9 MTA subway-line hex slots that carry bullets. */
+const DEFAULT_HEXES = MTA_COLORS.map((c) => c.hex);
 
 interface MtaPaletteCtx {
   activeHexes: string[];
