@@ -37,7 +37,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   // empty slots stay neutral so the player can still see what's filled in.
   const getDisplayBackground = (index: number): string => {
     const c = getCircleColor(index);
-    if (fifa) {
+    if (mta) {
       if (c === NEUTRAL) return NEUTRAL;
       if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
       // Every MTA tile renders a subway bullet on a white backdrop.
@@ -65,7 +65,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    const fifaLightFill = fifa && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
+    const fifaLightFill = mta && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
     if (color === '#FFFFFF' || color === '#FFF' || displayWhite || fifaLightFill) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';
@@ -114,7 +114,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
         >
           {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
           {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
-          {fifa && <FifaOverlay colorHex={getPatternColor(i)} />}
+          {mta && <MtaOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>
