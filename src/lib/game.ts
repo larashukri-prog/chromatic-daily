@@ -141,10 +141,12 @@ export function getDayInfo() {
   };
 }
 
-/** Fallback solution using hard-coded palette when generation fails */
-function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  const colorCount = STAGE_COLOR_COUNTS.stage1;
-  const chosen = FALLBACK_PALETTE.slice(0, colorCount);
+/** Fallback solution using the provided palette when generation fails. */
+function generateFallbackSolution(
+  palette: ColorDef[] = CHROMATIC_COLORS,
+): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, palette.length);
+  const chosen = palette.slice(0, colorCount);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
   const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
   positions.forEach((pos, i) => {
@@ -154,20 +156,21 @@ function generateFallbackSolution(): { solution: (string | null)[]; activeColors
 }
 
 /**
- * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex).
- * All tiles are drawn from the chromatic palette only — no black/white anchors.
+ * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex, palette).
+ * All tiles are drawn from the supplied palette — no black/white anchors.
  */
 export function generateStageSolution(
   stage: StageKey,
   regenIndex: number = 0,
+  palette: ColorDef[] = CHROMATIC_COLORS,
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const colorCount = STAGE_COLOR_COUNTS[stage];
+    const colorCount = Math.min(STAGE_COLOR_COUNTS[stage], palette.length);
     const baseSeed = getDateSeed();
     const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
-    const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    const shuffled = [...palette].sort(() => rand() - 0.5);
     const chosen = shuffled.slice(0, colorCount);
 
     const coloredPositions = getNonAdjacentPositions(chosen, colorCount, rand);
@@ -179,7 +182,7 @@ export function generateStageSolution(
     return { solution, activeColors: chosen, colorCount };
   } catch (err) {
     console.error('[Chromatic] generateStageSolution failed, using fallback:', err);
-    return generateFallbackSolution();
+    return generateFallbackSolution(palette);
   }
 }
 
