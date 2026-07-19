@@ -4,7 +4,14 @@ const DARK = 'rgba(0,0,0,0.85)';
 const LIGHT = 'rgba(255,255,255,0.9)';
 
 // Hex values of dark-background colors that need white strokes
-const DARK_COLORS = new Set(['#8B5CF6']); // Purple
+// Palette hexes whose bullets are too dark for the default dark pattern stroke;
+// switched to the light-stroke variant.
+const DARK_COLORS = new Set([
+  '#0062CF', // MTA A (blue)
+  '#7C858C', // MTA L (grey)
+  '#8E5C33', // MTA Z (brown)
+  '#9A38A1', // MTA 7 (purple)
+]);
 
 export const PATTERN_IDS = [
   'pattern-solid',
@@ -14,6 +21,8 @@ export const PATTERN_IDS = [
   'pattern-crosshatch',
   'pattern-polka-dots',
   'pattern-checkerboard',
+  'pattern-concentric-circles',
+  'pattern-zigzag',
 ];
 
 export function getPatternId(colorHex: string): string {
