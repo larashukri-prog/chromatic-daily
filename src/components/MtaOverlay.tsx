@@ -37,16 +37,15 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
 
   return (
     <span
-      className={`absolute inset-0 flex items-center justify-center pointer-events-none ${className}`}
+      className={`absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none ${className}`}
       aria-hidden
     >
       <svg
         viewBox="0 0 100 100"
-        width="86%"
-        height="86%"
+        className="w-full h-full"
         role="presentation"
       >
-        <circle cx="50" cy="50" r="48" fill={up} />
+        <circle cx="50" cy="50" r="50" fill={up} />
         <text
           x="50"
           y="50"

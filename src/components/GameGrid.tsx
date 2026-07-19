@@ -40,8 +40,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     if (mta) {
       if (c === NEUTRAL) return NEUTRAL;
       if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-      // Every MTA tile renders a subway bullet on a white backdrop.
-      return '#FFFFFF';
+      // MTA tiles use the brand color as the full slot background so the bullet bleeds to the edge.
+      return c;
     }
     if (!shapes) return c;
     if (c === NEUTRAL) return NEUTRAL;
