@@ -1,24 +1,28 @@
 // Chromatic Daily - Game Logic
 
 const COLORS = [
-  { name: 'Red', hex: '#EF4444', hue: 0 },
-  { name: 'Orange', hex: '#FD9349', hue: 25 },
-  { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
-  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Lime', hex: '#7AC00F', hue: 82 },
-  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: '1', hex: '#D82233', hue: 0 },
+  { name: '5', hex: '#009952', hue: 145 },
+  { name: 'A', hex: '#0062CF', hue: 213 },
+  { name: 'F', hex: '#EB6800', hue: 27 },
+  { name: 'Q', hex: '#F6BC26', hue: 45 },
+  { name: 'L', hex: '#7C858C', hue: 210 },
+  { name: 'Z', hex: '#8E5C33', hue: 25 },
+  { name: 'G', hex: '#799534', hue: 79 },
+  { name: '7', hex: '#9A38A1', hue: 295 },
 ];
 
 /** Hard-coded fallback palette in case the randomizer fails */
 const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
-  { name: 'Red', hex: '#EF4444', hue: 0 },
-  { name: 'Orange', hex: '#FD9349', hue: 25 },
-  { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
-  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Lime', hex: '#7AC00F', hue: 82 },
-  { name: 'Pink', hex: '#EC4899', hue: 330 },
+  { name: '1', hex: '#D82233', hue: 0 },
+  { name: '5', hex: '#009952', hue: 145 },
+  { name: 'A', hex: '#0062CF', hue: 213 },
+  { name: 'F', hex: '#EB6800', hue: 27 },
+  { name: 'Q', hex: '#F6BC26', hue: 45 },
+  { name: 'L', hex: '#7C858C', hue: 210 },
+  { name: 'Z', hex: '#8E5C33', hue: 25 },
+  { name: 'G', hex: '#799534', hue: 79 },
+  { name: '7', hex: '#9A38A1', hue: 295 },
 ];
 
 const NEUTRAL = '#D1D5DB';
@@ -264,7 +268,7 @@ export interface RoundAttempt {
   grid: (string | null)[];
   isCorrect: boolean;
   solution: (string | null)[];
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa';
+  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta';
   recallMs?: number;
   /** Stage 2 sub-puzzle the attempt was played on. */
   substage?: 'main' | '2b';
@@ -353,7 +357,7 @@ export function saveRoundAttempt(
   isCorrect: boolean,
   playerGrid: (string | null)[],
   solution: (string | null)[],
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'fifa',
+  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta',
   recallMs?: number,
   substage?: 'main' | '2b',
   regenIndex?: number,
@@ -440,16 +444,16 @@ export function getStageResultMessage(
   nextStage: StageKey | 'done',
   theme?: string,
 ): string {
-  const fifa = theme === 'fifa';
+  const mta = theme === 'mta';
 
   if (nextStage === 'done') {
     if (isCorrect) {
-      return fifa
-        ? 'Full Time — World-class form! You took the daily.'
+      return mta
+        ? 'Last stop — you rode the line clean. Nailed the daily.'
         : 'Daily complete. Perfect close — incredible recall.';
     }
-    return fifa
-      ? 'Final whistle. The daily slipped away — see you tomorrow.'
+    return mta
+      ? 'End of the line. Fresh route tomorrow — service resumes at midnight.'
       : "That's a wrap — fresh challenge tomorrow.";
   }
 
@@ -457,27 +461,27 @@ export function getStageResultMessage(
 
   if (isCorrect) {
     if (nextCount === 5) {
-      return fifa
-        ? 'Goal! Next up: 5 elements — keep your shape.'
+      return mta
+        ? 'Right on time. Next stop: 5 elements — mind the gap.'
         : "Nailed it. Next attempt brings 5 elements — keep the rhythm.";
     }
     if (nextCount === 6) {
-      return fifa
-        ? 'Brace yourself — final attempt: 6 elements, full pitch.'
+      return mta
+        ? 'Express run — final attempt: 6 elements, all lines lit.'
         : 'Locked in. Final attempt fills the grid with 6 elements.';
     }
-    return fifa ? 'Goal!' : 'Got it!';
+    return mta ? 'Right on time.' : 'Got it!';
   }
 
   // Wrong — repeat the same tier with a fresh puzzle.
   if (nextCount === 3) {
-    return fifa
-      ? 'Wide of the post. Same shape, new pattern — 3 elements again.'
+    return mta
+      ? 'Missed the train. Same 3 elements, new route — try again.'
       : 'Not quite. Same 3 elements, a fresh pattern — give it another go.';
   }
   if (nextCount === 5) {
-    return fifa
-      ? 'Off target. Another 5-element pattern coming up.'
+    return mta
+      ? 'Off track. Another 5-element route rolling in.'
       : 'Close. Another 5-element pattern is next.';
   }
   return 'Not quite — try again.';

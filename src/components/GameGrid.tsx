@@ -3,7 +3,7 @@ import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
 import { useVisualTheme } from '@/hooks/useAccessibility';
 import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { FifaOverlay } from '@/components/FifaOverlay';
+import { MtaOverlay } from '@/components/MtaOverlay';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -20,7 +20,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const { theme } = useVisualTheme();
   const a11y = theme === 'patterns';
   const shapes = theme === 'shapes';
-  const fifa = theme === 'fifa';
+  const mta = theme === 'mta';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -40,7 +40,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     if (fifa) {
       if (c === NEUTRAL) return NEUTRAL;
       if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-      // Every FIFA tile renders an icon/flag on a white backdrop, including anchors.
+      // Every MTA tile renders a subway bullet on a white backdrop.
       return '#FFFFFF';
     }
     if (!shapes) return c;
