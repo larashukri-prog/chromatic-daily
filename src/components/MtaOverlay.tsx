@@ -73,12 +73,9 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
               color: textFill,
               fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
               fontWeight: 800,
-              fontSize: '62px',
+              fontSize: '78px',
               lineHeight: 1,
-              letterSpacing: '-0.02em',
-              // Optical nudge so glyphs sit visually centered against the circle's
-              // cap-height/baseline, not the em-box.
-              paddingTop: '2px',
+              letterSpacing: '-0.03em',
             }}
           >
             {letter}

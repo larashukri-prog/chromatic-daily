@@ -1,24 +1,17 @@
-## Recenter MTA bullet characters
+## Enlarge MTA bullet glyphs to match reference
 
-The current `MtaOverlay` renders both the circle and the letter as SVG. `dominantBaseline="central"` is inconsistent across browsers (especially Safari/WebKit), and the recent `y="52"` nudge made the drift worse — characters sit slightly low/off-axis inside the circle.
+Single file: `src/components/MtaOverlay.tsx`. The circle already fills the tile; only the glyph size needs to grow to match the reference image where the character visually spans roughly 65–70% of the circle diameter.
 
-### Fix (single file: `src/components/MtaOverlay.tsx`)
+### Change
 
-Split the bullet into two layers so centering is bulletproof and matches real MTA signage:
-
-1. **Circle stays SVG** — full-bleed `<circle cx="50" cy="50" r="50" fill={hex}>` inside a `viewBox="0 0 100 100"` SVG that fills the parent span. This keeps the crisp round edge.
-2. **Character becomes an HTML layer** — an absolutely-positioned `<span>` overlaid on the SVG, using flexbox (`inset-0 flex items-center justify-center`) so the glyph is centered by the browser's text-layout engine (no baseline math). Font stack stays Helvetica Neue / Helvetica / Arial, `font-weight: 800`, with `line-height: 1` and `letter-spacing: -0.02em`.
-3. **Size the glyph off the container** — use `font-size: 62%` of the tile (via `text-[0.62em]` or inline `fontSize: '62%'`) so the character fills roughly 2× x-height without clipping wide letters (`A`, `F`, `L`, `Z`, `G`) or single digits. This scales automatically with the slot.
-4. **Keep the per-line text color map** — `Q` (yellow) → black, all others → white.
-5. Remove the previous `y="52"` and SVG `<text>` node entirely, so no baseline drift remains.
+- Bump `fontSize` in the `<foreignObject>` div from `62px` to `78px` (viewBox is 100 units, so ~78% of diameter — matches the reference for wide chars like `A`, `F`, `G`).
+- Tighten `letterSpacing` slightly to `-0.03em` so wide glyphs don't crowd the edge.
+- Drop the `paddingTop: '2px'` optical nudge — at the larger size it's no longer needed, and centering should stay clean from flexbox.
 
 ### Verification
 
-Reload `/play` in MTA theme:
-- Picker row: every character (`1 5 A F Q L Z G 7`) sits dead-center in its circle, both horizontally and vertically.
-- Guess slots and result rows show the same centering.
-- `Q` bullet still black-on-yellow; all others white.
+Reload `/play` in MTA theme. Compare picker bullets to the attached reference: characters should fill the circle just like `A`, `B`, `G`, `1`, `4`, `7` in the image — bold, dominant, with a thin ring of brand color around them.
 
 ### Out of scope
 
-No changes to palette, layout, sizing of the tiles themselves, or non-MTA themes.
+No changes to palette, tile size, or centering logic.
