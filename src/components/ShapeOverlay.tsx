@@ -3,8 +3,17 @@ import {
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 
-// 1:1 hex → icon mapping for the nine MTA palette colors.
+// 1:1 hex → icon mapping for the chromatic and MTA palettes.
 export const SHAPE_FOR_HEX: Record<string, IconType> = {
+  // Chromatic colors
+  '#EF4444': FaHeart,      // Red
+  '#FD9349': FaTree,       // Orange
+  '#FDE047': FaStar,       // Yellow
+  '#2DD4D4': FaCat,        // Teal
+  '#8B5CF6': FaMoon,       // Purple
+  '#7AC00F': FaFish,       // Lime
+  '#EC4899': FaDroplet,    // Pink
+  // MTA colors
   '#D82233': FaHeart,      // 1 — red
   '#009952': FaTree,       // 5 — green
   '#0062CF': FaCat,        // A — blue

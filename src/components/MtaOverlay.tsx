@@ -1,4 +1,5 @@
 import { useMtaPalette } from '@/components/MtaPaletteContext';
+import { MTA_COLORS } from '@/lib/game';
 
 /**
  * Official-ish NYC MTA subway bullet: filled brand-colored circle with a
@@ -19,8 +20,8 @@ export const MTA_LETTER_FOR_HEX: Record<string, string> = {
   '#9A38A1': '7',
 };
 
-/** Palette hexes that can carry an MTA bullet (ordered to match COLORS). */
-export const MTA_SLOT_HEXES: string[] = Object.keys(MTA_LETTER_FOR_HEX);
+/** Palette hexes that can carry an MTA bullet (ordered to match MTA_COLORS). */
+export const MTA_SLOT_HEXES: string[] = MTA_COLORS.map((c) => c.hex);
 
 interface MtaOverlayProps {
   colorHex: string | null;

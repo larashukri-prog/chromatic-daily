@@ -17,7 +17,7 @@ import { PatternOverlay } from '@/components/PatternOverlay';
 import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
 import { MtaOverlay } from '@/components/MtaOverlay';
 import {
-  GamePhase, NEUTRAL, COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
+  GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS, getColorsForTheme, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
@@ -244,8 +244,8 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Picker shows all nine MTA line colors at every stage — pool > grid forces recall over elimination.
-  const pickerColors = COLORS;
+  // Picker shows the active palette's colors at every stage — pool > grid forces recall over elimination.
+  const pickerColors = mtaMode ? MTA_COLORS : CHROMATIC_COLORS;
 
   useEffect(() => {
     if (window.location.search.includes('reset')) {
@@ -263,7 +263,8 @@ const Index = () => {
       setSubstage('main');
       setRegenIndex(0);
       setCurrentStageKey('stage1');
-      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
+      const palette = getColorsForTheme(visualTheme);
+      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0, palette);
       setSolution(sol);
       setActiveColors(ac);
       return;
@@ -302,11 +303,12 @@ const Index = () => {
       setRegenIndex(0);
       setAttemptInRound(1);
       setCurrentStageKey(stage);
-      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0);
+      const palette = getColorsForTheme(visualTheme);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0, palette);
       setSolution(sol);
       setActiveColors(ac);
     }
-  }, []);
+  }, [visualTheme]);
 
 
   const startObservation = useCallback(() => {
@@ -426,7 +428,8 @@ const Index = () => {
 
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const puzzle = generateFreePlayPuzzle(1);
+    const palette = getColorsForTheme(visualTheme);
+    const puzzle = generateFreePlayPuzzle(1, palette);
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSessionStats(initialStats);
@@ -744,7 +747,8 @@ const Index = () => {
     setSubstage('main');
     setRegenIndex(0);
     setAttemptInRound(1);
-    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, 0);
+    const palette = getColorsForTheme(visualTheme);
+    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, 0, palette);
     setSolution(sol);
     setActiveColors(ac);
 
@@ -755,7 +759,8 @@ const Index = () => {
   const freeplayNext = useCallback(() => {
     setShowResult(false);
     const nextRound = freeplayRoundNum + 1;
-    const puzzle = generateFreePlayPuzzle(nextRound);
+    const palette = getColorsForTheme(visualTheme);
+    const puzzle = generateFreePlayPuzzle(nextRound, palette);
     setFreeplayRoundNum(nextRound);
     posthog.capture('practice_mode_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',

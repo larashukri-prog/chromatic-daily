@@ -1,6 +1,24 @@
 // Chromatic Daily - Game Logic
 
-const COLORS = [
+export interface ColorDef {
+  name: string;
+  hex: string;
+  hue: number;
+}
+
+/** Original chromatic palette used by Colors, Patterns, and Shapes themes. */
+const CHROMATIC_COLORS: ColorDef[] = [
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Orange', hex: '#FD9349', hue: 25 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Lime', hex: '#7AC00F', hue: 82 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+];
+
+/** Official MTA subway-line brand colors used by the MTA theme. */
+const MTA_COLORS: ColorDef[] = [
   { name: '1', hex: '#D82233', hue: 0 },
   { name: '5', hex: '#009952', hue: 145 },
   { name: 'A', hex: '#0062CF', hue: 213 },
@@ -12,18 +30,14 @@ const COLORS = [
   { name: '7', hex: '#9A38A1', hue: 295 },
 ];
 
-/** Hard-coded fallback palette in case the randomizer fails */
-const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
-  { name: '1', hex: '#D82233', hue: 0 },
-  { name: '5', hex: '#009952', hue: 145 },
-  { name: 'A', hex: '#0062CF', hue: 213 },
-  { name: 'F', hex: '#EB6800', hue: 27 },
-  { name: 'Q', hex: '#F6BC26', hue: 45 },
-  { name: 'L', hex: '#7C858C', hue: 210 },
-  { name: 'Z', hex: '#8E5C33', hue: 25 },
-  { name: 'G', hex: '#799534', hue: 79 },
-  { name: '7', hex: '#9A38A1', hue: 295 },
-];
+/** Backwards-compatible alias for the original chromatic palette. */
+const COLORS = CHROMATIC_COLORS;
+
+/** Fallback palette for the chromatic theme. */
+const FALLBACK_PALETTE: ColorDef[] = [...CHROMATIC_COLORS];
+
+/** Fallback palette for the MTA theme. */
+const MTA_FALLBACK_PALETTE: ColorDef[] = [...MTA_COLORS];
 
 const NEUTRAL = '#D1D5DB';
 
@@ -127,10 +141,12 @@ export function getDayInfo() {
   };
 }
 
-/** Fallback solution using hard-coded palette when generation fails */
-function generateFallbackSolution(): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  const colorCount = STAGE_COLOR_COUNTS.stage1;
-  const chosen = FALLBACK_PALETTE.slice(0, colorCount);
+/** Fallback solution using the provided palette when generation fails. */
+function generateFallbackSolution(
+  palette: ColorDef[] = CHROMATIC_COLORS,
+): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
+  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, palette.length);
+  const chosen = palette.slice(0, colorCount);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
   const solution: (string | null)[] = Array(GRID_SIZE).fill(null);
   positions.forEach((pos, i) => {
@@ -140,20 +156,21 @@ function generateFallbackSolution(): { solution: (string | null)[]; activeColors
 }
 
 /**
- * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex).
- * All tiles are drawn from the chromatic palette only — no black/white anchors.
+ * Generate a puzzle for a specific stage, deterministic per (date, stage, regenIndex, palette).
+ * All tiles are drawn from the supplied palette — no black/white anchors.
  */
 export function generateStageSolution(
   stage: StageKey,
   regenIndex: number = 0,
+  palette: ColorDef[] = CHROMATIC_COLORS,
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    const colorCount = STAGE_COLOR_COUNTS[stage];
+    const colorCount = Math.min(STAGE_COLOR_COUNTS[stage], palette.length);
     const baseSeed = getDateSeed();
     const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
-    const shuffled = [...COLORS].sort(() => rand() - 0.5);
+    const shuffled = [...palette].sort(() => rand() - 0.5);
     const chosen = shuffled.slice(0, colorCount);
 
     const coloredPositions = getNonAdjacentPositions(chosen, colorCount, rand);
@@ -165,7 +182,7 @@ export function generateStageSolution(
     return { solution, activeColors: chosen, colorCount };
   } catch (err) {
     console.error('[Chromatic] generateStageSolution failed, using fallback:', err);
-    return generateFallbackSolution();
+    return generateFallbackSolution(palette);
   }
 }
 
@@ -188,7 +205,7 @@ export function getDayDifficultyTier(colorCount: number): 'easy' | 'medium' | 'h
 /**
  * Check if two colors are "palette neighbors" (hue distance < 50).
  */
-function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
+function areHueNeighbors(a: ColorDef, b: ColorDef): boolean {
   const diff = Math.abs(a.hue - b.hue);
   return Math.min(diff, 360 - diff) < 50;
 }
@@ -198,7 +215,7 @@ function areHueNeighbors(a: typeof COLORS[0], b: typeof COLORS[0]): boolean {
  * neighboring cells (including diagonals).
  */
 function getNonAdjacentPositions(
-  chosen: typeof COLORS,
+  chosen: ColorDef[],
   colorCount: number,
   rand: () => number
 ): number[] {
@@ -259,7 +276,11 @@ export function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export { NEUTRAL, COLORS };
+export function getColorsForTheme(theme: string): ColorDef[] {
+  return theme === 'mta' ? MTA_COLORS : CHROMATIC_COLORS;
+}
+
+export { NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS };
 
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
