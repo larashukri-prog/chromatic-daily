@@ -276,7 +276,11 @@ export function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export { NEUTRAL, COLORS };
+export function getColorsForTheme(theme: string): ColorDef[] {
+  return theme === 'mta' ? MTA_COLORS : CHROMATIC_COLORS;
+}
+
+export { NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS };
 
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
