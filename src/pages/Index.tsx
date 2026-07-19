@@ -244,7 +244,7 @@ const Index = () => {
 
   const isFreeplay = mode === 'freeplay';
 
-  // Picker shows all seven chromatic colors at every stage — pool > grid forces recall over elimination.
+  // Picker shows all nine MTA line colors at every stage — pool > grid forces recall over elimination.
   const pickerColors = COLORS;
 
   useEffect(() => {
@@ -619,7 +619,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'mta' ? 'Goal! Run it back?' : 'Great memory! Ready for the next one?')
+            ? (visualTheme === 'mta' ? 'Right on time. Next train?' : 'Great memory! Ready for the next one?')
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -1239,7 +1239,7 @@ const Index = () => {
                 >
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
-                <div className="flex justify-center gap-2 flex-wrap">
+                <div className="flex justify-center gap-2 flex-wrap max-w-[320px] mx-auto">
                   <MtaPaletteProvider activeHexes={MTA_DEFAULT_PALETTE_HEXES}>
                   {pickerColors.map((c) => {
                     const upHex = c.hex.toUpperCase();
