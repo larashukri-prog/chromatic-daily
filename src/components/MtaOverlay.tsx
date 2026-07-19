@@ -62,25 +62,20 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
         shapeRendering="geometricPrecision"
       >
         <circle cx="50" cy="50" r="50" fill={up} stroke="none" />
-        <foreignObject x="0" y="0" width="100" height="100">
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: textFill,
-              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-              fontWeight: 800,
-              fontSize: '78px',
-              lineHeight: 1,
-              letterSpacing: '-0.03em',
-            }}
-          >
-            {letter}
-          </div>
-        </foreignObject>
+        <text
+          x="50"
+          y="50"
+          fill={textFill}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+          fontWeight={800}
+          fontSize="72"
+          letterSpacing="-2"
+          style={{ userSelect: 'none' }}
+        >
+          {letter}
+        </text>
       </svg>
     </span>
   );
