@@ -759,7 +759,8 @@ const Index = () => {
   const freeplayNext = useCallback(() => {
     setShowResult(false);
     const nextRound = freeplayRoundNum + 1;
-    const puzzle = generateFreePlayPuzzle(nextRound);
+    const palette = getColorsForTheme(visualTheme);
+    const puzzle = generateFreePlayPuzzle(nextRound, palette);
     setFreeplayRoundNum(nextRound);
     posthog.capture('practice_mode_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
