@@ -1,54 +1,37 @@
-## Goal
+## Problem
 
-Expand the `Colors`, `Patterns`, and `Shapes` visual styles from a 7-option picker to a 9-option picker by adding two new hues to the chromatic palette. No changes to game rules, progression, MTA theme, sharing, or layout.
+The daily puzzle looks different across visual themes. Attempt 1 in Colors/Patterns/Shapes shows tiles in one arrangement, but MTA shows them in another. Two root causes in `src/lib/game.ts` → `generateStageSolution`:
 
-## New colors
+1. When the theme is MTA, `Index.tsx` passes `MTA_COLORS` as the palette; when it's Colors/Patterns/Shapes it passes `CHROMATIC_COLORS`. The generator shuffles that palette with the seeded RNG (`[...palette].sort(() => rand() - 0.5)`), so a different input array produces a different shuffle order and different chosen colors.
+2. `getNonAdjacentPositions` uses each chosen color's `hue` to avoid placing neighbors. Chromatic vs MTA have different hues, so even with the same RNG stream the chosen positions diverge.
 
-- **Blue** — `#3B82F6` (hue 217)
-- **Brown** — `#8B5C33` (hue 25)
+Net effect: no 1:1 correspondence between a Colors tile and its MTA/Pattern/Shape counterpart — position and identity can both differ.
 
-(Distinct from the MTA `Z` brown `#8E5C33`, so hex-based mappings won't collide.)
+## Fix
 
-## Changes
+Make daily puzzle generation palette-independent, then project the result onto the active theme's palette by index. Because both palettes have 9 entries, index 0 (chromatic Red) always maps to index 0 (MTA "1" line), index 1 (Orange) to "5", etc. Patterns and shapes are already keyed off the chromatic hex, so they remain in sync automatically.
 
-### 1. `src/lib/game.ts`
-Append the two new entries to `CHROMATIC_COLORS` (becomes 9). `FALLBACK_PALETTE` derives from it, so it updates automatically. No other logic changes — stage color counts (3/5/6) stay the same; the picker simply offers more distractors.
+### Changes
 
-```ts
-const CHROMATIC_COLORS: ColorDef[] = [
-  { name: 'Red', hex: '#EF4444', hue: 0 },
-  { name: 'Orange', hex: '#FD9349', hue: 25 },
-  { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
-  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Lime', hex: '#7AC00F', hue: 82 },
-  { name: 'Pink', hex: '#EC4899', hue: 330 },
-  { name: 'Blue', hex: '#3B82F6', hue: 217 },   // NEW
-  { name: 'Brown', hex: '#8B5C33', hue: 25 },   // NEW
-];
-```
+**`src/lib/game.ts`**
+- Refactor `generateStageSolution(stage, regenIndex, palette)` so the internal shuffle + non-adjacency placement always runs against the canonical `CHROMATIC_COLORS` array (fixed order, fixed hues). This guarantees identical positions and identical color slot indices across every theme and every user.
+- After computing the canonical `chosen` (chromatic ColorDefs) and their positions, translate each entry to the requested `palette` by its index in `CHROMATIC_COLORS`. If `palette === CHROMATIC_COLORS`, the output is unchanged.
+- Return `solution` and `activeColors` using the translated palette so existing consumers (grid rendering, picker highlight, MTA overlay, share text) keep working with the hexes they expect.
+- Apply the same canonical-generation approach in `generateFallbackSolution` so fallback paths stay consistent too.
 
-### 2. `src/components/PatternDefs.tsx`
-`PATTERN_IDS` already has 9 patterns; `getPatternId` maps by index, so the two new colors automatically pick up the last two patterns (`concentric-circles` for Blue, `zigzag` for Brown). Add Blue and Brown to `DARK_COLORS` so their pattern strokes render in white for contrast.
+**No changes required in:**
+- `Index.tsx` — it already passes `getColorsForTheme(visualTheme)` and regenerates on theme change; the mapping now happens inside the generator.
+- `PatternDefs.tsx` / `ShapeOverlay.tsx` / `MtaOverlay.tsx` — these already map hex → visual element via a fixed index table, so once positions align the visuals align.
+- Persistence — solutions are still stored as hexes; theme is already recorded per attempt.
 
-### 3. `src/components/ShapeOverlay.tsx`
-Add the two missing chromatic hex → icon entries to `SHAPE_FOR_HEX`:
+### Verification
 
-- `'#3B82F6': FaBolt`   (Blue → bolt)
-- `'#8B5C33': FaLeaf`   (Brown → leaf)
+1. Load `/play`, note the Attempt 1 tile arrangement in Colors.
+2. Switch visual theme to Patterns, Shapes, then MTA — the same slots should be filled with the same positional 1:1 mapping (slot A always the "red" line across themes, etc.).
+3. Advance a stage and repeat for Attempt 2 / 3, including a loss path (`stage1b`, `stage2r`) to confirm the fresh puzzles also line up across themes.
+4. Confirm the free-play flow is untouched (still uses its own generator).
 
-MTA mappings stay untouched (their own hexes are different).
+### Out of scope
 
-### 4. `src/pages/Index.tsx`
-No code changes needed — the picker already renders `getColorsForTheme(theme)` in a flex-wrap container, so it will naturally show 9 options for chromatic themes and remain 9 for MTA.
-
-## Out of scope
-
-- MTA theme palette (already 9).
-- Grid size, stage color counts, DDA, sharing emoji layout.
-- Onboarding copy.
-
-## Verification
-
-- Type-check + build.
-- Playwright: load `/play`, switch through Colors / Patterns / Shapes / MTA themes, screenshot each picker to confirm 9 tiles render with correct pattern and icon overlays.
+- No changes to progression, scoring, sharing text, persistence, or the picker pool.
+- Free-play puzzles are not part of this fix (user reported the daily only).
