@@ -62,19 +62,28 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
         shapeRendering="geometricPrecision"
       >
         <circle cx="50" cy="50" r="50" fill={up} stroke="none" />
-        <text
-          x="50"
-          y="52"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill={textFill}
-          fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-          fontWeight={800}
-          fontSize="72"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          {letter}
-        </text>
+        <foreignObject x="0" y="0" width="100" height="100">
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: textFill,
+              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+              fontWeight: 800,
+              fontSize: '62px',
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              // Optical nudge so glyphs sit visually centered against the circle's
+              // cap-height/baseline, not the em-box.
+              paddingTop: '2px',
+            }}
+          >
+            {letter}
+          </div>
+        </foreignObject>
       </svg>
     </span>
   );
