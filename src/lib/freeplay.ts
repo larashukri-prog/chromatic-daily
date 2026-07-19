@@ -1,26 +1,41 @@
-import { COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
+import { CHROMATIC_COLORS, COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
 
 /**
- * Compute color count for a given session round (1-based) on the 2x3 grid (6 slots).
+ * Compute color count for a given session round (1-based).
+ * The 2x3 grid holds 6 tiles, so the effective count is clamped to
+ * min(count, palette.length, GRID_SIZE) downstream. Higher tiers still
+ * matter conceptually as long-session difficulty markers.
+ *
  * Tiers:
- *  Round 1–2:  2 colors
- *  Round 3–6:  3 colors
- *  Round 7–15: 4 colors
- *  Round 16+:  5–6 colors  (full board)
+ *  Round 1–2:   2 colors
+ *  Round 3–5:   3 colors
+ *  Round 6–9:   4 colors
+ *  Round 10–14: 5 colors
+ *  Round 15–20: 6 colors
+ *  Round 21–27: 7 colors
+ *  Round 28–34: 8 colors
+ *  Round 35+:   9 colors
  */
 function getColorCountForRound(roundCount: number): number {
   const r = Math.max(1, Math.floor(roundCount));
   if (r <= 2) return 2;
-  if (r <= 6) return 3;
-  if (r <= 15) return 4;
-  return 5 + Math.floor(Math.random() * 2); // 5 or 6
+  if (r <= 5) return 3;
+  if (r <= 9) return 4;
+  if (r <= 14) return 5;
+  if (r <= 20) return 6;
+  if (r <= 27) return 7;
+  if (r <= 34) return 8;
+  return 9;
 }
 
 /**
  * Generate a Practice Mode puzzle with progressive difficulty
- * based on the session's round count (1-based). All tiles come
- * from the supplied palette (defaults to chromatic) — no black/white anchors.
- * Uses Math.random() — no seeding, no persistence.
+ * based on the session's round count (1-based).
+ *
+ * Mirrors the daily flow: shuffles canonical CHROMATIC_COLORS indices
+ * (palette-independent) and then projects those indices onto the caller's
+ * palette 1:1. This keeps Colors / Patterns / Shapes / MTA aligned when the
+ * visual style is toggled mid-round. Uses Math.random() — no seeding.
  */
 export function generateFreePlayPuzzle(
   roundCount: number = 1,
@@ -30,12 +45,15 @@ export function generateFreePlayPuzzle(
   activeColors: { name: string; hex: string }[];
   colorCount: number;
 } {
-  const colorCount = Math.min(getColorCountForRound(roundCount), palette.length);
+  const requested = getColorCountForRound(roundCount);
+  const colorCount = Math.min(requested, CHROMATIC_COLORS.length, palette.length, GRID_SIZE);
 
-  const shuffled = [...palette].sort(() => Math.random() - 0.5);
-  const chosen = shuffled.slice(0, colorCount);
+  // Shuffle canonical indices — palette-independent — then project onto the
+  // caller's palette so the same slot/index maps cleanly across every theme.
+  const canonicalIdx = CHROMATIC_COLORS.map((_, i) => i).sort(() => Math.random() - 0.5);
+  const chosenIdx = canonicalIdx.slice(0, colorCount);
+  const chosen = chosenIdx.map((i) => palette[i]);
 
-  // Shuffle positions and pick slots
   const positions = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => Math.random() - 0.5);
   const coloredPositions = positions.slice(0, colorCount);
 
