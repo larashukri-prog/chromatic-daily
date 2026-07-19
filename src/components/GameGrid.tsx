@@ -65,8 +65,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
     const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    const fifaLightFill = mta && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || fifaLightFill) {
+    const mtaLightFill = mta && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
+    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || mtaLightFill) {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';
     }

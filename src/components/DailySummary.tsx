@@ -233,7 +233,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
 
-  // Active hexes for this attempt (so FIFA flag mapping matches the puzzle
+  // Active hexes for this attempt (so MTA subway bullet mapping matches the puzzle
   // that was actually played, not the current/global stage palette).
   const slideActiveHexes = Array.from(
     new Set(
