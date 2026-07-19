@@ -263,7 +263,8 @@ const Index = () => {
       setSubstage('main');
       setRegenIndex(0);
       setCurrentStageKey('stage1');
-      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
+      const palette = getColorsForTheme(visualTheme);
+      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0, palette);
       setSolution(sol);
       setActiveColors(ac);
       return;
