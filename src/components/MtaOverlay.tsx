@@ -20,6 +20,19 @@ export const MTA_LETTER_FOR_HEX: Record<string, string> = {
   '#9A38A1': '7',
 };
 
+/** Per-line text color: Q (yellow) uses black; all others use white. */
+export const MTA_TEXT_COLOR_FOR_HEX: Record<string, string> = {
+  '#D82233': '#FFFFFF',
+  '#009952': '#FFFFFF',
+  '#0062CF': '#FFFFFF',
+  '#EB6800': '#FFFFFF',
+  '#F6BC26': '#000000',
+  '#7C858C': '#FFFFFF',
+  '#8E5C33': '#FFFFFF',
+  '#799534': '#FFFFFF',
+  '#9A38A1': '#FFFFFF',
+};
+
 /** Palette hexes that can carry an MTA bullet (ordered to match MTA_COLORS). */
 export const MTA_SLOT_HEXES: string[] = MTA_COLORS.map((c) => c.hex);
 
@@ -35,6 +48,7 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
   const up = colorHex.toUpperCase();
   const letter = MTA_LETTER_FOR_HEX[up];
   if (!letter) return null;
+  const textFill = MTA_TEXT_COLOR_FOR_HEX[up] ?? '#FFFFFF';
 
   return (
     <span
@@ -45,17 +59,18 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
         viewBox="0 0 100 100"
         className="w-full h-full"
         role="presentation"
+        shapeRendering="geometricPrecision"
       >
-        <circle cx="50" cy="50" r="50" fill={up} />
+        <circle cx="50" cy="50" r="50" fill={up} stroke="none" />
         <text
           x="50"
-          y="50"
+          y="52"
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#FFFFFF"
+          fill={textFill}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
           fontWeight={800}
-          fontSize="62"
+          fontSize="72"
           style={{ letterSpacing: '-0.02em' }}
         >
           {letter}
