@@ -428,7 +428,8 @@ const Index = () => {
 
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const puzzle = generateFreePlayPuzzle(1);
+    const palette = getColorsForTheme(visualTheme);
+    const puzzle = generateFreePlayPuzzle(1, palette);
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSessionStats(initialStats);
