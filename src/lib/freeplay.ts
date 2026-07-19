@@ -1,4 +1,4 @@
-import { COLORS, GRID_SIZE } from '@/lib/game';
+import { COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
 
 /**
  * Compute color count for a given session round (1-based) on the 2x3 grid (6 slots).
@@ -19,17 +19,20 @@ function getColorCountForRound(roundCount: number): number {
 /**
  * Generate a Practice Mode puzzle with progressive difficulty
  * based on the session's round count (1-based). All tiles come
- * from the chromatic palette — no black/white anchors.
+ * from the supplied palette (defaults to chromatic) — no black/white anchors.
  * Uses Math.random() — no seeding, no persistence.
  */
-export function generateFreePlayPuzzle(roundCount: number = 1): {
+export function generateFreePlayPuzzle(
+  roundCount: number = 1,
+  palette: ColorDef[] = COLORS,
+): {
   solution: (string | null)[];
   activeColors: { name: string; hex: string }[];
   colorCount: number;
 } {
-  const colorCount = getColorCountForRound(roundCount);
+  const colorCount = Math.min(getColorCountForRound(roundCount), palette.length);
 
-  const shuffled = [...COLORS].sort(() => Math.random() - 0.5);
+  const shuffled = [...palette].sort(() => Math.random() - 0.5);
   const chosen = shuffled.slice(0, colorCount);
 
   // Shuffle positions and pick slots
