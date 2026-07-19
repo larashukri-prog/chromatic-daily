@@ -64,7 +64,6 @@ export function MtaOverlay({ colorHex, className = '' }: MtaOverlayProps) {
         <circle cx="50" cy="50" r="50" fill={up} stroke="none" />
         <foreignObject x="0" y="0" width="100" height="100">
           <div
-            xmlns="http://www.w3.org/1999/xhtml"
             style={{
               width: '100%',
               height: '100%',
