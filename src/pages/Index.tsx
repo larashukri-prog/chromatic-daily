@@ -213,6 +213,7 @@ const Index = () => {
   const { theme: visualTheme } = useVisualTheme();
   const shapesMode = visualTheme === 'shapes';
   const mtaMode = visualTheme === 'mta';
+  const prevThemeRef = useRef<VisualTheme>(visualTheme);
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -248,6 +249,30 @@ const Index = () => {
   const pickerColors = mtaMode ? MTA_COLORS : CHROMATIC_COLORS;
 
   useEffect(() => {
+    // Practice Mode: re-project the current puzzle onto the new palette
+    // instead of clobbering it with a fresh daily stage.
+    if (mode === 'freeplay') {
+      const oldPalette = getColorsForTheme(prevThemeRef.current);
+      const newPalette = getColorsForTheme(visualTheme);
+      const remapHex = (hex: string | null): string | null => {
+        if (!hex) return hex;
+        const idx = oldPalette.findIndex((c) => c.hex === hex);
+        if (idx === -1 || !newPalette[idx]) return hex;
+        return newPalette[idx].hex;
+      };
+      setSolution((prev) => prev.map(remapHex));
+      setPlayerGrid((prev) => prev.map(remapHex));
+      setActiveColors((prev) =>
+        prev.map((c) => {
+          const idx = oldPalette.findIndex((p) => p.hex === c.hex);
+          if (idx === -1 || !newPalette[idx]) return c;
+          return { name: newPalette[idx].name, hex: newPalette[idx].hex };
+        }),
+      );
+      setSelectedColor((prev) => remapHex(prev));
+      prevThemeRef.current = visualTheme;
+      return;
+    }
     if (window.location.search.includes('reset')) {
       localStorage.removeItem('chromatic_daily');
       window.history.replaceState({}, '', window.location.pathname);
@@ -267,6 +292,7 @@ const Index = () => {
       const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0, palette);
       setSolution(sol);
       setActiveColors(ac);
+      prevThemeRef.current = visualTheme;
       return;
     }
     const info = getCurrentRoundInfo();
@@ -308,6 +334,7 @@ const Index = () => {
       setSolution(sol);
       setActiveColors(ac);
     }
+    prevThemeRef.current = visualTheme;
   }, [visualTheme]);
 
 
@@ -775,7 +802,7 @@ const Index = () => {
     setActiveSlot(null);
     setPhase('idle');
     setTimeout(() => startFreePlayObservation(puzzle), 50);
-  }, [startFreePlayObservation, freeplayRoundNum]);
+  }, [startFreePlayObservation, freeplayRoundNum, visualTheme]);
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
