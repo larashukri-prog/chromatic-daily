@@ -1,43 +1,25 @@
-## Bring Practice Mode in line with the daily UI updates
+## Reset local state so you can replay today's daily + Practice
 
-Practice Mode already inherits the 9-option picker and the polished MTA bullet overlay through shared components. Two gaps remain vs. the daily flow.
+Today's daily result is locked in `localStorage` (key `chromatic-daily`) once you finish all 3 attempts — that's why the app keeps showing the last result. The project already ships two safe ways to clear it; no code changes needed.
 
-### (a) Palette-independent puzzle generation
+### Option 1 — one-shot URL reset (recommended)
 
-Today `generateFreePlayPuzzle` in `src/lib/freeplay.ts` shuffles the supplied palette directly and stores palette-specific hexes in `solution`. If the player toggles Colors → Patterns → Shapes → MTA mid-round, the overlays only render for hexes in their own palette, so tiles can go blank or lose the 1:1 mapping — the exact issue we fixed for the daily via `generateStageSolution`.
-
-Refactor to mirror the daily approach:
-
-- Always shuffle canonical `CHROMATIC_COLORS` indices (unseeded `Math.random` — Practice stays non-deterministic).
-- Pick `colorCount` indices and pick positions against canonical hues (reuse the same non-adjacent placement idea used in daily, scaled to the 2x3 grid).
-- Project chosen indices onto the caller's palette 1:1, so the same slot + index always maps cleanly across every visual style.
-- Return `{ solution, activeColors, colorCount }` unchanged in shape.
-
-No change to `Index.tsx` call sites — `getColorsForTheme(visualTheme)` continues to be passed in.
-
-### (b) Extend Practice progression to 9 tiles
-
-Current `getColorCountForRound` caps at 5–6. With a 9-color pool, stretch the ramp so long sessions get meaningfully harder:
+Open the preview with the reset query param appended:
 
 ```
-Round 1–2:   2 colors
-Round 3–5:   3 colors
-Round 6–9:   4 colors
-Round 10–14: 5 colors
-Round 15–20: 6 colors
-Round 21–27: 7 colors
-Round 28–34: 8 colors
-Round 35+:   9 colors  (full board equivalent — grid holds 6, so cap at min(count, palette.length, GRID_SIZE))
+/play?reset
 ```
 
-Note: the grid is 6 slots, so `colorCount` is still clamped to `GRID_SIZE`. The extended tiers matter because `getColorsForTheme` returns 9-color palettes and the higher tiers should sample from a bigger sub-pool (harder discrimination) — the picker keeps showing all 9. Update `getColorCountForRound` to the tiers above, and keep the existing `Math.min(count, palette.length)` clamp; the grid cap is applied when picking positions.
+This clears the `chromatic-daily` local storage entry on load, then drops you back at a fresh daily attempt 1. Practice Mode uses no persistence, so it always starts clean.
 
-### Verification
+### Option 2 — manual clear from DevTools
 
-- Start Practice in Colors, complete a round, switch to Patterns / Shapes / MTA mid-round: same tiles/positions render correctly in every style, no blank slots.
-- Play through rounds 1 → 35+ and confirm the color count ramp matches the tiers above and never exceeds the grid.
-- Build + typecheck clean.
+In the preview browser: DevTools → Application → Local Storage → your preview origin → delete the `chromatic-daily` key → reload.
+
+### If you also want a persistent in-app reset button
+
+Say the word and I'll add a small dev-only "Reset today" affordance to the UI (already scoped by the existing test-utilities memory). Otherwise, `?reset` is the fastest path and doesn't touch code.
 
 ### Out of scope
 
-Picker layout, MTA overlay styling, daily-mode logic, persistence, analytics event shape.
+No code changes in this plan — this is a "how to unstick your test session" walkthrough. If you want the dev button added, approve and tell me and I'll follow up with a build-mode change.
