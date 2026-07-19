@@ -1,22 +1,24 @@
-## Polish MTA bullets to match authentic subway signage
+## Recenter MTA bullet characters
 
-Single file: `src/components/MtaOverlay.tsx`. The component is already used everywhere MTA tiles render (guess slots, historical rows, picker), so styling changes propagate automatically.
+The current `MtaOverlay` renders both the circle and the letter as SVG. `dominantBaseline="central"` is inconsistent across browsers (especially Safari/WebKit), and the recent `y="52"` nudge made the drift worse — characters sit slightly low/off-axis inside the circle.
 
-### Changes
+### Fix (single file: `src/components/MtaOverlay.tsx`)
 
-1. **Text contrast per line** — introduce a per-hex text-color map. All lines use `#FFFFFF`; the `Q` bullet (`#F6BC26`, yellow) uses `#000000`. Use that map for the SVG `text fill` instead of the hard-coded white.
-2. **Typography tuning** — keep the Helvetica/Arial stack and `font-weight: 800`, but bump `fontSize` from `62` to `72` so the character fills roughly 2× x-height inside the 100-unit circle, matching official bullets. Keep `textAnchor="middle"` + `dominantBaseline="central"` for exact centering.
-3. **Crisp round circle** — set `shape-rendering="geometricPrecision"` on the SVG and add a subtle 1-unit inner stroke matching the fill (or `stroke="none"`) so anti-aliasing looks clean at all sizes. Retain `r="50"` for full-bleed fills already used by the grid.
-4. **Letter-spacing** — keep the slight negative tracking (`-0.02em`) for the wide letters (`A`, `F`, `L`, `Z`, `G`) and single digits so nothing clips the circle edge.
+Split the bullet into two layers so centering is bulletproof and matches real MTA signage:
 
-### Out of scope
-
-- No changes to the palette, picker layout, or grid slot chrome.
-- No changes to non-MTA themes.
+1. **Circle stays SVG** — full-bleed `<circle cx="50" cy="50" r="50" fill={hex}>` inside a `viewBox="0 0 100 100"` SVG that fills the parent span. This keeps the crisp round edge.
+2. **Character becomes an HTML layer** — an absolutely-positioned `<span>` overlaid on the SVG, using flexbox (`inset-0 flex items-center justify-center`) so the glyph is centered by the browser's text-layout engine (no baseline math). Font stack stays Helvetica Neue / Helvetica / Arial, `font-weight: 800`, with `line-height: 1` and `letter-spacing: -0.02em`.
+3. **Size the glyph off the container** — use `font-size: 62%` of the tile (via `text-[0.62em]` or inline `fontSize: '62%'`) so the character fills roughly 2× x-height without clipping wide letters (`A`, `F`, `L`, `Z`, `G`) or single digits. This scales automatically with the slot.
+4. **Keep the per-line text color map** — `Q` (yellow) → black, all others → white.
+5. Remove the previous `y="52"` and SVG `<text>` node entirely, so no baseline drift remains.
 
 ### Verification
 
-Reload `/play` in MTA theme and check:
-- Picker row: 9 bullets are perfectly round, characters visually fill the circle.
-- `Q` bullet renders black text on yellow; all other bullets render white text.
-- Guess slots and historical/result rows show the same bullet styling.
+Reload `/play` in MTA theme:
+- Picker row: every character (`1 5 A F Q L Z G 7`) sits dead-center in its circle, both horizontally and vertically.
+- Guess slots and result rows show the same centering.
+- `Q` bullet still black-on-yellow; all others white.
+
+### Out of scope
+
+No changes to palette, layout, sizing of the tiles themselves, or non-MTA themes.
