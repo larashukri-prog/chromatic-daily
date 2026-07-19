@@ -1,6 +1,24 @@
 // Chromatic Daily - Game Logic
 
-const COLORS = [
+export interface ColorDef {
+  name: string;
+  hex: string;
+  hue: number;
+}
+
+/** Original chromatic palette used by Colors, Patterns, and Shapes themes. */
+const CHROMATIC_COLORS: ColorDef[] = [
+  { name: 'Red', hex: '#EF4444', hue: 0 },
+  { name: 'Orange', hex: '#FD9349', hue: 25 },
+  { name: 'Yellow', hex: '#FDE047', hue: 50 },
+  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
+  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
+  { name: 'Lime', hex: '#7AC00F', hue: 82 },
+  { name: 'Pink', hex: '#EC4899', hue: 330 },
+];
+
+/** Official MTA subway-line brand colors used by the MTA theme. */
+const MTA_COLORS: ColorDef[] = [
   { name: '1', hex: '#D82233', hue: 0 },
   { name: '5', hex: '#009952', hue: 145 },
   { name: 'A', hex: '#0062CF', hue: 213 },
@@ -12,18 +30,14 @@ const COLORS = [
   { name: '7', hex: '#9A38A1', hue: 295 },
 ];
 
-/** Hard-coded fallback palette in case the randomizer fails */
-const FALLBACK_PALETTE: { name: string; hex: string; hue: number }[] = [
-  { name: '1', hex: '#D82233', hue: 0 },
-  { name: '5', hex: '#009952', hue: 145 },
-  { name: 'A', hex: '#0062CF', hue: 213 },
-  { name: 'F', hex: '#EB6800', hue: 27 },
-  { name: 'Q', hex: '#F6BC26', hue: 45 },
-  { name: 'L', hex: '#7C858C', hue: 210 },
-  { name: 'Z', hex: '#8E5C33', hue: 25 },
-  { name: 'G', hex: '#799534', hue: 79 },
-  { name: '7', hex: '#9A38A1', hue: 295 },
-];
+/** Backwards-compatible alias for the original chromatic palette. */
+const COLORS = CHROMATIC_COLORS;
+
+/** Fallback palette for the chromatic theme. */
+const FALLBACK_PALETTE: ColorDef[] = [...CHROMATIC_COLORS];
+
+/** Fallback palette for the MTA theme. */
+const MTA_FALLBACK_PALETTE: ColorDef[] = [...MTA_COLORS];
 
 const NEUTRAL = '#D1D5DB';
 
