@@ -1,16 +1,17 @@
-import { COLORS } from '@/lib/game';
+import { CHROMATIC_COLORS, MTA_COLORS } from '@/lib/game';
 
 const DARK = 'rgba(0,0,0,0.85)';
 const LIGHT = 'rgba(255,255,255,0.9)';
 
-// Hex values of dark-background colors that need white strokes
-// Palette hexes whose bullets are too dark for the default dark pattern stroke;
-// switched to the light-stroke variant.
+// Hex values of dark-background colors that need white strokes.
 const DARK_COLORS = new Set([
-  '#0062CF', // MTA A (blue)
-  '#7C858C', // MTA L (grey)
-  '#8E5C33', // MTA Z (brown)
-  '#9A38A1', // MTA 7 (purple)
+  // Chromatic dark colors
+  '#8B5CF6', // Purple
+  // MTA dark colors
+  '#0062CF', // A — blue
+  '#7C858C', // L — grey
+  '#8E5C33', // Z — brown
+  '#9A38A1', // 7 — purple
 ]);
 
 export const PATTERN_IDS = [
@@ -26,10 +27,18 @@ export const PATTERN_IDS = [
 ];
 
 export function getPatternId(colorHex: string): string {
-  const idx = COLORS.findIndex((c) => c.hex === colorHex);
-  if (idx === -1) return '';
-  const base = PATTERN_IDS[idx];
-  return DARK_COLORS.has(colorHex) ? `${base}-light` : base;
+  const up = colorHex.toUpperCase();
+  const idx = CHROMATIC_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
+  if (idx !== -1) {
+    const base = PATTERN_IDS[idx];
+    return DARK_COLORS.has(up) ? `${base}-light` : base;
+  }
+  const mtaIdx = MTA_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
+  if (mtaIdx !== -1) {
+    const base = PATTERN_IDS[mtaIdx];
+    return DARK_COLORS.has(up) ? `${base}-light` : base;
+  }
+  return '';
 }
 
 function PatternSet({ suffix, s }: { suffix: string; s: string }) {
