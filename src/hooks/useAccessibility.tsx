@@ -1,19 +1,18 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { posthog } from '@/lib/posthog';
 
-export type VisualTheme = 'colors' | 'mix';
+/** Single unified visual style: colors + daily rotating patterns. */
+export type VisualTheme = 'mix';
 
 export const VISUAL_THEME_OPTIONS: { value: VisualTheme; label: string }[] = [
-  { value: 'colors', label: 'Color Only' },
   { value: 'mix', label: 'MIX' },
 ];
 
-export function getVisualThemeLabel(theme: VisualTheme): string {
-  return VISUAL_THEME_OPTIONS.find((o) => o.value === theme)?.label ?? theme;
+export function getVisualThemeLabel(_theme?: VisualTheme | string): string {
+  return 'MIX';
 }
 
 const THEME_KEY = 'chromatic-visual-theme';
-const LEGACY_KEY = 'chromatic-accessibility';
 
 interface VisualThemeContextType {
   theme: VisualTheme;
@@ -24,54 +23,26 @@ interface VisualThemeContextType {
 }
 
 const VisualThemeContext = createContext<VisualThemeContextType>({
-  theme: 'colors',
+  theme: 'mix',
   setTheme: () => {},
-  enabled: false,
+  enabled: true,
   toggle: () => {},
 });
 
-function loadInitial(): VisualTheme {
-  try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'colors' || stored === 'mix') return stored;
-    // Migrate legacy pattern/shape/MTA/FIFA styles onto MIX.
-    if (
-      stored === 'patterns' ||
-      stored === 'shapes' ||
-      stored === 'mta' ||
-      stored === 'fifa' ||
-      stored === 'knicks'
-    ) {
-      return 'mix';
-    }
-    // Migrate legacy boolean
-    const legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy === 'true') return 'mix';
-    return 'colors';
-  } catch {
-    return 'colors';
-  }
-}
-
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<VisualTheme>(loadInitial);
-
   useEffect(() => {
+    // Migrate any legacy stored style (colors/patterns/shapes/mta/fifa) to MIX.
     try {
-      localStorage.setItem(THEME_KEY, theme);
+      localStorage.setItem(THEME_KEY, 'mix');
     } catch {}
     try {
-      posthog.register({ visual_style: theme });
+      posthog.register({ visual_style: 'mix' });
     } catch {}
-  }, [theme]);
-
-  const setTheme = (t: VisualTheme) => setThemeState(t);
-  const toggle = () =>
-    setThemeState((prev) => (prev === 'mix' ? 'colors' : 'mix'));
+  }, []);
 
   return (
     <VisualThemeContext.Provider
-      value={{ theme, setTheme, enabled: theme === 'mix', toggle }}
+      value={{ theme: 'mix', setTheme: () => {}, enabled: true, toggle: () => {} }}
     >
       {children}
     </VisualThemeContext.Provider>
