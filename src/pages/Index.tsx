@@ -1370,7 +1370,7 @@ const Index = () => {
                       isWhite && !mtaMode ||
                       mtaMode;
                     return (
-                    <button
+                    <motion.button
                       key={c.hex}
                       onClick={() => {
                         if (activeSlot !== null) {
@@ -1380,6 +1380,9 @@ const Index = () => {
                           if (isOverwrite || currentCount < effectiveColorCount) {
                             newGrid[activeSlot] = c.hex;
                             setPlayerGrid(newGrid);
+                            playTileFx([activeSlot], 'fill', 320);
+                            setSwatchPop(c.hex);
+                            fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
                             trackEngagement('color_placed', { mode });
                           }
                           setActiveSlot(null);
@@ -1389,6 +1392,17 @@ const Index = () => {
                           trackEngagement('color_selected', { mode });
                         }
                       }}
+                      whileTap={{ scale: 0.92 }}
+                      animate={
+                        swatchPop === c.hex
+                          ? { scale: [1, 1.25, 1] }
+                          : { scale: selectedColor === c.hex ? 1.05 : 1 }
+                      }
+                      transition={
+                        swatchPop === c.hex
+                          ? { duration: 0.24, ease: 'easeOut' }
+                          : { type: 'spring', stiffness: 500, damping: 18 }
+                      }
                       className={cn(
                         "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
                         "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -1397,18 +1411,16 @@ const Index = () => {
                       style={{
                         backgroundColor: bg,
                         border: showAsWhite ? '2px solid #D1D5DB' : undefined,
-                        outline: selectedColor === c.hex
-                          ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
-                          : '2px solid transparent',
-                        outlineOffset: '2px',
-                        transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
+                        boxShadow: selectedColor === c.hex
+                          ? `0 0 0 3px hsl(var(--card)), 0 0 0 5px ${showAsWhite ? 'rgba(15,23,42,0.55)' : c.hex}, 0 0 14px 4px ${showAsWhite ? 'rgba(15,23,42,0.28)' : `${c.hex}80`}`
+                          : undefined,
                       }}
                       title={c.name}
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
                       {mtaMode && <MtaOverlay colorHex={c.hex} />}
-                    </button>
+                    </motion.button>
                     );
                   })}
                   </MtaPaletteProvider>
