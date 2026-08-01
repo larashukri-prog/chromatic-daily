@@ -72,6 +72,19 @@ export function isDarkColor(hex: string): boolean {
   return L < 0.45;
 }
 
+/**
+ * Legacy hexes from retired palettes (MTA lines + earlier chromatic shades).
+ * Mapped onto their canonical palette index so saved rounds from older
+ * sessions still render with the daily pattern + shape.
+ */
+const LEGACY_HEX_INDEX: Record<string, number> = {
+  // Retired MTA subway palette (index-aligned with CHROMATIC_COLORS)
+  '#D82233': 0, '#009952': 1, '#0062CF': 2, '#EB6800': 3, '#F6BC26': 4,
+  '#7C858C': 5, '#8E5C33': 6, '#799534': 7, '#9A38A1': 8,
+  // Earlier chromatic shades
+  '#F97316': 1, '#FBBF24': 2, '#F59E0B': 2, '#14B8A6': 3, '#84CC16': 5,
+};
+
 export interface DailyMix {
   /** SVG pattern id (already contrast-adjusted) for a base color. */
   patternIdFor: (hex: string | null) => string;
@@ -92,7 +105,9 @@ export function getDailyMix(dateKey: number = getTodayKey()): DailyMix {
   const indexOf = (hex: string | null): number => {
     if (!hex) return -1;
     const up = hex.toUpperCase();
-    return CHROMATIC_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
+    const i = CHROMATIC_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
+    if (i !== -1) return i;
+    return LEGACY_HEX_INDEX[up] ?? -1;
   };
 
   const mix: DailyMix = {
