@@ -13,11 +13,9 @@ import confetti from 'canvas-confetti';
 
 import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
-import { PatternOverlay } from '@/components/PatternOverlay';
-import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
-import { MtaOverlay } from '@/components/MtaOverlay';
+import { MixOverlay } from '@/components/MixOverlay';
 import {
-  GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS, getColorsForTheme, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
+  GamePhase, NEUTRAL, activePalette, getColorsForTheme, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
@@ -211,8 +209,9 @@ const Index = () => {
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
-  const shapesMode = visualTheme === 'shapes';
-  const mtaMode = visualTheme === 'mta';
+  const mixMode = visualTheme === 'mix';
+  const shapesMode = false;
+  const mtaMode = false;
   const prevThemeRef = useRef<VisualTheme>(visualTheme);
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
@@ -246,7 +245,7 @@ const Index = () => {
   const isFreeplay = mode === 'freeplay';
 
   // Picker shows the active palette's colors at every stage — pool > grid forces recall over elimination.
-  const pickerColors = mtaMode ? MTA_COLORS : CHROMATIC_COLORS;
+  const pickerColors = getColorsForTheme(visualTheme);
 
   useEffect(() => {
     // Practice Mode: re-project the current puzzle onto the new palette
@@ -649,7 +648,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'mta' ? 'Right on time. Next train?' : 'Great memory! Ready for the next one?')
+            ? 'Great memory! Ready for the next one?'
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -730,7 +729,7 @@ const Index = () => {
 
       // MTA: fire blue/gold confetti when the daily is won on the final attempt.
       const isDailyDone = nextStageKey === null;
-      if (visualTheme === 'mta' && correct && isDailyDone) {
+      if (false && correct && isDailyDone) {
         const key = `final:win`;
         if (mtaCelebrationKey.current !== key) {
           mtaCelebrationKey.current = key;
@@ -1066,7 +1065,7 @@ const Index = () => {
   }, [startFreePlay]);
 
   return (
-    <MtaPaletteProvider activeHexes={activeColors.map((c) => c.hex)}>
+    <> c.hex)}>
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
         isFreeplay ? 'bg-[hsl(260,30%,97%)]' : 'bg-background'
@@ -1272,7 +1271,6 @@ const Index = () => {
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap max-w-[320px] mx-auto">
-                  <MtaPaletteProvider activeHexes={MTA_DEFAULT_PALETTE_HEXES}>
                   {pickerColors.map((c) => {
                     const upHex = c.hex.toUpperCase();
                     const isWhite = upHex === '#FFFFFF';
@@ -1324,13 +1322,10 @@ const Index = () => {
                       }}
                       title={c.name}
                     >
-                      {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
-                      {shapesMode && <ShapeOverlay colorHex={c.hex} />}
-                      {mtaMode && <MtaOverlay colorHex={c.hex} />}
+                      {mixMode && <MixOverlay colorHex={c.hex} />}
                     </button>
                     );
                   })}
-                  </MtaPaletteProvider>
                 </div>
               </div>
             )}
@@ -1611,9 +1606,7 @@ const Index = () => {
                           border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
                         }}
                       >
-                        {a11y && <PatternOverlay colorHex={c} size="100%" />}
-                        {shapesMode && <ShapeOverlay colorHex={c} />}
-                        {mtaMode && c && <MtaOverlay colorHex={c} />}
+                        {mixMode && <MixOverlay colorHex={c} />}
                       </div>
                     );
                   })}
@@ -1684,7 +1677,6 @@ const Index = () => {
         </p>
       </footer>
     </div>
-    </MtaPaletteProvider>
   );
 };
 
