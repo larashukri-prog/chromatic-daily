@@ -92,6 +92,13 @@ const Index = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasStartedPlaying = useRef(false);
 
+  // --- Game juice state ---
+  const [tileFx, setTileFx] = useState<Record<number, 'fill' | 'clear' | 'shake' | 'ripple'>>({});
+  const [flipping, setFlipping] = useState(false);
+  const [stagedCheck, setStagedCheck] = useState(false);
+  const [swatchPop, setSwatchPop] = useState<string | null>(null);
+  const fxTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
   // Speed Star state
   const [isSpeedRound, setIsSpeedRound] = useState(false);
   const [starsEarned, setStarsEarned] = useState(0);
