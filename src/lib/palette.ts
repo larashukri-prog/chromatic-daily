@@ -216,7 +216,6 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const day = date.getDay();
   const rand = seededRandom(dateSeed(date) + 7919);
   const n = DAILY_PALETTE_SIZE;
-  const jitter = () => (rand() - 0.5) * 8; // ±4° hue jitter
   const spin = rand() * 360; // per-day hue rotation
 
   const out: Spec[] = [];
