@@ -704,8 +704,6 @@ const Index = () => {
         // is visible at the same time the result modal appears (mobile-friendly).
         if (milestoneHit) triggerMilestone();
         if (!correct) {
-          setShake(true);
-          setTimeout(() => setShake(false), 600);
           setTimeout(() => setShowResult(true), 800);
         } else {
           setFreeplayRoundNum((n) => n + 1);
