@@ -210,8 +210,6 @@ const Index = () => {
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
   const mixMode = visualTheme === 'mix';
-  const shapesMode = false;
-  const mtaMode = false;
   const prevThemeRef = useRef<VisualTheme>(visualTheme);
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
@@ -727,16 +725,7 @@ const Index = () => {
       const msg = getStageResultMessage(currentStageKey, correct, nextStageArg, visualTheme);
       setResultMessage(msg);
 
-      // MTA: fire blue/gold confetti when the daily is won on the final attempt.
       const isDailyDone = nextStageKey === null;
-      if (false && correct && isDailyDone) {
-        const key = `final:win`;
-        if (mtaCelebrationKey.current !== key) {
-          mtaCelebrationKey.current = key;
-          fireMtaCelebration();
-        }
-      }
-
       // Daily ends when: stage is terminal, OR we've used all 3 attempts (adaptive paths).
       const done = nextStageKey === null || newTotalUsed >= MAX_ROUNDS;
       if (done || savedData.finished) {
@@ -1275,17 +1264,8 @@ const Index = () => {
                     const upHex = c.hex.toUpperCase();
                     const isWhite = upHex === '#FFFFFF';
                     const isBlack = upHex === '#000000';
-                    // In shapes mode, anchors keep their true fill (black/white);
-                    // chromatic colors render on white with a shape overlay.
-                    // In MTA mode, anchors render as Cup (white) and Ball (black);
-                    // chromatic colors render on white with the MTA subway bullet overlay.
-                    let bg = c.hex;
-                    if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                    else if (mtaMode) bg = '#FFFFFF';
-                    const showAsWhite =
-                      (shapesMode && !isBlack) ||
-                      isWhite && !mtaMode ||
-                      mtaMode;
+                    const bg = c.hex;
+                    const showAsWhite = isWhite;
                     return (
                     <button
                       key={c.hex}
@@ -1356,9 +1336,7 @@ const Index = () => {
                   onClick={handleReady}
                   className={cn(
                     'w-full rounded-xl h-12 text-sm tracking-wide text-white',
-                    mtaMode
-                      ? 'bg-black hover:bg-black/90'
-                      : 'bg-black hover:bg-black/90'
+                    'bg-black hover:bg-black/90'
                   )}
                 >
                   I'm ready
@@ -1374,9 +1352,7 @@ const Index = () => {
                     disabled={!canVerify}
                     className={cn(
                       'rounded-xl flex-1 gap-2 text-white',
-                      mtaMode
-                        ? 'bg-black hover:bg-black/90'
-                        : 'bg-black hover:bg-black/90'
+                      'bg-black hover:bg-black/90'
                     )}
                   >
                     <CheckCircle2 className="w-4 h-4" /> Verify
@@ -1587,15 +1563,8 @@ const Index = () => {
                     const up = c?.toUpperCase();
                     const isBlack = up === '#000000';
                     const isWhite = up === '#FFFFFF';
-                    let bg: string = c || NEUTRAL;
-                    if (c) {
-                      if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                      else if (mtaMode) bg = '#FFFFFF';
-                    }
-                    const lightBorder =
-                      (shapesMode && c && !isBlack) ||
-                      (isWhite && !mtaMode) ||
-                      (mtaMode && !!c);
+                    const bg: string = c || NEUTRAL;
+                    const lightBorder = isWhite;
                     return (
                       <div
                         key={i}
