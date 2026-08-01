@@ -80,10 +80,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     }
     if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
     if (phase === 'result' && result && !result[index] && solution[index]) return '3px solid #DC2626';
-    if (phase === 'recall' && !playerGrid[index]) {
-      return selectedColor ? '2px dashed #9CA3AF' : '2px dashed #D1D5DB';
-    }
     return '2px solid transparent';
+
   };
 
   const getGlowStyle = (index: number): React.CSSProperties => {
