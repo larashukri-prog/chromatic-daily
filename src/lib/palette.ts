@@ -138,15 +138,25 @@ interface Spec {
 /** Minimum perceptual distance required between any two colors of a day. */
 const MIN_SEPARATION = 0.085;
 
-function toLab({ L, C, H }: Spec): [number, number, number] {
-  const h = (H * Math.PI) / 180;
-  return [L, C * Math.cos(h), C * Math.sin(h)];
+/** Oklab coordinates of a rendered hex — measures what the eye actually sees. */
+function hexToOklab(hex: string): [number, number, number] {
+  const m = hex.replace('#', '');
+  const f = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const r = f(parseInt(m.slice(0, 2), 16) / 255);
+  const g = f(parseInt(m.slice(2, 4), 16) / 255);
+  const b = f(parseInt(m.slice(4, 6), 16) / 255);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const mm = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * mm - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * mm + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * mm - 0.808675766 * s,
+  ];
 }
 
-function specDistance(a: Spec, b: Spec): number {
-  const [l1, a1, b1] = toLab(a);
-  const [l2, a2, b2] = toLab(b);
-  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+function labDistance(a: [number, number, number], b: [number, number, number]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
 /**
@@ -161,9 +171,12 @@ function enforceSeparation(specs: Spec[]): Spec[] {
 
   for (let pass = 0; pass < 80; pass++) {
     let worst = 0;
+    // Distances are measured on the rendered (gamut-clamped) colors so
+    // clipping can't collapse two swatches together.
+    const labs = out.map((s) => hexToOklab(oklchToHex(s.L, s.C, s.H)));
     for (let i = 0; i < out.length; i++) {
       for (let j = i + 1; j < out.length; j++) {
-        const d = specDistance(out[i], out[j]);
+        const d = labDistance(labs[i], labs[j]);
         if (d >= MIN_SEPARATION) continue;
         worst = Math.max(worst, MIN_SEPARATION - d);
 
@@ -175,12 +188,16 @@ function enforceSeparation(specs: Spec[]): Spec[] {
         const step = deficit * 0.55;
         lo.L = Math.max(L_MIN, lo.L - step);
         hi.L = Math.min(L_MAX, hi.L + step);
+        labs[i] = hexToOklab(oklchToHex(out[i].L, out[i].C, out[i].H));
+        labs[j] = hexToOklab(oklchToHex(out[j].L, out[j].C, out[j].H));
 
         // If lightness is pinned at the rails, drift hue apart instead.
         if (!out[i].lockHue && !out[j].lockHue && lo.L <= L_MIN + 1e-6 && hi.L >= L_MAX - 1e-6) {
           const spread = (deficit / Math.max(0.05, (lo.C + hi.C) / 2)) * 20;
           lo.H -= spread;
           hi.H += spread;
+          labs[i] = hexToOklab(oklchToHex(out[i].L, out[i].C, out[i].H));
+          labs[j] = hexToOklab(oklchToHex(out[j].L, out[j].C, out[j].H));
         }
       }
     }
