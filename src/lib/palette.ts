@@ -135,8 +135,13 @@ interface Spec {
   lockHue?: boolean;
 }
 
-/** Minimum perceptual distance required between any two colors of a day. */
-const MIN_SEPARATION = 0.085;
+/**
+ * Minimum perceptual distance required between any two colors of a day.
+ * ~0.15 Oklab ≈ Delta E 15. Days whose rule fixes lightness and chroma
+ * (Monday pastels, Tuesday brights) can only separate by hue, so they carry
+ * their own achievable floor.
+ */
+const MIN_SEPARATION = 0.15;
 
 /** Oklab coordinates of a rendered hex — measures what the eye actually sees. */
 function hexToOklab(hex: string): [number, number, number] {
