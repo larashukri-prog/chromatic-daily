@@ -108,15 +108,15 @@ function hueLabel(h: number): string {
 function seasonalBand(month: number): { name: string; hues: number[]; L: number; C: number } {
   // month is 0-indexed
   if (month === 11 || month <= 1) {
-    return { name: 'Winter Frost', hues: [200, 210, 220, 230, 240, 250, 260, 270, 285], L: 0.78, C: 0.09 };
+    return { name: 'Winter Frost', hues: [190, 215, 240, 265, 290, 320, 160, 20, 55], L: 0.76, C: 0.1 };
   }
   if (month <= 4) {
-    return { name: 'Spring Bloom', hues: [100, 120, 140, 160, 330, 340, 60, 80, 200], L: 0.8, C: 0.14 };
+    return { name: 'Spring Bloom', hues: [95, 130, 165, 200, 250, 300, 335, 15, 60], L: 0.78, C: 0.14 };
   }
   if (month <= 7) {
-    return { name: 'Summer Citrus', hues: [40, 55, 70, 85, 100, 25, 15, 130, 160], L: 0.76, C: 0.18 };
+    return { name: 'Summer Citrus', hues: [15, 45, 75, 105, 140, 180, 215, 300, 340], L: 0.74, C: 0.18 };
   }
-  return { name: 'Autumn Earth', hues: [20, 30, 40, 50, 60, 15, 35, 75, 10], L: 0.6, C: 0.13 };
+  return { name: 'Autumn Earth', hues: [10, 40, 70, 100, 135, 175, 250, 300, 330], L: 0.62, C: 0.14 };
 }
 
 export interface DailyPaletteMeta {
