@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion, animate } from 'framer-motion';
 import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +31,47 @@ function getDifficultyName(colorCount: number): string {
   if (colorCount <= 4) return 'STANDARD';
   if (colorCount <= 6) return 'COMPLEX';
   return 'MASTER';
+}
+
+/* ---------- Shared motion variants ---------- */
+
+const SPRING = { type: 'spring' as const, stiffness: 380, damping: 26, mass: 0.7 };
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 12, scale: 0.985 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { ...SPRING, staggerChildren: 0.06, delayChildren: 0.05 },
+  },
+};
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const } },
+};
+
+/** Diagonal (top-left -> bottom-right) reveal delay for a 2-column grid. */
+function tileDelay(i: number) {
+  const col = i % 2;
+  const row = Math.floor(i / 2);
+  return (col + row) * 0.07;
+}
+
+/** Animated count-up used by the Neural Match readout. */
+function useCountUp(target: number, enabled: boolean) {
+  const [value, setValue] = useState(enabled ? 0 : target);
+  useEffect(() => {
+    if (!enabled) { setValue(target); return; }
+    const controls = animate(0, target, {
+      duration: 0.7,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setValue(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [target, enabled]);
+  return value;
 }
 
 interface AttemptSlide {
