@@ -125,6 +125,88 @@ export interface DailyPaletteMeta {
   colors: DailyColor[];
 }
 
+// -------------------------------------------------- minimum separation guard
+
+interface Spec {
+  L: number;
+  C: number;
+  H: number;
+  /** When true the hue is theme-critical (monochrome) and must not drift. */
+  lockHue?: boolean;
+}
+
+/** Minimum perceptual distance required between any two colors of a day. */
+const MIN_SEPARATION = 0.085;
+
+/** Oklab coordinates of a rendered hex — measures what the eye actually sees. */
+function hexToOklab(hex: string): [number, number, number] {
+  const m = hex.replace('#', '');
+  const f = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const r = f(parseInt(m.slice(0, 2), 16) / 255);
+  const g = f(parseInt(m.slice(2, 4), 16) / 255);
+  const b = f(parseInt(m.slice(4, 6), 16) / 255);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const mm = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * mm - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * mm + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * mm - 0.808675766 * s,
+  ];
+}
+
+function labDistance(a: [number, number, number], b: [number, number, number]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+/**
+ * Deterministically nudges colors apart (lightness first, then a small hue
+ * drift when allowed) until every pair clears MIN_SEPARATION, or the bounded
+ * iteration budget runs out.
+ */
+function enforceSeparation(specs: Spec[]): Spec[] {
+  const out = specs.map((s) => ({ ...s }));
+  const L_MIN = 0.2;
+  const L_MAX = 0.95;
+
+  for (let pass = 0; pass < 80; pass++) {
+    let worst = 0;
+    // Distances are measured on the rendered (gamut-clamped) colors so
+    // clipping can't collapse two swatches together.
+    const labs = out.map((s) => hexToOklab(oklchToHex(s.L, s.C, s.H)));
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const d = labDistance(labs[i], labs[j]);
+        if (d >= MIN_SEPARATION) continue;
+        worst = Math.max(worst, MIN_SEPARATION - d);
+
+        const deficit = MIN_SEPARATION - d;
+        // Deterministic direction: lower index keeps the darker slot.
+        const lowFirst = out[i].L < out[j].L || (out[i].L === out[j].L && i < j);
+        const lo = lowFirst ? out[i] : out[j];
+        const hi = lowFirst ? out[j] : out[i];
+        const step = deficit * 0.55;
+        lo.L = Math.max(L_MIN, lo.L - step);
+        hi.L = Math.min(L_MAX, hi.L + step);
+        labs[i] = hexToOklab(oklchToHex(out[i].L, out[i].C, out[i].H));
+        labs[j] = hexToOklab(oklchToHex(out[j].L, out[j].C, out[j].H));
+
+        // If lightness is pinned at the rails, drift hue apart instead.
+        if (!out[i].lockHue && !out[j].lockHue && lo.L <= L_MIN + 1e-6 && hi.L >= L_MAX - 1e-6) {
+          const spread = (deficit / Math.max(0.05, (lo.C + hi.C) / 2)) * 20;
+          lo.H -= spread;
+          hi.H += spread;
+          labs[i] = hexToOklab(oklchToHex(out[i].L, out[i].C, out[i].H));
+          labs[j] = hexToOklab(oklchToHex(out[j].L, out[j].C, out[j].H));
+        }
+      }
+    }
+    if (worst === 0) break;
+  }
+
+  return out;
+}
+
 function buildPalette(date: Date): DailyPaletteMeta {
   const day = date.getDay();
   const rand = seededRandom(dateSeed(date) + 7919);
@@ -132,7 +214,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const jitter = () => (rand() - 0.5) * 8; // ±4° hue jitter
   const spin = rand() * 360; // per-day hue rotation
 
-  const out: { L: number; C: number; H: number }[] = [];
+  const out: Spec[] = [];
   let name = 'Chromatic';
 
   switch (day) {
@@ -140,7 +222,12 @@ function buildPalette(date: Date): DailyPaletteMeta {
       // Monday — Pastels
       name = 'Monday Pastels';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.88, C: 0.06, H: spin + (360 / n) * i + jitter() });
+        // Gentle lightness wobble so the low-chroma pastels stay separable.
+        out.push({
+          L: 0.8 + (i % 3) * 0.055,
+          C: 0.075,
+          H: spin + (360 / n) * i + jitter(),
+        });
       }
       break;
     }
@@ -159,9 +246,10 @@ function buildPalette(date: Date): DailyPaletteMeta {
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         out.push({
-          L: 0.3 + t * (0.9 - 0.3),
-          C: 0.02 + t * (0.15 - 0.02),
+          L: 0.25 + t * (0.93 - 0.25),
+          C: 0.02 + t * (0.18 - 0.02),
           H: anchor,
+          lockHue: true,
         });
       }
       break;
@@ -197,24 +285,26 @@ function buildPalette(date: Date): DailyPaletteMeta {
       break;
     }
     case 6: {
-      // Saturday — Cool / cold
+      // Saturday — Cool / cold (widened hue band + lightness ramp)
       name = 'Saturday Cool';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.65, C: 0.16, H: 180 + (80 / (n - 1)) * i });
+        const t = i / (n - 1);
+        out.push({ L: 0.45 + t * 0.37, C: 0.16, H: 160 + (120 / (n - 1)) * i });
       }
       break;
     }
     default: {
-      // Sunday — Warm sunset
+      // Sunday — Warm sunset (widened hue band + lightness ramp)
       name = 'Sunday Sunset';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.68, C: 0.2, H: 0 + (50 / (n - 1)) * i });
+        const t = i / (n - 1);
+        out.push({ L: 0.5 + t * 0.35, C: 0.2, H: 340 + (85 / (n - 1)) * i });
       }
       break;
     }
   }
 
-  const colors: DailyColor[] = out.map((c, i) => {
+  const colors: DailyColor[] = enforceSeparation(out).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
     const L = Math.min(0.97, Math.max(0.18, c.L));
     const C = Math.max(0, c.C);
