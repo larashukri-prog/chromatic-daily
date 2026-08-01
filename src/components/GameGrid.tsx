@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
-import { useVisualTheme } from '@/hooks/useAccessibility';
 import { MixOverlay } from '@/components/MixOverlay';
 
 interface GameGridProps {
@@ -15,8 +14,6 @@ interface GameGridProps {
 }
 
 export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, activeSlot, onCircleClick }: GameGridProps) {
-  const { theme } = useVisualTheme();
-  const mix = theme === 'mix';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -90,7 +87,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
             ...getGlowStyle(i),
           }}
         >
-          {mix && <MixOverlay colorHex={getPatternColor(i)} />}
+          {<MixOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>

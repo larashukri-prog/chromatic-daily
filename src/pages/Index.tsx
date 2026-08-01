@@ -11,7 +11,6 @@ import { GameGrid } from '@/components/GameGrid';
 import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
-import { VisualThemeToggle } from '@/components/VisualThemeToggle';
 import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
 import { MixOverlay } from '@/components/MixOverlay';
 import {
@@ -209,7 +208,7 @@ const Index = () => {
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const { enabled: a11y } = useAccessibility();
   const { theme: visualTheme } = useVisualTheme();
-  const mixMode = visualTheme === 'mix';
+  const mixMode = true;
   const prevThemeRef = useRef<VisualTheme>(visualTheme);
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
@@ -1372,12 +1371,6 @@ const Index = () => {
         </>
       )}
 
-      {/* Accessibility Toggle (below card, above streaks) */}
-      {!showDailySummary && (
-        <div className="mt-5 flex justify-center">
-          <VisualThemeToggle />
-        </div>
-      )}
 
 
       {/* Info & Reset buttons */}
