@@ -1,18 +1,21 @@
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { posthog } from '@/lib/posthog';
 
-/** Single unified visual style: colors + daily rotating patterns. */
-export type VisualTheme = 'mix';
+export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'mta';
 
 export const VISUAL_THEME_OPTIONS: { value: VisualTheme; label: string }[] = [
-  { value: 'mix', label: 'MIX' },
+  { value: 'colors', label: 'Colors' },
+  { value: 'patterns', label: 'Patterns' },
+  { value: 'shapes', label: 'Shapes' },
+  { value: 'mta', label: 'MTA' },
 ];
 
-export function getVisualThemeLabel(_theme?: VisualTheme | string): string {
-  return 'MIX';
+export function getVisualThemeLabel(theme: VisualTheme): string {
+  return VISUAL_THEME_OPTIONS.find((o) => o.value === theme)?.label ?? theme;
 }
 
 const THEME_KEY = 'chromatic-visual-theme';
+const LEGACY_KEY = 'chromatic-accessibility';
 
 interface VisualThemeContextType {
   theme: VisualTheme;
@@ -23,26 +26,46 @@ interface VisualThemeContextType {
 }
 
 const VisualThemeContext = createContext<VisualThemeContextType>({
-  theme: 'mix',
+  theme: 'colors',
   setTheme: () => {},
-  enabled: true,
+  enabled: false,
   toggle: () => {},
 });
 
+function loadInitial(): VisualTheme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes' || stored === 'mta') return stored;
+    // Migrate legacy FIFA / Knicks themes to MTA.
+    if (stored === 'fifa' || stored === 'knicks') return 'mta';
+    // Migrate legacy boolean
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy === 'true') return 'patterns';
+    return 'colors';
+  } catch {
+    return 'colors';
+  }
+}
+
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<VisualTheme>(loadInitial);
+
   useEffect(() => {
-    // Migrate any legacy stored style (colors/patterns/shapes/mta/fifa) to MIX.
     try {
-      localStorage.setItem(THEME_KEY, 'mix');
+      localStorage.setItem(THEME_KEY, theme);
     } catch {}
     try {
-      posthog.register({ visual_style: 'mix' });
+      posthog.register({ visual_style: theme });
     } catch {}
-  }, []);
+  }, [theme]);
+
+  const setTheme = (t: VisualTheme) => setThemeState(t);
+  const toggle = () =>
+    setThemeState((prev) => (prev === 'patterns' ? 'colors' : 'patterns'));
 
   return (
     <VisualThemeContext.Provider
-      value={{ theme: 'mix', setTheme: () => {}, enabled: true, toggle: () => {} }}
+      value={{ theme, setTheme, enabled: theme === 'patterns', toggle }}
     >
       {children}
     </VisualThemeContext.Provider>
