@@ -617,6 +617,7 @@ const Index = () => {
     setPlayerGrid(Array(GRID_SIZE).fill(null));
     setSelectedColor(null);
     setActiveSlot(null);
+    setStagedCheck(false);
   };
 
   const selectedCount = playerGrid.filter((c) => c !== null).length;
@@ -632,6 +633,18 @@ const Index = () => {
     setResult(res);
     setIsCorrect(correct);
     setVerifying(true);
+    setStagedCheck(false);
+
+    // Success: ripple sweeps top-left → bottom-right across correct tiles.
+    // Failure: only the incorrect tiles head-shake, then settle back.
+    const wrongIdx = res.map((ok, i) => ({ ok, i })).filter((x) => !x.ok).map((x) => x.i);
+    if (correct) {
+      const filled = playerGrid.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
+      playTileFx(filled, 'ripple', 900);
+    } else {
+      fxTimers.current.push(setTimeout(() => playTileFx(wrongIdx, 'shake', 240), 600));
+      fxTimers.current.push(setTimeout(() => playTileFx(wrongIdx, 'clear', 320), 880));
+    }
 
     const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
     const correctTilesThisRound = solution.reduce((n, c, i) => n + (c !== null && res[i] ? 1 : 0), 0);
