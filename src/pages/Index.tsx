@@ -1054,7 +1054,6 @@ const Index = () => {
   }, [startFreePlay]);
 
   return (
-    <> c.hex)}>
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
         isFreeplay ? 'bg-[hsl(260,30%,97%)]' : 'bg-background'
