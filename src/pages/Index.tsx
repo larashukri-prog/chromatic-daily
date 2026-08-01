@@ -810,23 +810,9 @@ const Index = () => {
     }, 1500);
   };
 
-  // --- Staged auto-verification -------------------------------------------
-  // Placing the final tile arms an 800ms "Staged Check" buffer (ambient board
-  // pulse), then verification runs automatically. Clearing cancels it.
-  const verifyRef = useRef(verify);
-  verifyRef.current = verify;
-
+  // Board is armed (ambient pulse) once every tile is placed, awaiting Verify.
   useEffect(() => {
-    if (!canVerify || verifying) {
-      setStagedCheck(false);
-      return;
-    }
-    setStagedCheck(true);
-    const t = setTimeout(() => {
-      setStagedCheck(false);
-      verifyRef.current();
-    }, 800);
-    return () => clearTimeout(t);
+    setStagedCheck(canVerify && !verifying);
   }, [canVerify, verifying]);
 
   const canContinue =
@@ -1463,10 +1449,18 @@ const Index = () => {
                 </Button>
               )}
               {phase === 'recall' && (
-                <Button onClick={clearGrid} variant="outline" className="rounded-xl w-full gap-2">
-                  <RotateCcw className="w-4 h-4" />
-                  {stagedCheck ? 'Checking…' : 'Clear'}
-                </Button>
+                <>
+                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
+                    <RotateCcw className="w-4 h-4" /> Clear
+                  </Button>
+                  <Button
+                    onClick={verify}
+                    disabled={!canVerify}
+                    className="rounded-xl flex-1 gap-2 text-white bg-black hover:bg-black/90"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Verify
+                  </Button>
+                </>
               )}
               {/* Daily result: view result button */}
               {phase === 'result' && !isFreeplay && !showResult && !alreadyFinished && (
