@@ -298,6 +298,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
     case 6: {
       // Saturday — Cool spectrum: hues 150°→290°, L 0.40→0.85.
       name = 'Saturday Cool Spectrum';
+      minSep = 0.09;
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         out.push({ L: 0.4 + t * 0.45, C: 0.16, H: 150 + 140 * t });
@@ -307,6 +308,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
     default: {
       // Sunday — Sunset warmth: hues 330°→70° (wrapping), L 0.45→0.90.
       name = 'Sunday Sunset Warmth';
+      minSep = 0.09;
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         out.push({ L: 0.45 + t * 0.45, C: 0.2, H: 330 + 100 * t });
