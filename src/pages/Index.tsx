@@ -394,9 +394,14 @@ const Index = () => {
       if (navigator.vibrate) navigator.vibrate(50);
     }
 
-    setPhase('recall');
+    // Flip the board face-down before revealing the empty receptacles.
+    setFlipping(true);
     setSelectedColor(null);
-    recallStartTime.current = Date.now();
+    setTimeout(() => {
+      setFlipping(false);
+      setPhase('recall');
+      recallStartTime.current = Date.now();
+    }, 420);
   }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay, mode, roundIndex]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
