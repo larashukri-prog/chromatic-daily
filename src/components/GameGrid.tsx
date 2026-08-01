@@ -121,9 +121,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
             ...getGlowStyle(i),
           }}
         >
-          {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
-          {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
-          {mta && <MtaOverlay colorHex={getPatternColor(i)} />}
+          <MixedTile colorHex={getMixColor(i)} />
         </motion.button>
       ))}
     </div>
