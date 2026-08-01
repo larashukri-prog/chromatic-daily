@@ -80,10 +80,19 @@ export default {
             height: "0",
           },
         },
+        "board-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 0 0 0 hsl(var(--primary) / 0)",
+          },
+          "50%": {
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 0 0 6px hsl(var(--primary) / 0.14)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "board-pulse": "board-pulse 800ms ease-in-out infinite",
       },
     },
   },
