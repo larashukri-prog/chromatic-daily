@@ -262,11 +262,13 @@ export function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export function getColorsForTheme(theme: string): ColorDef[] {
-  return theme === 'mta' ? MTA_COLORS : CHROMATIC_COLORS;
+/** Both visual styles share the dynamic daily palette. */
+export function getColorsForTheme(_theme?: string): ColorDef[] {
+  return activePalette();
 }
 
-export { NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS };
+export { NEUTRAL, activePalette };
+export { getDailyPaletteName };
 
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
@@ -275,7 +277,7 @@ export interface RoundAttempt {
   grid: (string | null)[];
   isCorrect: boolean;
   solution: (string | null)[];
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta';
+  visualTheme?: 'colors' | 'mix';
   recallMs?: number;
   /** Stage 2 sub-puzzle the attempt was played on. */
   substage?: 'main' | '2b';
