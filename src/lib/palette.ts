@@ -108,21 +108,6 @@ function clamp01(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
 }
 
-/** Seasonal hue bands used by the Friday rule. */
-function seasonalBand(month: number): { name: string; hues: number[]; L: number; C: number } {
-  // month is 0-indexed
-  if (month === 11 || month <= 1) {
-    return { name: 'Winter Frost', hues: [190, 215, 240, 265, 290, 320, 160, 20, 55], L: 0.76, C: 0.1 };
-  }
-  if (month <= 4) {
-    return { name: 'Spring Bloom', hues: [95, 130, 165, 200, 250, 300, 335, 15, 60], L: 0.78, C: 0.14 };
-  }
-  if (month <= 7) {
-    return { name: 'Summer Citrus', hues: [15, 45, 75, 105, 140, 180, 215, 300, 340], L: 0.74, C: 0.18 };
-  }
-  return { name: 'Autumn Earth', hues: [10, 40, 70, 100, 135, 175, 250, 300, 330], L: 0.62, C: 0.14 };
-}
-
 export interface DailyPaletteMeta {
   /** Human name of the day's palette theme, e.g. "Cool Depths". */
   name: string;
