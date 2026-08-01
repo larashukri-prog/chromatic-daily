@@ -221,7 +221,7 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
   const { theme: globalTheme } = useVisualTheme();
   const effectiveTheme = slide.visualTheme ?? globalTheme;
-  const mixMode = effectiveTheme === 'mix';
+  const mixMode = true;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
