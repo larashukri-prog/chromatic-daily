@@ -338,6 +338,8 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   });
   const correctTiles = result.filter(Boolean).length;
   const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
+  const reduce = useReducedMotion();
+  const animatedMatch = useCountUp(neuralMatch, !reduce);
 
   return (
     <MtaPaletteProvider activeHexes={slideActiveHexes}>
@@ -361,9 +363,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               Neural Match
             </span>
-            <span className="text-[10px] font-semibold text-foreground">{neuralMatch}%</span>
+            <span className="text-[10px] font-semibold text-foreground tabular-nums">{animatedMatch}%</span>
           </div>
-          <Progress value={neuralMatch} className="h-1.5" />
+          <Progress value={animatedMatch} className="h-1.5" />
         </div>
       )}
 
