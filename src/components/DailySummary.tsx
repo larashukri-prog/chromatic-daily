@@ -377,7 +377,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             initial={{ opacity: 0, rotateY: 90 }}
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
-            transition={{ duration: 0.3 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 24 }}
             className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[160px] mx-auto mb-4"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
@@ -487,12 +487,15 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
 
       {/* View Solution toggle for incorrect attempts */}
       {!slide.isCorrect && (
-        <button
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.95 }}
+          transition={SPRING}
           onClick={() => setShowSolution((s) => !s)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-1"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-1 inline-block"
         >
           {showSolution ? 'View Your Attempt' : 'View Solution'}
-        </button>
+        </motion.button>
       )}
     </div>
     </MtaPaletteProvider>
@@ -513,9 +516,9 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <motion.div
             key={i}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3, delay: i * 0.04 }}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: [0.6, 1.04, 1], opacity: 1 }}
+            transition={{ duration: 0.5, times: [0, 0.6, 1], ease: [0.22, 1, 0.36, 1], delay: tileDelay(i) }}
             className="aspect-square rounded-full"
             style={{ backgroundColor: NEUTRAL, border: '2px solid transparent' }}
           />
