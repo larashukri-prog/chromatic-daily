@@ -212,11 +212,6 @@ const Index = () => {
   }, []);
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
-  const { enabled: a11y } = useAccessibility();
-  const { theme: visualTheme } = useVisualTheme();
-  const shapesMode = visualTheme === 'shapes';
-  const mtaMode = visualTheme === 'mta';
-  const prevThemeRef = useRef<VisualTheme>(visualTheme);
 
   const { dayName, colorCount: baseColorCount } = getDayInfo();
   const effectiveColorCount = activeColors.length || baseColorCount;
@@ -249,7 +244,7 @@ const Index = () => {
   const isFreeplay = mode === 'freeplay';
 
   // Picker shows the active palette's colors at every stage — pool > grid forces recall over elimination.
-  const pickerColors = mtaMode ? MTA_COLORS : CHROMATIC_COLORS;
+  const pickerColors = CHROMATIC_COLORS;
 
   useEffect(() => {
     // Practice Mode: re-project the current puzzle onto the new palette
@@ -291,8 +286,7 @@ const Index = () => {
       setSubstage('main');
       setRegenIndex(0);
       setCurrentStageKey('stage1');
-      const palette = getColorsForTheme(visualTheme);
-      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0, palette);
+      const { solution: sol, activeColors: ac } = generateStageSolution('stage1', 0);
       setSolution(sol);
       setActiveColors(ac);
       prevThemeRef.current = visualTheme;
@@ -332,8 +326,7 @@ const Index = () => {
       setRegenIndex(0);
       setAttemptInRound(1);
       setCurrentStageKey(stage);
-      const palette = getColorsForTheme(visualTheme);
-      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0, palette);
+      const { solution: sol, activeColors: ac } = generateStageSolution(stage, 0);
       setSolution(sol);
       setActiveColors(ac);
     }
@@ -342,7 +335,7 @@ const Index = () => {
 
 
   const startObservation = useCallback(() => {
-    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    const duration = getObservationDuration(activeColors.length || baseColorCount);
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
@@ -364,7 +357,7 @@ const Index = () => {
         // Timer expired — do NOT auto-transition; user must click "I am ready"
       }
     }, 30);
-  }, [a11y, activeColors.length, baseColorCount]);
+  }, [activeColors.length, baseColorCount]);
 
   /** Handle user clicking "I am ready" during observation */
   const handleReady = useCallback(() => {
@@ -373,7 +366,7 @@ const Index = () => {
     hasStartedPlaying.current = true;
     trackEngagement('ready_clicked', { mode, round_number: roundIndex + 1 });
 
-    const duration = getObservationDuration(activeColors.length || baseColorCount, a11y);
+    const duration = getObservationDuration(activeColors.length || baseColorCount);
     const elapsed = Date.now() - observationStartTime.current;
 
     // Accumulate focus seconds (daily mode only)
@@ -398,7 +391,7 @@ const Index = () => {
       setPhase('recall');
       recallStartTime.current = Date.now();
     }, 420);
-  }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay, mode, roundIndex]);
+  }, [phase, activeColors.length, baseColorCount, isFreeplay, mode, roundIndex]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
   const startCountdown = useCallback((onComplete: () => void) => {
@@ -422,7 +415,6 @@ const Index = () => {
     if (alreadyFinished && !isFreeplay) return;
     posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
     posthog.capture('game_started', {
-      visual_style: visualTheme,
       round_number: roundIndex + 1,
       day_number: dayNum,
       difficulty: difficultyName,
@@ -437,12 +429,12 @@ const Index = () => {
     } else {
       startObservation();
     }
-  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode, visualTheme]);
+  }, [alreadyFinished, isFreeplay, startObservation, startCountdown, roundIndex, dayNum, difficultyName, mode]);
 
   // --- Free Play callbacks ---
 
   const startFreePlayObservation = useCallback((puzzle: { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number }) => {
-    const duration = getObservationDuration(puzzle.colorCount, a11y);
+    const duration = getObservationDuration(puzzle.colorCount);
     setTimerDuration(duration);
     setPhase('observation');
     setTimerProgress(100);
@@ -459,12 +451,11 @@ const Index = () => {
         // Do NOT auto-transition — user must click "I am ready"
       }
     }, 30);
-  }, [a11y]);
+  }, []);
 
   const startFreePlay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const palette = getColorsForTheme(visualTheme);
-    const puzzle = generateFreePlayPuzzle(1, palette);
+    const puzzle = generateFreePlayPuzzle(1);
     setMode('freeplay');
     setFreeplayRoundNum(1);
     setSessionStats(initialStats);
@@ -486,13 +477,12 @@ const Index = () => {
       color_count: puzzle.colorCount,
     });
     posthog.capture('practice_started', {
-      visual_style: visualTheme,
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
     trackVirtualPageview('/practice', 'Chromatic Daily — Practice');
     startCountdown(() => startFreePlayObservation(puzzle));
-  }, [a11y, startCountdown, startFreePlayObservation, visualTheme]);
+  }, [startCountdown, startFreePlayObservation]);
 
   const backToDaily = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -698,7 +688,7 @@ const Index = () => {
         setPhase('result');
         setResultMessage(
           correct
-            ? (visualTheme === 'mta' ? 'Right on time. Next train?' : 'Great memory! Ready for the next one?')
+            ? 'Great memory! Ready for the next one?'
             : 'Not quite — give it another shot!'
         );
         // Fire milestone after the verify animation settles so the celebration
@@ -726,7 +716,7 @@ const Index = () => {
       correct,
       playerGrid,
       solution,
-      visualTheme,
+      'mixed',
       Math.round(recallSeconds * 1000),
       substageForSave,
       regenIndex,
@@ -772,19 +762,12 @@ const Index = () => {
       // Adaptive next stage: win steps up difficulty, loss repeats the tier.
       const nextStageKey = getNextStage(currentStageKey, correct);
       const nextStageArg: StageKey | 'done' = nextStageKey ?? 'done';
-      const msg = getStageResultMessage(currentStageKey, correct, nextStageArg, visualTheme);
+      const msg = getStageResultMessage(currentStageKey, correct, nextStageArg);
       setResultMessage(msg);
 
-      // MTA: fire blue/gold confetti when the daily is won on the final attempt.
+      // Fire confetti when the daily is won on the final attempt.
       const isDailyDone = nextStageKey === null;
-      if (visualTheme === 'mta' && correct && isDailyDone) {
-        const key = `final:win`;
-        if (mtaCelebrationKey.current !== key) {
-          mtaCelebrationKey.current = key;
-          fireMtaCelebration();
-        }
-      } else if (correct && isDailyDone) {
-        // Attempt 3 cleared in any other visual style — celebrate too.
+      if (correct && isDailyDone) {
         const key = `final:win`;
         if (mtaCelebrationKey.current !== key) {
           mtaCelebrationKey.current = key;
@@ -831,8 +814,7 @@ const Index = () => {
     setSubstage('main');
     setRegenIndex(0);
     setAttemptInRound(1);
-    const palette = getColorsForTheme(visualTheme);
-    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, 0, palette);
+    const { solution: sol, activeColors: ac } = generateStageSolution(nextStage, 0);
     setSolution(sol);
     setActiveColors(ac);
 
@@ -843,8 +825,7 @@ const Index = () => {
   const freeplayNext = useCallback(() => {
     setShowResult(false);
     const nextRound = freeplayRoundNum + 1;
-    const palette = getColorsForTheme(visualTheme);
-    const puzzle = generateFreePlayPuzzle(nextRound, palette);
+    const puzzle = generateFreePlayPuzzle(nextRound);
     setFreeplayRoundNum(nextRound);
     posthog.capture('practice_mode_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
@@ -859,7 +840,7 @@ const Index = () => {
     setActiveSlot(null);
     setPhase('idle');
     setTimeout(() => startFreePlayObservation(puzzle), 50);
-  }, [startFreePlayObservation, freeplayRoundNum, visualTheme]);
+  }, [startFreePlayObservation, freeplayRoundNum]);
 
   const freeplayRetry = useCallback(() => {
     setShowResult(false);
@@ -870,7 +851,7 @@ const Index = () => {
     setPhase('idle');
     const currentColorCount = activeColors.length;
     setTimeout(() => {
-      const duration = getObservationDuration(currentColorCount, a11y);
+      const duration = getObservationDuration(currentColorCount);
       setTimerDuration(duration);
       setPhase('observation');
       setTimerProgress(100);
@@ -888,21 +869,12 @@ const Index = () => {
         }
       }, 30);
     }, 50);
-  }, [a11y, activeColors.length]);
+  }, [activeColors.length]);
 
   const buildShareMetrics = () => {
     const data = getTodayData();
     const roundsForStyles = data?.rounds ?? savedRounds;
-    const seen: VisualTheme[] = [];
-    for (const round of roundsForStyles) {
-      for (const attempt of round.attempts) {
-        const t = attempt.visualTheme as VisualTheme | undefined;
-        if (t && !seen.includes(t)) seen.push(t);
-      }
-    }
-    const visualStyles = (seen.length ? seen : [visualTheme])
-      .map(getVisualThemeLabel)
-      .join(', ');
+    const visualStyles = 'Mixed';
     // Derive metrics from persisted rounds so the share text is correct
     // even after a reload / when viewing /summary in a fresh session.
     let roundsPlayed = 0;
@@ -1085,7 +1057,7 @@ const Index = () => {
     setShowSessionReport(false);
     if (phase === 'observation') {
       // Restart observation timer for current puzzle
-      const duration = getObservationDuration(activeColors.length, a11y);
+      const duration = getObservationDuration(activeColors.length);
       setTimerDuration(duration);
       setTimerProgress(100);
       observationStartTime.current = Date.now();
@@ -1097,7 +1069,7 @@ const Index = () => {
         if (elapsed >= duration) clearInterval(timerRef.current!);
       }, 30);
     }
-  }, [phase, activeColors.length, a11y]);
+  }, [phase, activeColors.length]);
 
   const shareSession = useCallback(() => {
     if (posthog.__loaded) {
@@ -1123,7 +1095,6 @@ const Index = () => {
   }, [startFreePlay]);
 
   return (
-    <MtaPaletteProvider activeHexes={activeColors.map((c) => c.hex)}>
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 py-4 sm:py-8 transition-colors duration-500 ${
         isFreeplay ? 'bg-[hsl(260,30%,97%)]' : 'bg-background'
@@ -1335,22 +1306,12 @@ const Index = () => {
                   {selectedCount}/{effectiveColorCount} colors placed
                 </motion.p>
                 <div className="flex justify-center gap-2 flex-wrap max-w-[320px] mx-auto">
-                  <MtaPaletteProvider activeHexes={MTA_DEFAULT_PALETTE_HEXES}>
                   {pickerColors.map((c) => {
                     const upHex = c.hex.toUpperCase();
                     const isWhite = upHex === '#FFFFFF';
                     const isBlack = upHex === '#000000';
-                    // In shapes mode, anchors keep their true fill (black/white);
-                    // chromatic colors render on white with a shape overlay.
-                    // In MTA mode, anchors render as Cup (white) and Ball (black);
-                    // chromatic colors render on white with the MTA subway bullet overlay.
-                    let bg = c.hex;
-                    if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                    else if (mtaMode) bg = '#FFFFFF';
-                    const showAsWhite =
-                      (shapesMode && !isBlack) ||
-                      isWhite && !mtaMode ||
-                      mtaMode;
+                    const bg = c.hex;
+                    const showAsWhite = isWhite;
                     return (
                     <motion.button
                       key={c.hex}
@@ -1399,13 +1360,10 @@ const Index = () => {
                       }}
                       title={c.name}
                     >
-                      {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
-                      {shapesMode && <ShapeOverlay colorHex={c.hex} />}
-                      {mtaMode && <MtaOverlay colorHex={c.hex} />}
+                      <MixedTile colorHex={c.hex} shapeScale={0.5} />
                     </motion.button>
                     );
                   })}
-                  </MtaPaletteProvider>
                 </div>
               </div>
             )}
@@ -1434,12 +1392,7 @@ const Index = () => {
               {phase === 'observation' && (
                 <Button
                   onClick={handleReady}
-                  className={cn(
-                    'w-full rounded-xl h-12 text-sm tracking-wide text-white',
-                    mtaMode
-                      ? 'bg-black hover:bg-black/90'
-                      : 'bg-black hover:bg-black/90'
-                  )}
+                  className="w-full rounded-xl h-12 text-sm tracking-wide text-white bg-black hover:bg-black/90"
                 >
                   I'm ready
                 </Button>
@@ -1472,12 +1425,6 @@ const Index = () => {
         </>
       )}
 
-      {/* Accessibility Toggle (below card, above streaks) */}
-      {!showDailySummary && (
-        <div className="mt-5 flex justify-center">
-          <VisualThemeToggle />
-        </div>
-      )}
 
 
       {/* Info & Reset buttons */}
@@ -1660,17 +1607,9 @@ const Index = () => {
                 <div className="grid grid-cols-2 gap-2 max-w-[90px] mx-auto">
                   {solution.map((c, i) => {
                     const up = c?.toUpperCase();
-                    const isBlack = up === '#000000';
                     const isWhite = up === '#FFFFFF';
-                    let bg: string = c || NEUTRAL;
-                    if (c) {
-                      if (shapesMode) bg = isBlack ? '#000000' : '#FFFFFF';
-                      else if (mtaMode) bg = '#FFFFFF';
-                    }
-                    const lightBorder =
-                      (shapesMode && c && !isBlack) ||
-                      (isWhite && !mtaMode) ||
-                      (mtaMode && !!c);
+                    const bg: string = c || NEUTRAL;
+                    const lightBorder = isWhite;
                     return (
                       <div
                         key={i}
@@ -1681,9 +1620,7 @@ const Index = () => {
                           border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
                         }}
                       >
-                        {a11y && <PatternOverlay colorHex={c} size="100%" />}
-                        {shapesMode && <ShapeOverlay colorHex={c} />}
-                        {mtaMode && c && <MtaOverlay colorHex={c} />}
+                        <MixedTile colorHex={c} shapeScale={0.5} />
                       </div>
                     );
                   })}
@@ -1754,13 +1691,11 @@ const Index = () => {
         </p>
       </footer>
     </div>
-    </MtaPaletteProvider>
   );
 };
 
 // Wrap in ErrorBoundary
 import { GameErrorBoundary } from '@/components/GameErrorBoundary';
-import { MtaPaletteProvider, MTA_DEFAULT_PALETTE_HEXES } from '@/components/MtaPaletteContext';
 const IndexWithErrorBoundary = () => (
   <GameErrorBoundary>
     <Index />
