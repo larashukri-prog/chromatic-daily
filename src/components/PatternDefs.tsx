@@ -1,4 +1,4 @@
-import { CHROMATIC_COLORS, MTA_COLORS } from '@/lib/game';
+import { CHROMATIC_COLORS } from '@/lib/game';
 
 const DARK = 'rgba(0,0,0,0.85)';
 const LIGHT = 'rgba(255,255,255,0.9)';
@@ -9,11 +9,6 @@ const DARK_COLORS = new Set([
   '#8B5CF6', // Purple
   '#3B82F6', // Blue
   '#8B5C33', // Brown
-  // MTA dark colors
-  '#0062CF', // A — blue
-  '#7C858C', // L — grey
-  '#8E5C33', // Z — brown
-  '#9A38A1', // 7 — purple
 ]);
 
 export const PATTERN_IDS = [
@@ -33,11 +28,6 @@ export function getPatternId(colorHex: string): string {
   const idx = CHROMATIC_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
   if (idx !== -1) {
     const base = PATTERN_IDS[idx];
-    return DARK_COLORS.has(up) ? `${base}-light` : base;
-  }
-  const mtaIdx = MTA_COLORS.findIndex((c) => c.hex.toUpperCase() === up);
-  if (mtaIdx !== -1) {
-    const base = PATTERN_IDS[mtaIdx];
     return DARK_COLORS.has(up) ? `${base}-light` : base;
   }
   return '';

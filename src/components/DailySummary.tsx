@@ -4,11 +4,7 @@ import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
-import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
-import { PatternOverlay } from '@/components/PatternOverlay';
-import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { MtaOverlay } from '@/components/MtaOverlay';
-import { MtaPaletteProvider } from '@/components/MtaPaletteContext';
+import { MixedTile } from '@/components/MixedTile';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -38,13 +34,10 @@ interface AttemptSlide {
   solution: (string | null)[];
   isCorrect: boolean;
   roundIndex: number;
-  visualTheme?: VisualTheme;
 }
 
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
-  const { theme: visualTheme } = useVisualTheme();
-  const mta = visualTheme === 'mta';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -76,7 +69,6 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         solution: entry.attempt.solution ?? entry.roundSolution,
         isCorrect: entry.attempt.isCorrect,
         roundIndex: i,
-        visualTheme: entry.attempt.visualTheme as VisualTheme | undefined,
       });
     } else {
       slides.push(null);
@@ -222,26 +214,9 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 }
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
-  const { enabled: a11y } = useAccessibility();
-  const { theme: globalTheme } = useVisualTheme();
-  const effectiveTheme = slide.visualTheme ?? globalTheme;
-  const shapesMode = effectiveTheme === 'shapes';
-  const mtaMode = effectiveTheme === 'mta';
-  const patternsMode = effectiveTheme === 'patterns';
-  const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
-
-  // Active hexes for this attempt (so MTA subway bullet mapping matches the puzzle
-  // that was actually played, not the current/global stage palette).
-  const slideActiveHexes = Array.from(
-    new Set(
-      [...solution, ...playerGrid].filter(
-        (h): h is string => typeof h === 'string',
-      ).map((h) => h.toUpperCase()),
-    ),
-  );
 
   const result = solution.map((c, i) => {
     if (c === null) return playerGrid[i] === null;
@@ -251,7 +226,6 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
 
   return (
-    <MtaPaletteProvider activeHexes={slideActiveHexes}>
     <div className="text-center">
       {/* Round header */}
       <div className="flex items-center justify-center gap-2 mb-1">
@@ -293,16 +267,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               if (showSolution) {
                 const color = solution[i] ?? NEUTRAL;
                 const up = solution[i]?.toUpperCase();
-                const isBlack = up === '#000000';
                 const isWhite = up === '#FFFFFF';
-                let bg: string = color;
-                if (solution[i]) {
-                  if (shapesMode) bg = '#FFFFFF';
-                  else if (mtaMode) bg = '#FFFFFF';
-                }
-                const lightBorder =
-                  (shapesMode && solution[i]) ||
-                  (mtaMode && !!solution[i]);
+                const bg: string = color;
+                const lightBorder = isWhite;
                 return (
                   <motion.div
                     key={i}
@@ -316,9 +283,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
-                    {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
-                    {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {mtaMode && solution[i] && <MtaOverlay colorHex={solution[i]} />}
+                    <MixedTile colorHex={solution[i]} shapeScale={0.5} />
                   </motion.div>
                 );
               }
@@ -336,16 +301,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
                 : 'none';
               const pUp = playerGrid[i]?.toUpperCase();
-              const pIsBlack = pUp === '#000000';
               const pIsWhite = pUp === '#FFFFFF';
-              let pBg: string = cellColor;
-              if (playerGrid[i]) {
-                if (shapesMode) pBg = '#FFFFFF';
-                else if (mtaMode) pBg = '#FFFFFF';
-              }
-              const pLightBorder =
-                (shapesMode && playerGrid[i]) ||
-                (mtaMode && !!playerGrid[i]);
+              const pBg: string = cellColor;
+              const pLightBorder = pIsWhite;
 
               return (
                 <motion.div
@@ -364,9 +322,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       : '2px solid transparent',
                   }}
                 >
-                  {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
-                  {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {mtaMode && playerGrid[i] && <MtaOverlay colorHex={playerGrid[i]} />}
+                  <MixedTile colorHex={playerGrid[i]} shapeScale={0.5} />
                 </motion.div>
               );
             })}
@@ -384,7 +340,6 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </button>
       )}
     </div>
-    </MtaPaletteProvider>
   );
 }
 
