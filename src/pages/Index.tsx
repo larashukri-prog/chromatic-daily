@@ -1463,23 +1463,10 @@ const Index = () => {
                 </Button>
               )}
               {phase === 'recall' && (
-                <>
-                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
-                    <RotateCcw className="w-4 h-4" /> Clear
-                  </Button>
-                  <Button
-                    onClick={verify}
-                    disabled={!canVerify}
-                    className={cn(
-                      'rounded-xl flex-1 gap-2 text-white',
-                      mtaMode
-                        ? 'bg-black hover:bg-black/90'
-                        : 'bg-black hover:bg-black/90'
-                    )}
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Verify
-                  </Button>
-                </>
+                <Button onClick={clearGrid} variant="outline" className="rounded-xl w-full gap-2">
+                  <RotateCcw className="w-4 h-4" />
+                  {stagedCheck ? 'Checking…' : 'Clear'}
+                </Button>
               )}
               {/* Daily result: view result button */}
               {phase === 'result' && !isFreeplay && !showResult && !alreadyFinished && (
