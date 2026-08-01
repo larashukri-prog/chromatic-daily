@@ -216,122 +216,64 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const day = date.getDay();
   const rand = seededRandom(dateSeed(date) + 7919);
   const n = DAILY_PALETTE_SIZE;
-  const spin = rand() * 360; // per-day hue rotation
+  const spin = rand() * 360; // per-day rotation of the whole hue ring
 
-  const out: Spec[] = [];
-  let name = 'Chromatic';
-  // Hue-locked rules can only separate by hue, so they carry a lower floor.
-  let minSep = MIN_SEPARATION;
+  // Every day uses all nine hue slots, 40 apart, so no two tiles can ever be
+  // shades of the same colour family.
+  const RING_STEP = 360 / n;
 
-  switch (day) {
-    case 1: {
-      // Monday — Pastels: 9 hues across 360°, fixed L/C.
-      name = 'Monday Pastels';
-      minSep = 0.05;
-      for (let i = 0; i < n; i++) {
-        out.push({ L: 0.85, C: 0.08, H: spin + (360 / n) * i });
-      }
-      break;
-    }
-    case 2: {
-      // Tuesday — Brights: 9 hues across 360°, fixed L/C.
-      name = 'Tuesday Brights';
-      minSep = 0.1;
-      for (let i = 0; i < n; i++) {
-        out.push({ L: 0.7, C: 0.22, H: spin + (360 / n) * i });
-      }
-      break;
-    }
-    case 3: {
-      // Wednesday — Triadic tones: 3 hues 120° apart × 3 wide lightness steps.
-      const anchor = Math.floor(rand() * 360);
-      const hues = [anchor, (anchor + 120) % 360, (anchor + 240) % 360];
-      name = `Wednesday ${hues.map(hueLabel).join('/')} Triad`;
-      const steps: { L: number; C: number }[] = [
-        { L: 0.35, C: 0.13 },
-        { L: 0.65, C: 0.19 },
-        { L: 0.88, C: 0.1 },
-      ];
-      for (const h of hues) {
-        for (const s of steps) {
-          out.push({ L: s.L, C: s.C, H: h, lockHue: true });
-        }
-      }
-      break;
-    }
-    case 4: {
-      // Thursday — Split-duotone: two opposing hues, 4 + 5 wide steps.
-      const a = Math.floor(rand() * 360);
-      const b = (a + 180) % 360;
-      name = `Thursday ${hueLabel(a)}/${hueLabel(b)} Duotone`;
-      const aSteps: { L: number; C: number }[] = [
-        { L: 0.3, C: 0.11 },
-        { L: 0.52, C: 0.19 },
-        { L: 0.72, C: 0.16 },
-        { L: 0.92, C: 0.07 },
-      ];
-      const bSteps: { L: number; C: number }[] = [
-        { L: 0.25, C: 0.1 },
-        { L: 0.43, C: 0.17 },
-        { L: 0.61, C: 0.2 },
-        { L: 0.79, C: 0.14 },
-        { L: 0.95, C: 0.06 },
-      ];
-      for (const s of aSteps) out.push({ L: s.L, C: s.C, H: a, lockHue: true });
-      for (const s of bSteps) out.push({ L: s.L, C: s.C, H: b, lockHue: true });
-      break;
-    }
-    case 5: {
-      // Friday — Seasonal curated set
-      const band = seasonalBand(date.getMonth());
-      name = `Friday ${band.name}`;
-      minSep = 0.12;
-      for (let i = 0; i < n; i++) {
-        out.push({
-          L: band.L + (i % 3) * 0.09 - 0.09,
-          C: band.C + (i % 2) * 0.03,
-          H: band.hues[i % band.hues.length],
-        });
-      }
-      break;
-    }
-    case 6: {
-      name = 'Saturday Cool Spectrum';
-      minSep = 0.12;
-      // Curated cool anchors across 150°–290° with zigzagging lightness so no
-      // two neighbours read as steps of one gradient.
-      out.push(
-        { L: 0.62, C: 0.17, H: 155 }, // emerald
-        { L: 0.44, C: 0.11, H: 185 }, // deep teal
-        { L: 0.9, C: 0.07, H: 200 }, // ice cyan
-        { L: 0.55, C: 0.19, H: 232 }, // cobalt
-        { L: 0.78, C: 0.11, H: 215 }, // sky
-        { L: 0.4, C: 0.16, H: 268 }, // indigo
-        { L: 0.83, C: 0.09, H: 278 }, // periwinkle
-        { L: 0.66, C: 0.16, H: 250 }, // royal blue
-        { L: 0.88, C: 0.09, H: 168 }, // mint
-      );
-      break;
-    }
-    default: {
-      name = 'Sunday Sunset Warmth';
-      minSep = 0.12;
-      // Curated warm anchors across 330°–82°, zigzagging lightness, no dark
-      // purple end — every tile reads as a sunset colour.
-      out.push(
-        { L: 0.6, C: 0.21, H: 340 }, // magenta
-        { L: 0.46, C: 0.17, H: 15 }, // crimson
-        { L: 0.86, C: 0.08, H: 355 }, // blush
-        { L: 0.7, C: 0.18, H: 30 }, // coral
-        { L: 0.52, C: 0.14, H: 45 }, // burnt orange
-        { L: 0.82, C: 0.15, H: 75 }, // gold
-        { L: 0.58, C: 0.22, H: 25 }, // red
-        { L: 0.68, C: 0.16, H: 60 }, // amber
-        { L: 0.93, C: 0.07, H: 82 }, // cream
-      );
-      break;
-    }
+  interface Tone {
+    name: string;
+    L: number;
+    C: number;
+    /** Peak-to-peak lightness variation applied across the nine slots. */
+    jitter: number;
+    /** Extra hue tint added on top of the daily spin. */
+    tint?: number;
   }
+
+  let tone: Tone;
+  switch (day) {
+    case 1:
+      tone = { name: 'Monday Pastel', L: 0.86, C: 0.09, jitter: 0.07 };
+      break;
+    case 2:
+      tone = { name: 'Tuesday Vivid', L: 0.7, C: 0.22, jitter: 0.08 };
+      break;
+    case 3:
+      tone = { name: 'Wednesday Deep Jewel', L: 0.52, C: 0.19, jitter: 0.1 };
+      break;
+    case 4:
+      tone = { name: 'Thursday Contrast Mix', L: 0.66, C: 0.17, jitter: 0.26 };
+      break;
+    case 5: {
+      const band = seasonalBand(date.getMonth());
+      tone = { name: `Friday ${band.name}`, L: band.L, C: band.C + 0.03, jitter: 0.1, tint: band.hues[0] };
+      break;
+    }
+    case 6:
+      tone = { name: 'Saturday Bright Pop', L: 0.76, C: 0.2, jitter: 0.09 };
+      break;
+    default:
+      tone = { name: 'Sunday Muted Earth', L: 0.62, C: 0.11, jitter: 0.09 };
+      break;
+  }
+
+  const name = tone.name;
+  const minSep = MIN_SEPARATION;
+  const base = spin + (tone.tint ?? 0);
+
+  for (let i = 0; i < n; i++) {
+    const H = base + RING_STEP * i;
+    // Alternating light/dark walk plus a small deterministic wobble, so tiles
+    // differ in brightness as well as hue.
+    const swing = i % 2 === 0 ? 1 : -1;
+    const wobble = (rand() - 0.5) * 0.06;
+    const L = clamp01(tone.L + swing * (tone.jitter / 2) + wobble, 0.24, 0.94);
+    const C = Math.max(0.05, tone.C + (rand() - 0.5) * 0.04);
+    out.push({ L, C, H });
+  }
+
 
   const colors: DailyColor[] = enforceSeparation(out, minSep).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
