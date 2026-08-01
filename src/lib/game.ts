@@ -6,7 +6,7 @@ export interface ColorDef {
   hue: number;
 }
 
-/** Original chromatic palette used by Colors, Patterns, and Shapes themes. */
+/** The single universal palette. Each color pairs with a daily pattern + shape. */
 const CHROMATIC_COLORS: ColorDef[] = [
   { name: 'Red', hex: '#EF4444', hue: 0 },
   { name: 'Orange', hex: '#FD9349', hue: 25 },
@@ -19,27 +19,11 @@ const CHROMATIC_COLORS: ColorDef[] = [
   { name: 'Brown', hex: '#8B5C33', hue: 25 },
 ];
 
-/** Official MTA subway-line brand colors used by the MTA theme. */
-const MTA_COLORS: ColorDef[] = [
-  { name: '1', hex: '#D82233', hue: 0 },
-  { name: '5', hex: '#009952', hue: 145 },
-  { name: 'A', hex: '#0062CF', hue: 213 },
-  { name: 'F', hex: '#EB6800', hue: 27 },
-  { name: 'Q', hex: '#F6BC26', hue: 45 },
-  { name: 'L', hex: '#7C858C', hue: 210 },
-  { name: 'Z', hex: '#8E5C33', hue: 25 },
-  { name: 'G', hex: '#799534', hue: 79 },
-  { name: '7', hex: '#9A38A1', hue: 295 },
-];
-
 /** Backwards-compatible alias for the original chromatic palette. */
 const COLORS = CHROMATIC_COLORS;
 
 /** Fallback palette for the chromatic theme. */
 const FALLBACK_PALETTE: ColorDef[] = [...CHROMATIC_COLORS];
-
-/** Fallback palette for the MTA theme. */
-const MTA_FALLBACK_PALETTE: ColorDef[] = [...MTA_COLORS];
 
 const NEUTRAL = '#D1D5DB';
 
@@ -295,11 +279,7 @@ export function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export function getColorsForTheme(theme: string): ColorDef[] {
-  return theme === 'mta' ? MTA_COLORS : CHROMATIC_COLORS;
-}
-
-export { NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS };
+export { NEUTRAL, COLORS, CHROMATIC_COLORS };
 
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
@@ -308,7 +288,7 @@ export interface RoundAttempt {
   grid: (string | null)[];
   isCorrect: boolean;
   solution: (string | null)[];
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta';
+  visualTheme?: string;
   recallMs?: number;
   /** Stage 2 sub-puzzle the attempt was played on. */
   substage?: 'main' | '2b';
@@ -397,7 +377,7 @@ export function saveRoundAttempt(
   isCorrect: boolean,
   playerGrid: (string | null)[],
   solution: (string | null)[],
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta',
+  visualTheme?: string,
   recallMs?: number,
   substage?: 'main' | '2b',
   regenIndex?: number,
@@ -482,54 +462,29 @@ export function getStageResultMessage(
   _stage: StageKey,
   isCorrect: boolean,
   nextStage: StageKey | 'done',
-  theme?: string,
 ): string {
-  const mta = theme === 'mta';
-
   if (nextStage === 'done') {
-    if (isCorrect) {
-      return mta
-        ? 'Last stop — you rode the line clean. Nailed the daily.'
-        : 'Daily complete. Perfect close — incredible recall.';
-    }
-    return mta
-      ? 'End of the line. Fresh route tomorrow — service resumes at midnight.'
-      : "That's a wrap — fresh challenge tomorrow.";
+    if (isCorrect) return 'Daily complete. Perfect close — incredible recall.';
+    return "That's a wrap — fresh challenge tomorrow.";
   }
 
   const nextCount = STAGE_COLOR_COUNTS[nextStage];
 
   if (isCorrect) {
-    if (nextCount === 5) {
-      return mta
-        ? 'Right on time. Next stop: 5 elements — mind the gap.'
-        : "Nailed it. Next attempt brings 5 elements — keep the rhythm.";
-    }
-    if (nextCount === 6) {
-      return mta
-        ? 'Express run — final attempt: 6 elements, all lines lit.'
-        : 'Locked in. Final attempt fills the grid with 6 elements.';
-    }
-    return mta ? 'Right on time.' : 'Got it!';
+    if (nextCount === 5) return 'Nailed it. Next attempt brings 5 elements — keep the rhythm.';
+    if (nextCount === 6) return 'Locked in. Final attempt fills the grid with 6 elements.';
+    return 'Got it!';
   }
 
   // Wrong — repeat the same tier with a fresh puzzle.
-  if (nextCount === 3) {
-    return mta
-      ? 'Missed the train. Same 3 elements, new route — try again.'
-      : 'Not quite. Same 3 elements, a fresh pattern — give it another go.';
-  }
-  if (nextCount === 5) {
-    return mta
-      ? 'Off track. Another 5-element route rolling in.'
-      : 'Close. Another 5-element pattern is next.';
-  }
+  if (nextCount === 3) return 'Not quite. Same 3 elements, a fresh pattern — give it another go.';
+  if (nextCount === 5) return 'Close. Another 5-element pattern is next.';
   return 'Not quite — try again.';
 }
 
 /** Back-compat alias used by older call sites. */
-export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number, theme?: string): string {
-  return getStageResultMessage('stage1', isCorrect, 'stage2', theme);
+export function getResultMessage(_roundIndex: number, _attemptInRound: number, isCorrect: boolean, _totalAttemptsUsed: number): string {
+  return getStageResultMessage('stage1', isCorrect, 'stage2');
 }
 
 export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: string } {
