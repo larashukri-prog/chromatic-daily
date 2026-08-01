@@ -108,15 +108,15 @@ function hueLabel(h: number): string {
 function seasonalBand(month: number): { name: string; hues: number[]; L: number; C: number } {
   // month is 0-indexed
   if (month === 11 || month <= 1) {
-    return { name: 'Winter Frost', hues: [200, 210, 220, 230, 240, 250, 260, 270, 285], L: 0.78, C: 0.09 };
+    return { name: 'Winter Frost', hues: [190, 215, 240, 265, 290, 320, 160, 20, 55], L: 0.76, C: 0.1 };
   }
   if (month <= 4) {
-    return { name: 'Spring Bloom', hues: [100, 120, 140, 160, 330, 340, 60, 80, 200], L: 0.8, C: 0.14 };
+    return { name: 'Spring Bloom', hues: [95, 130, 165, 200, 250, 300, 335, 15, 60], L: 0.78, C: 0.14 };
   }
   if (month <= 7) {
-    return { name: 'Summer Citrus', hues: [40, 55, 70, 85, 100, 25, 15, 130, 160], L: 0.76, C: 0.18 };
+    return { name: 'Summer Citrus', hues: [15, 45, 75, 105, 140, 180, 215, 300, 340], L: 0.74, C: 0.18 };
   }
-  return { name: 'Autumn Earth', hues: [20, 30, 40, 50, 60, 15, 35, 75, 10], L: 0.6, C: 0.13 };
+  return { name: 'Autumn Earth', hues: [10, 40, 70, 100, 135, 175, 250, 300, 330], L: 0.62, C: 0.14 };
 }
 
 export interface DailyPaletteMeta {
@@ -135,8 +135,13 @@ interface Spec {
   lockHue?: boolean;
 }
 
-/** Minimum perceptual distance required between any two colors of a day. */
-const MIN_SEPARATION = 0.085;
+/**
+ * Minimum perceptual distance required between any two colors of a day.
+ * ~0.15 Oklab ≈ Delta E 15. Days whose rule fixes lightness and chroma
+ * (Monday pastels, Tuesday brights) can only separate by hue, so they carry
+ * their own achievable floor.
+ */
+const MIN_SEPARATION = 0.15;
 
 /** Oklab coordinates of a rendered hex — measures what the eye actually sees. */
 function hexToOklab(hex: string): [number, number, number] {
@@ -164,7 +169,7 @@ function labDistance(a: [number, number, number], b: [number, number, number]): 
  * drift when allowed) until every pair clears MIN_SEPARATION, or the bounded
  * iteration budget runs out.
  */
-function enforceSeparation(specs: Spec[]): Spec[] {
+function enforceSeparation(specs: Spec[], minSep: number = MIN_SEPARATION): Spec[] {
   const out = specs.map((s) => ({ ...s }));
   const L_MIN = 0.2;
   const L_MAX = 0.95;
@@ -177,10 +182,10 @@ function enforceSeparation(specs: Spec[]): Spec[] {
     for (let i = 0; i < out.length; i++) {
       for (let j = i + 1; j < out.length; j++) {
         const d = labDistance(labs[i], labs[j]);
-        if (d >= MIN_SEPARATION) continue;
-        worst = Math.max(worst, MIN_SEPARATION - d);
+        if (d >= minSep) continue;
+        worst = Math.max(worst, minSep - d);
 
-        const deficit = MIN_SEPARATION - d;
+        const deficit = minSep - d;
         // Deterministic direction: lower index keeps the darker slot.
         const lowFirst = out[i].L < out[j].L || (out[i].L === out[j].L && i < j);
         const lo = lowFirst ? out[i] : out[j];
@@ -211,100 +216,108 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const day = date.getDay();
   const rand = seededRandom(dateSeed(date) + 7919);
   const n = DAILY_PALETTE_SIZE;
-  const jitter = () => (rand() - 0.5) * 8; // ±4° hue jitter
   const spin = rand() * 360; // per-day hue rotation
 
   const out: Spec[] = [];
   let name = 'Chromatic';
+  // Hue-locked rules can only separate by hue, so they carry a lower floor.
+  let minSep = MIN_SEPARATION;
 
   switch (day) {
     case 1: {
-      // Monday — Pastels
+      // Monday — Pastels: 9 hues across 360°, fixed L/C.
       name = 'Monday Pastels';
+      minSep = 0.05;
       for (let i = 0; i < n; i++) {
-        // Gentle lightness wobble so the low-chroma pastels stay separable.
-        out.push({
-          L: 0.8 + (i % 3) * 0.055,
-          C: 0.075,
-          H: spin + (360 / n) * i + jitter(),
-        });
+        out.push({ L: 0.85, C: 0.08, H: spin + (360 / n) * i });
       }
       break;
     }
     case 2: {
-      // Tuesday — Brights
+      // Tuesday — Brights: 9 hues across 360°, fixed L/C.
       name = 'Tuesday Brights';
+      minSep = 0.1;
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.7, C: 0.22, H: spin + (360 / n) * i + jitter() });
+        out.push({ L: 0.7, C: 0.22, H: spin + (360 / n) * i });
       }
       break;
     }
     case 3: {
-      // Wednesday — Monochrome, fixed hue anchor
+      // Wednesday — Triadic tones: 3 hues 120° apart × 3 wide lightness steps.
       const anchor = Math.floor(rand() * 360);
-      name = `Wednesday ${hueLabel(anchor)} Mono`;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({
-          L: 0.25 + t * (0.93 - 0.25),
-          C: 0.02 + t * (0.18 - 0.02),
-          H: anchor,
-          lockHue: true,
-        });
+      const hues = [anchor, (anchor + 120) % 360, (anchor + 240) % 360];
+      name = `Wednesday ${hues.map(hueLabel).join('/')} Triad`;
+      const steps: { L: number; C: number }[] = [
+        { L: 0.35, C: 0.13 },
+        { L: 0.65, C: 0.19 },
+        { L: 0.88, C: 0.1 },
+      ];
+      for (const h of hues) {
+        for (const s of steps) {
+          out.push({ L: s.L, C: s.C, H: h, lockHue: true });
+        }
       }
       break;
     }
     case 4: {
-      // Thursday — Duotone interpolation between two hue anchors
+      // Thursday — Split-duotone: two opposing hues, 4 + 5 wide steps.
       const a = Math.floor(rand() * 360);
-      const b = (a + 100 + Math.floor(rand() * 140)) % 360;
+      const b = (a + 180) % 360;
       name = `Thursday ${hueLabel(a)}/${hueLabel(b)} Duotone`;
-      // Interpolate along the shorter hue arc.
-      let delta = ((b - a + 540) % 360) - 180;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({
-          L: 0.5 + t * 0.32,
-          C: 0.2 - Math.abs(t - 0.5) * 0.14,
-          H: a + delta * t,
-        });
-      }
+      const aSteps: { L: number; C: number }[] = [
+        { L: 0.3, C: 0.11 },
+        { L: 0.52, C: 0.19 },
+        { L: 0.72, C: 0.16 },
+        { L: 0.92, C: 0.07 },
+      ];
+      const bSteps: { L: number; C: number }[] = [
+        { L: 0.25, C: 0.1 },
+        { L: 0.43, C: 0.17 },
+        { L: 0.61, C: 0.2 },
+        { L: 0.79, C: 0.14 },
+        { L: 0.95, C: 0.06 },
+      ];
+      for (const s of aSteps) out.push({ L: s.L, C: s.C, H: a, lockHue: true });
+      for (const s of bSteps) out.push({ L: s.L, C: s.C, H: b, lockHue: true });
       break;
     }
     case 5: {
-      // Friday — Seasonal
+      // Friday — Seasonal curated set
       const band = seasonalBand(date.getMonth());
       name = `Friday ${band.name}`;
+      minSep = 0.12;
       for (let i = 0; i < n; i++) {
         out.push({
-          L: band.L + (i % 3) * 0.04 - 0.04,
-          C: band.C + ((i % 2) * 0.02),
-          H: band.hues[i % band.hues.length] + jitter(),
+          L: band.L + (i % 3) * 0.09 - 0.09,
+          C: band.C + (i % 2) * 0.03,
+          H: band.hues[i % band.hues.length],
         });
       }
       break;
     }
     case 6: {
-      // Saturday — Cool / cold (widened hue band + lightness ramp)
-      name = 'Saturday Cool';
+      // Saturday — Cool spectrum: hues 150°→290°, L 0.40→0.85.
+      name = 'Saturday Cool Spectrum';
+      minSep = 0.09;
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
-        out.push({ L: 0.45 + t * 0.37, C: 0.16, H: 160 + (120 / (n - 1)) * i });
+        out.push({ L: 0.4 + t * 0.45, C: 0.16, H: 150 + 140 * t });
       }
       break;
     }
     default: {
-      // Sunday — Warm sunset (widened hue band + lightness ramp)
-      name = 'Sunday Sunset';
+      // Sunday — Sunset warmth: hues 330°→70° (wrapping), L 0.45→0.90.
+      name = 'Sunday Sunset Warmth';
+      minSep = 0.09;
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
-        out.push({ L: 0.5 + t * 0.35, C: 0.2, H: 340 + (85 / (n - 1)) * i });
+        out.push({ L: 0.45 + t * 0.45, C: 0.2, H: 330 + 100 * t });
       }
       break;
     }
   }
 
-  const colors: DailyColor[] = enforceSeparation(out).map((c, i) => {
+  const colors: DailyColor[] = enforceSeparation(out, minSep).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
     const L = Math.min(0.97, Math.max(0.18, c.L));
     const C = Math.max(0, c.C);
