@@ -104,6 +104,10 @@ function hueLabel(h: number): string {
   return HUE_LABELS.find((e) => hh < e.max)?.label ?? 'Color';
 }
 
+function clamp01(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v));
+}
+
 /** Seasonal hue bands used by the Friday rule. */
 function seasonalBand(month: number): { name: string; hues: number[]; L: number; C: number } {
   // month is 0-indexed
