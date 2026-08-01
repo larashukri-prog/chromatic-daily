@@ -267,16 +267,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               if (showSolution) {
                 const color = solution[i] ?? NEUTRAL;
                 const up = solution[i]?.toUpperCase();
-                const isBlack = up === '#000000';
                 const isWhite = up === '#FFFFFF';
-                let bg: string = color;
-                if (solution[i]) {
-                  if (shapesMode) bg = '#FFFFFF';
-                  else if (mtaMode) bg = '#FFFFFF';
-                }
-                const lightBorder =
-                  (shapesMode && solution[i]) ||
-                  (mtaMode && !!solution[i]);
+                const bg: string = color;
+                const lightBorder = isWhite;
                 return (
                   <motion.div
                     key={i}
@@ -290,9 +283,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
-                    {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
-                    {shapesMode && <ShapeOverlay colorHex={solution[i]} />}
-                    {mtaMode && solution[i] && <MtaOverlay colorHex={solution[i]} />}
+                    <MixedTile colorHex={solution[i]} shapeScale={0.5} />
                   </motion.div>
                 );
               }
@@ -310,16 +301,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
                 : 'none';
               const pUp = playerGrid[i]?.toUpperCase();
-              const pIsBlack = pUp === '#000000';
               const pIsWhite = pUp === '#FFFFFF';
-              let pBg: string = cellColor;
-              if (playerGrid[i]) {
-                if (shapesMode) pBg = '#FFFFFF';
-                else if (mtaMode) pBg = '#FFFFFF';
-              }
-              const pLightBorder =
-                (shapesMode && playerGrid[i]) ||
-                (mtaMode && !!playerGrid[i]);
+              const pBg: string = cellColor;
+              const pLightBorder = pIsWhite;
 
               return (
                 <motion.div
@@ -338,9 +322,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                       : '2px solid transparent',
                   }}
                 >
-                  {showPatterns && <PatternOverlay colorHex={playerGrid[i]} size="100%" />}
-                  {shapesMode && <ShapeOverlay colorHex={playerGrid[i]} />}
-                  {mtaMode && playerGrid[i] && <MtaOverlay colorHex={playerGrid[i]} />}
+                  <MixedTile colorHex={playerGrid[i]} shapeScale={0.5} />
                 </motion.div>
               );
             })}
@@ -358,7 +340,6 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </button>
       )}
     </div>
-    </MtaPaletteProvider>
   );
 }
 
