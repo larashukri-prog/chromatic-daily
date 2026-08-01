@@ -125,6 +125,71 @@ export interface DailyPaletteMeta {
   colors: DailyColor[];
 }
 
+// -------------------------------------------------- minimum separation guard
+
+interface Spec {
+  L: number;
+  C: number;
+  H: number;
+  /** When true the hue is theme-critical (monochrome) and must not drift. */
+  lockHue?: boolean;
+}
+
+/** Minimum perceptual distance required between any two colors of a day. */
+const MIN_SEPARATION = 0.085;
+
+function toLab({ L, C, H }: Spec): [number, number, number] {
+  const h = (H * Math.PI) / 180;
+  return [L, C * Math.cos(h), C * Math.sin(h)];
+}
+
+function specDistance(a: Spec, b: Spec): number {
+  const [l1, a1, b1] = toLab(a);
+  const [l2, a2, b2] = toLab(b);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
+/**
+ * Deterministically nudges colors apart (lightness first, then a small hue
+ * drift when allowed) until every pair clears MIN_SEPARATION, or the bounded
+ * iteration budget runs out.
+ */
+function enforceSeparation(specs: Spec[]): Spec[] {
+  const out = specs.map((s) => ({ ...s }));
+  const L_MIN = 0.2;
+  const L_MAX = 0.95;
+
+  for (let pass = 0; pass < 80; pass++) {
+    let worst = 0;
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const d = specDistance(out[i], out[j]);
+        if (d >= MIN_SEPARATION) continue;
+        worst = Math.max(worst, MIN_SEPARATION - d);
+
+        const deficit = MIN_SEPARATION - d;
+        // Deterministic direction: lower index keeps the darker slot.
+        const lowFirst = out[i].L < out[j].L || (out[i].L === out[j].L && i < j);
+        const lo = lowFirst ? out[i] : out[j];
+        const hi = lowFirst ? out[j] : out[i];
+        const step = deficit * 0.55;
+        lo.L = Math.max(L_MIN, lo.L - step);
+        hi.L = Math.min(L_MAX, hi.L + step);
+
+        // If lightness is pinned at the rails, drift hue apart instead.
+        if (!out[i].lockHue && !out[j].lockHue && lo.L <= L_MIN + 1e-6 && hi.L >= L_MAX - 1e-6) {
+          const spread = (deficit / Math.max(0.05, (lo.C + hi.C) / 2)) * 20;
+          lo.H -= spread;
+          hi.H += spread;
+        }
+      }
+    }
+    if (worst === 0) break;
+  }
+
+  return out;
+}
+
 function buildPalette(date: Date): DailyPaletteMeta {
   const day = date.getDay();
   const rand = seededRandom(dateSeed(date) + 7919);
@@ -132,7 +197,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const jitter = () => (rand() - 0.5) * 8; // ±4° hue jitter
   const spin = rand() * 360; // per-day hue rotation
 
-  const out: { L: number; C: number; H: number }[] = [];
+  const out: Spec[] = [];
   let name = 'Chromatic';
 
   switch (day) {
@@ -140,7 +205,12 @@ function buildPalette(date: Date): DailyPaletteMeta {
       // Monday — Pastels
       name = 'Monday Pastels';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.88, C: 0.06, H: spin + (360 / n) * i + jitter() });
+        // Gentle lightness wobble so the low-chroma pastels stay separable.
+        out.push({
+          L: 0.8 + (i % 3) * 0.055,
+          C: 0.075,
+          H: spin + (360 / n) * i + jitter(),
+        });
       }
       break;
     }
@@ -159,9 +229,10 @@ function buildPalette(date: Date): DailyPaletteMeta {
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         out.push({
-          L: 0.3 + t * (0.9 - 0.3),
-          C: 0.02 + t * (0.15 - 0.02),
+          L: 0.25 + t * (0.93 - 0.25),
+          C: 0.02 + t * (0.18 - 0.02),
           H: anchor,
+          lockHue: true,
         });
       }
       break;
@@ -197,24 +268,26 @@ function buildPalette(date: Date): DailyPaletteMeta {
       break;
     }
     case 6: {
-      // Saturday — Cool / cold
+      // Saturday — Cool / cold (widened hue band + lightness ramp)
       name = 'Saturday Cool';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.65, C: 0.16, H: 180 + (80 / (n - 1)) * i });
+        const t = i / (n - 1);
+        out.push({ L: 0.45 + t * 0.37, C: 0.16, H: 160 + (120 / (n - 1)) * i });
       }
       break;
     }
     default: {
-      // Sunday — Warm sunset
+      // Sunday — Warm sunset (widened hue band + lightness ramp)
       name = 'Sunday Sunset';
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.68, C: 0.2, H: 0 + (50 / (n - 1)) * i });
+        const t = i / (n - 1);
+        out.push({ L: 0.5 + t * 0.35, C: 0.2, H: 340 + (85 / (n - 1)) * i });
       }
       break;
     }
   }
 
-  const colors: DailyColor[] = out.map((c, i) => {
+  const colors: DailyColor[] = enforceSeparation(out).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
     const L = Math.min(0.97, Math.max(0.18, c.L));
     const C = Math.max(0, c.C);
