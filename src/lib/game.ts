@@ -581,6 +581,7 @@ export function generateShareText(
     lines.push('');
   }
 
+  lines.push(`🎨 Palette: ${getDailyPaletteName()}`);
   if (metrics?.visualStyles) {
     lines.push(`🎨 Visual Style: ${metrics.visualStyles}`);
   }
