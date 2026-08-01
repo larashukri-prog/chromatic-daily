@@ -1,13 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { posthog } from '@/lib/posthog';
 
-export type VisualTheme = 'colors' | 'patterns' | 'shapes' | 'mta';
+export type VisualTheme = 'colors' | 'mix';
 
 export const VISUAL_THEME_OPTIONS: { value: VisualTheme; label: string }[] = [
-  { value: 'colors', label: 'Colors' },
-  { value: 'patterns', label: 'Patterns' },
-  { value: 'shapes', label: 'Shapes' },
-  { value: 'mta', label: 'MTA' },
+  { value: 'colors', label: 'Color Only' },
+  { value: 'mix', label: 'MIX' },
 ];
 
 export function getVisualThemeLabel(theme: VisualTheme): string {
@@ -35,12 +33,20 @@ const VisualThemeContext = createContext<VisualThemeContextType>({
 function loadInitial(): VisualTheme {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'colors' || stored === 'patterns' || stored === 'shapes' || stored === 'mta') return stored;
-    // Migrate legacy FIFA / Knicks themes to MTA.
-    if (stored === 'fifa' || stored === 'knicks') return 'mta';
+    if (stored === 'colors' || stored === 'mix') return stored;
+    // Migrate legacy pattern/shape/MTA/FIFA styles onto MIX.
+    if (
+      stored === 'patterns' ||
+      stored === 'shapes' ||
+      stored === 'mta' ||
+      stored === 'fifa' ||
+      stored === 'knicks'
+    ) {
+      return 'mix';
+    }
     // Migrate legacy boolean
     const legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy === 'true') return 'patterns';
+    if (legacy === 'true') return 'mix';
     return 'colors';
   } catch {
     return 'colors';
@@ -61,11 +67,11 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (t: VisualTheme) => setThemeState(t);
   const toggle = () =>
-    setThemeState((prev) => (prev === 'patterns' ? 'colors' : 'patterns'));
+    setThemeState((prev) => (prev === 'mix' ? 'colors' : 'mix'));
 
   return (
     <VisualThemeContext.Provider
-      value={{ theme, setTheme, enabled: theme === 'patterns', toggle }}
+      value={{ theme, setTheme, enabled: theme === 'mix', toggle }}
     >
       {children}
     </VisualThemeContext.Provider>

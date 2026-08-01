@@ -1,45 +1,21 @@
 // Chromatic Daily - Game Logic
 
+import { getDailyPalette, getDailyPaletteName } from '@/lib/palette';
+
 export interface ColorDef {
   name: string;
   hex: string;
   hue: number;
 }
 
-/** Original chromatic palette used by Colors, Patterns, and Shapes themes. */
-const CHROMATIC_COLORS: ColorDef[] = [
-  { name: 'Red', hex: '#EF4444', hue: 0 },
-  { name: 'Orange', hex: '#FD9349', hue: 25 },
-  { name: 'Yellow', hex: '#FDE047', hue: 50 },
-  { name: 'Teal', hex: '#2DD4D4', hue: 180 },
-  { name: 'Purple', hex: '#8B5CF6', hue: 260 },
-  { name: 'Lime', hex: '#7AC00F', hue: 82 },
-  { name: 'Pink', hex: '#EC4899', hue: 330 },
-  { name: 'Blue', hex: '#3B82F6', hue: 217 },
-  { name: 'Brown', hex: '#8B5C33', hue: 25 },
-];
-
-/** Official MTA subway-line brand colors used by the MTA theme. */
-const MTA_COLORS: ColorDef[] = [
-  { name: '1', hex: '#D82233', hue: 0 },
-  { name: '5', hex: '#009952', hue: 145 },
-  { name: 'A', hex: '#0062CF', hue: 213 },
-  { name: 'F', hex: '#EB6800', hue: 27 },
-  { name: 'Q', hex: '#F6BC26', hue: 45 },
-  { name: 'L', hex: '#7C858C', hue: 210 },
-  { name: 'Z', hex: '#8E5C33', hue: 25 },
-  { name: 'G', hex: '#799534', hue: 79 },
-  { name: '7', hex: '#9A38A1', hue: 295 },
-];
-
-/** Backwards-compatible alias for the original chromatic palette. */
-const COLORS = CHROMATIC_COLORS;
-
-/** Fallback palette for the chromatic theme. */
-const FALLBACK_PALETTE: ColorDef[] = [...CHROMATIC_COLORS];
-
-/** Fallback palette for the MTA theme. */
-const MTA_FALLBACK_PALETTE: ColorDef[] = [...MTA_COLORS];
+/**
+ * The active palette is the dynamic OKLCH daily palette (9 colors, generated
+ * from the local weekday). Both visual styles share it — only the MIX overlay
+ * differs.
+ */
+function activePalette(): ColorDef[] {
+  return getDailyPalette().map((c) => ({ name: c.name, hex: c.hex, hue: c.hue }));
+}
 
 const NEUTRAL = '#D1D5DB';
 
@@ -145,11 +121,9 @@ export function getDayInfo() {
 
 /** Fallback solution using the provided palette when generation fails. */
 function generateFallbackSolution(
-  palette: ColorDef[] = CHROMATIC_COLORS,
+  palette: ColorDef[] = activePalette(),
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  // Generate against the canonical chromatic palette, then project by index
-  // onto the requested palette so every theme lines up 1:1.
-  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, CHROMATIC_COLORS.length, palette.length);
+  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, palette.length);
   const chosenIdx = Array.from({ length: colorCount }, (_, i) => i);
   const chosen = chosenIdx.map((i) => palette[i]);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
@@ -167,26 +141,19 @@ function generateFallbackSolution(
 export function generateStageSolution(
   stage: StageKey,
   regenIndex: number = 0,
-  palette: ColorDef[] = CHROMATIC_COLORS,
+  palette: ColorDef[] = activePalette(),
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    // Always generate against the canonical CHROMATIC palette so positions
-    // and chosen slot indices are identical across every visual theme.
-    // Then translate each chosen index onto the active theme's palette.
-    const colorCount = Math.min(
-      STAGE_COLOR_COUNTS[stage],
-      CHROMATIC_COLORS.length,
-      palette.length,
-    );
+    // Generation is index-based so it stays identical across visual styles;
+    // the chosen indices are then projected onto the supplied palette.
+    const colorCount = Math.min(STAGE_COLOR_COUNTS[stage], palette.length);
     const baseSeed = getDateSeed();
     const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
-    // Shuffle canonical indices, not palette entries, so the RNG stream is
-    // palette-independent.
-    const canonicalIdx = CHROMATIC_COLORS.map((_, i) => i).sort(() => rand() - 0.5);
+    const canonicalIdx = palette.map((_, i) => i).sort(() => rand() - 0.5);
     const chosenIdx = canonicalIdx.slice(0, colorCount);
-    const chosenCanonical = chosenIdx.map((i) => CHROMATIC_COLORS[i]);
+    const chosenCanonical = chosenIdx.map((i) => palette[i]);
 
     // Adjacency uses canonical hues so placements are also theme-independent.
     const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand);
@@ -295,11 +262,13 @@ export function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export function getColorsForTheme(theme: string): ColorDef[] {
-  return theme === 'mta' ? MTA_COLORS : CHROMATIC_COLORS;
+/** Both visual styles share the dynamic daily palette. */
+export function getColorsForTheme(_theme?: string): ColorDef[] {
+  return activePalette();
 }
 
-export { NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS };
+export { NEUTRAL, activePalette };
+export { getDailyPaletteName };
 
 // Local storage helpers
 const STORAGE_KEY = 'chromatic-daily';
@@ -308,7 +277,7 @@ export interface RoundAttempt {
   grid: (string | null)[];
   isCorrect: boolean;
   solution: (string | null)[];
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta';
+  visualTheme?: 'colors' | 'mix';
   recallMs?: number;
   /** Stage 2 sub-puzzle the attempt was played on. */
   substage?: 'main' | '2b';
@@ -397,7 +366,7 @@ export function saveRoundAttempt(
   isCorrect: boolean,
   playerGrid: (string | null)[],
   solution: (string | null)[],
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta',
+  visualTheme?: 'colors' | 'mix',
   recallMs?: number,
   substage?: 'main' | '2b',
   regenIndex?: number,
@@ -612,6 +581,7 @@ export function generateShareText(
     lines.push('');
   }
 
+  lines.push(`🎨 Palette: ${getDailyPaletteName()}`);
   if (metrics?.visualStyles) {
     lines.push(`🎨 Visual Style: ${metrics.visualStyles}`);
   }
