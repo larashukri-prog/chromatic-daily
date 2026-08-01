@@ -1277,7 +1277,7 @@ const Index = () => {
             <div className="relative">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={verifying ? 'verifying' : flipping ? 'flipping' : phase}
+                  key={verifying ? 'verifying' : phase}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
