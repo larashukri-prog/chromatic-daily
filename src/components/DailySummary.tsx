@@ -397,14 +397,24 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                 return (
                   <motion.div
                     key={i}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3, delay: i * 0.04 }}
+                    initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+                    animate={{
+                      scale: [0.6, 1.04, 1],
+                      opacity: 1,
+                      boxShadow: solution[i]
+                        ? ['0 0 0 0 rgba(74, 222, 128, 0)', '0 0 0 0 rgba(74, 222, 128, 0)', '0 0 12px 3px rgba(74, 222, 128, 0.3)']
+                        : 'none',
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      times: [0, 0.6, 1],
+                      ease: [0.22, 1, 0.36, 1],
+                      delay: tileDelay(i),
+                    }}
                     className="aspect-square rounded-full relative overflow-hidden"
                     style={{
                       backgroundColor: bg,
                       border: lightBorder ? '2px solid #D1D5DB' : '2px solid transparent',
-                      boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
                     }}
                   >
                     {showPatterns && <PatternOverlay colorHex={solution[i]} size="100%" />}
@@ -441,13 +451,23 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
               return (
                 <motion.div
                   key={i}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+                  animate={{
+                    scale: [0.6, 1.04, 1],
+                    opacity: 1,
+                    boxShadow: ['0 0 0 0 rgba(0,0,0,0)', '0 0 0 0 rgba(0,0,0,0)', glow],
+                    x: hasColor && !result[i] && !reduce ? [0, -3, 3, -2, 2, 0] : 0,
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    times: [0, 0.6, 1],
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: tileDelay(i),
+                    x: { duration: 0.24, delay: tileDelay(i) + 0.45, ease: 'easeInOut' },
+                  }}
                   className="aspect-square rounded-full relative overflow-hidden"
                   style={{
                     backgroundColor: pBg,
-                    boxShadow: glow,
                     border: !result[i] && solution[i]
                       ? '2px solid #DC2626'
                       : pLightBorder
