@@ -108,21 +108,6 @@ function clamp01(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
 }
 
-/** Seasonal hue bands used by the Friday rule. */
-function seasonalBand(month: number): { name: string; hues: number[]; L: number; C: number } {
-  // month is 0-indexed
-  if (month === 11 || month <= 1) {
-    return { name: 'Winter Frost', hues: [190, 215, 240, 265, 290, 320, 160, 20, 55], L: 0.76, C: 0.1 };
-  }
-  if (month <= 4) {
-    return { name: 'Spring Bloom', hues: [95, 130, 165, 200, 250, 300, 335, 15, 60], L: 0.78, C: 0.14 };
-  }
-  if (month <= 7) {
-    return { name: 'Summer Citrus', hues: [15, 45, 75, 105, 140, 180, 215, 300, 340], L: 0.74, C: 0.18 };
-  }
-  return { name: 'Autumn Earth', hues: [10, 40, 70, 100, 135, 175, 250, 300, 330], L: 0.62, C: 0.14 };
-}
-
 export interface DailyPaletteMeta {
   /** Human name of the day's palette theme, e.g. "Cool Depths". */
   name: string;
@@ -216,72 +201,49 @@ function enforceSeparation(specs: Spec[], minSep: number = MIN_SEPARATION): Spec
   return out;
 }
 
-function buildPalette(date: Date): DailyPaletteMeta {
-  const day = date.getDay();
-  const rand = seededRandom(dateSeed(date) + 7919);
+/** Fisher-Yates shuffle driven by the day's deterministic RNG. */
+function shuffle<T>(arr: T[], rand: () => number): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Free-form daily palette: nine colors sampled independently across hue,
+ * lightness and chroma. No weekday character, no smooth ramp — a deep blue can
+ * sit next to a citrus pink and a bright yellow on the same day.
+ */
+function buildRaw(date: Date, attempt: number): DailyColor[] {
   const n = DAILY_PALETTE_SIZE;
-  const spin = rand() * 360; // per-day rotation of the whole hue ring
+  const rand = seededRandom(dateSeed(date) + 7919 + attempt * 104729);
 
-  const out: Spec[] = [];
+  // Hue: nine buckets 40 apart, rotated per day, jittered, then shuffled so
+  // the order around the wheel changes daily too.
+  const spin = rand() * 360;
+  const hues = shuffle(
+    Array.from({ length: n }, (_, i) => spin + (360 / n) * i + (rand() - 0.5) * 22),
+    rand
+  );
 
-  // Every day uses all nine hue slots, 40 apart, so no two tiles can ever be
-  // shades of the same colour family.
-  const RING_STEP = 360 / n;
+  // Lightness: a wide ramp, shuffled, so light and dark tiles interleave
+  // unpredictably rather than alternating.
+  const lights = shuffle(
+    Array.from({ length: n }, (_, i) => 0.3 + (0.62 * i) / (n - 1) + (rand() - 0.5) * 0.05),
+    rand
+  );
 
-  interface Tone {
-    name: string;
-    L: number;
-    C: number;
-    /** Peak-to-peak lightness variation applied across the nine slots. */
-    jitter: number;
-    /** Extra hue tint added on top of the daily spin. */
-    tint?: number;
-  }
-
-  let tone: Tone;
-  switch (day) {
-    case 1:
-      tone = { name: 'Monday Pastel', L: 0.86, C: 0.09, jitter: 0.07 };
-      break;
-    case 2:
-      tone = { name: 'Tuesday Vivid', L: 0.7, C: 0.22, jitter: 0.08 };
-      break;
-    case 3:
-      tone = { name: 'Wednesday Deep Jewel', L: 0.52, C: 0.19, jitter: 0.1 };
-      break;
-    case 4:
-      tone = { name: 'Thursday Contrast Mix', L: 0.66, C: 0.17, jitter: 0.26 };
-      break;
-    case 5: {
-      const band = seasonalBand(date.getMonth());
-      tone = { name: `Friday ${band.name}`, L: band.L, C: band.C + 0.03, jitter: 0.1, tint: band.hues[0] };
-      break;
-    }
-    case 6:
-      tone = { name: 'Saturday Bright Pop', L: 0.76, C: 0.2, jitter: 0.09 };
-      break;
-    default:
-      tone = { name: 'Sunday Muted Earth', L: 0.62, C: 0.11, jitter: 0.09 };
-      break;
-  }
-
-  const name = tone.name;
-  const minSep = MIN_SEPARATION;
-  const base = spin + (tone.tint ?? 0);
-
+  const specs: Spec[] = [];
   for (let i = 0; i < n; i++) {
-    const H = base + RING_STEP * i;
-    // Alternating light/dark walk plus a small deterministic wobble, so tiles
-    // differ in brightness as well as hue.
-    const swing = i % 2 === 0 ? 1 : -1;
-    const wobble = (rand() - 0.5) * 0.06;
-    const L = clamp01(tone.L + swing * (tone.jitter / 2) + wobble, 0.24, 0.94);
-    const C = Math.max(0.05, tone.C + (rand() - 0.5) * 0.04);
-    out.push({ L, C, H });
+    const L = clamp01(lights[i], 0.28, 0.93);
+    // Chroma sampled per slot: some tiles read vivid, some muted, on any day.
+    const C = 0.06 + rand() * 0.18;
+    specs.push({ L, C, H: hues[i] });
   }
 
-
-  const colors: DailyColor[] = enforceSeparation(out, minSep).map((c, i) => {
+  return enforceSeparation(specs, MIN_SEPARATION).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
     const L = Math.min(0.97, Math.max(0.18, c.L));
     const C = Math.max(0, c.C);
@@ -292,7 +254,47 @@ function buildPalette(date: Date): DailyPaletteMeta {
       lightness: L,
     };
   });
+}
 
+/** Mean perceptual distance between two palettes (higher = more different). */
+function paletteDistance(a: DailyColor[], b: DailyColor[]): number {
+  const la = a.map((c) => hexToOklab(c.hex));
+  const lb = b.map((c) => hexToOklab(c.hex));
+  let total = 0;
+  for (const x of la) {
+    let best = Infinity;
+    for (const y of lb) best = Math.min(best, labDistance(x, y));
+    total += best;
+  }
+  return total / la.length;
+}
+
+/** Minimum average shift required between consecutive days. */
+const MIN_DAY_NOVELTY = 0.1;
+
+function buildDay(date: Date, depth: number): DailyColor[] {
+  if (depth <= 0) return buildRaw(date, 0);
+
+  const prevDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
+  const prev = buildDay(prevDate, depth - 1);
+
+  let best = buildRaw(date, 0);
+  let bestScore = paletteDistance(best, prev);
+  for (let attempt = 1; attempt < 6 && bestScore < MIN_DAY_NOVELTY; attempt++) {
+    const cand = buildRaw(date, attempt);
+    const score = paletteDistance(cand, prev);
+    if (score > bestScore) {
+      best = cand;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+function buildPalette(date: Date): DailyPaletteMeta {
+  const colors = buildDay(date, 2);
+  const avgL = colors.reduce((s, c) => s + c.lightness, 0) / colors.length;
+  const name = avgL > 0.68 ? 'Bright Mix' : avgL < 0.5 ? 'Deep Mix' : 'Daily Mix';
   return { name, colors };
 }
 
