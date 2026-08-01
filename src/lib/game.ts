@@ -366,7 +366,7 @@ export function saveRoundAttempt(
   isCorrect: boolean,
   playerGrid: (string | null)[],
   solution: (string | null)[],
-  visualTheme?: 'colors' | 'patterns' | 'shapes' | 'mta',
+  visualTheme?: 'colors' | 'mix',
   recallMs?: number,
   substage?: 'main' | '2b',
   regenIndex?: number,
