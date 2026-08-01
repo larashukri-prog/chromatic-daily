@@ -296,23 +296,37 @@ function buildPalette(date: Date): DailyPaletteMeta {
       break;
     }
     case 6: {
-      // Saturday — Cool spectrum: hues 150°→290°, L 0.40→0.85.
       name = 'Saturday Cool Spectrum';
-      minSep = 0.09;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({ L: 0.4 + t * 0.45, C: 0.16, H: 150 + 140 * t });
-      }
+      // Curated cool anchors across 150°–290° with zigzagging lightness so no
+      // two neighbours read as steps of one gradient.
+      out.push(
+        { L: 0.62, C: 0.17, H: 155 }, // emerald
+        { L: 0.44, C: 0.11, H: 185 }, // deep teal
+        { L: 0.9, C: 0.07, H: 200 }, // ice cyan
+        { L: 0.55, C: 0.19, H: 232 }, // cobalt
+        { L: 0.78, C: 0.11, H: 215 }, // sky
+        { L: 0.4, C: 0.16, H: 268 }, // indigo
+        { L: 0.83, C: 0.09, H: 278 }, // periwinkle
+        { L: 0.66, C: 0.16, H: 250 }, // royal blue
+        { L: 0.88, C: 0.09, H: 168 }, // mint
+      );
       break;
     }
     default: {
-      // Sunday — Sunset warmth: hues 330°→70° (wrapping), L 0.45→0.90.
       name = 'Sunday Sunset Warmth';
-      minSep = 0.09;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({ L: 0.45 + t * 0.45, C: 0.2, H: 330 + 100 * t });
-      }
+      // Curated warm anchors across 330°–82°, zigzagging lightness, no dark
+      // purple end — every tile reads as a sunset colour.
+      out.push(
+        { L: 0.6, C: 0.21, H: 340 }, // magenta
+        { L: 0.46, C: 0.17, H: 15 }, // crimson
+        { L: 0.86, C: 0.08, H: 355 }, // blush
+        { L: 0.7, C: 0.18, H: 30 }, // coral
+        { L: 0.52, C: 0.14, H: 45 }, // burnt orange
+        { L: 0.82, C: 0.15, H: 75 }, // gold
+        { L: 0.58, C: 0.22, H: 25 }, // red
+        { L: 0.68, C: 0.16, H: 60 }, // amber
+        { L: 0.93, C: 0.07, H: 82 }, // cream
+      );
       break;
     }
   }
