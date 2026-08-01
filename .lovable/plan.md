@@ -1,25 +1,35 @@
-## Problem
+# Game Juice: Tactile Micro-Interactions
 
-The theme-swap effect in `src/pages/Index.tsx` (lines 250–311) runs on every `visualTheme` change but only handles **daily mode**. When a user is in Practice Mode and toggles between Colors / Patterns / Shapes / MTA, that effect unconditionally overwrites `solution` and `activeColors` with a fresh **daily stage** puzzle — clobbering the practice round, resetting progress, and desyncing the picker vs. the grid.
+Adds spring physics, tactile slot states, a card-flip board transition, and staged auto-verification feedback across daily and practice modes. No game rules, seeds, difficulty, or scoring change.
 
-A second, smaller issue: `freeplayNext` (line 759) reads `visualTheme` but omits it from its dependency array, so the next practice round can be generated with a stale palette after a theme change.
+## 1. Color swatches
 
-## Fix
+- Each picker swatch becomes a spring-animated button: press scales to 0.92, the selected swatch springs to 1.05 (replaces the current static 1.15 scale).
+- The selected swatch gains a soft glowing ring in its own hue instead of the hard black outline.
+- Assigning a color to a slot fires a crisp snap: the swatch pops and settles, and selection clears as it does today.
 
-Keep daily behavior untouched. Add a freeplay branch to the theme-swap effect that **re-projects the current practice puzzle onto the new palette** using the canonical index it already sits at.
+## 2. Tile slots
 
-1. Add a `prevThemeRef = useRef<VisualTheme>(visualTheme)` so we know the palette we're projecting *from*.
-2. In the `visualTheme` effect, before the existing daily logic, short-circuit when `mode === 'freeplay'`:
-   - Compute `oldPalette = getColorsForTheme(prevThemeRef.current)` and `newPalette = getColorsForTheme(visualTheme)`.
-   - For each non-null hex in `solution`, look up its index in `oldPalette` and swap in `newPalette[idx].hex`. Same for `activeColors` and `selectedColor`. If any hex isn't found in `oldPalette` (edge case, e.g. after `?reset`), leave it alone.
-   - Update `prevThemeRef.current = visualTheme` and `return` (skip the daily reset path entirely).
-   - Also update `prevThemeRef.current` at the end of the daily branch so subsequent freeplay swaps have a correct baseline.
-3. Add `visualTheme` to `freeplayNext`'s dependency array.
+- Empty slots get an inset shadow plus a subtle dashed ring so they read as physical receptacles.
+- Filling a slot plays a bounce on that tile only (0.9 -> 1.05 -> 1.0).
+- Clearing an occupied slot plays a fast fade-out with a small horizontal wobble.
 
-Result: switching visual style mid-practice keeps the same puzzle, same round number, same session stats, just repainted in the new palette — matching how daily mode already behaves.
+## 3. "I'm ready" board flip
 
-## Files touched
+- On press, the target tiles flip face-down on the Y axis (rotateY 180deg, 400ms, lightly staggered) and land as empty grey receptacles, then the recall phase begins.
+- The existing speed-star pop and chime still fire on top of the flip.
 
-- `src/pages/Index.tsx` — modify the `useEffect` at lines 250–311 and the `freeplayNext` `useCallback` deps.
+## 4. Staged auto-verification
 
-No changes to `src/lib/freeplay.ts`, `src/lib/game.ts`, or any overlay components.
+- Placing the final tile starts an 800ms "Staged Check" buffer with an ambient pulse glow on the card border; verification then runs automatically.
+- The Verify button is removed. Clear stays available and cancels the pending check if tapped during the buffer.
+- Stage clear: a ripple sweeps across correct tiles from top-left to bottom-right; a successful attempt 3 also fires a confetti burst using the existing confetti helper.
+- Incorrect: the current red highlight shows first, then only the wrong tiles head-shake (translateX -4px to 4px, 200ms) and fade smoothly back to empty. The full-card shake is replaced by this softer per-tile feedback.
+
+## Technical notes
+
+- `src/components/GameGrid.tsx`: per-tile animation state (fill, clear, flip, ripple, shake) driven by a new prop; tiles use Framer Motion variants with spring transitions.
+- `src/pages/Index.tsx`: swatch motion and glow ring; place/clear handlers emit tile animation events; a new staged-check timer replaces the manual `verify()` trigger; Verify button removed; flip state gates `handleReady` before entering recall.
+- `tailwind.config.ts` / `src/index.css`: add `tile-bounce`, `tile-wobble`, `board-pulse`, and `ripple` keyframes plus glow/ring tokens — no hardcoded colors in components.
+- All new motion respects `prefers-reduced-motion`, falling back to instant state changes.
+- Behavior is identical across Colors, Patterns, Shapes, and MTA themes, and in Practice Mode.
