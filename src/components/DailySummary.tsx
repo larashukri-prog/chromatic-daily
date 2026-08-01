@@ -4,11 +4,7 @@ import { Link2, ChevronLeft, ChevronRight, Trophy, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
-import { useAccessibility, useVisualTheme, type VisualTheme } from '@/hooks/useAccessibility';
-import { PatternOverlay } from '@/components/PatternOverlay';
-import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { MtaOverlay } from '@/components/MtaOverlay';
-import { MtaPaletteProvider } from '@/components/MtaPaletteContext';
+import { MixedTile } from '@/components/MixedTile';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -38,13 +34,10 @@ interface AttemptSlide {
   solution: (string | null)[];
   isCorrect: boolean;
   roundIndex: number;
-  visualTheme?: VisualTheme;
 }
 
 export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShareWhatsApp, copied, onStartFreePlay, dayName, colorCount, starsEarned, totalFocusSeconds, stats }: DailySummaryProps) {
   const [activeSlide, setActiveSlide] = useState(0);
-  const { theme: visualTheme } = useVisualTheme();
-  const mta = visualTheme === 'mta';
 
   // Derived metrics for the bottom block.
   const consistency = stats && stats.roundsPlayed
@@ -76,7 +69,6 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
         solution: entry.attempt.solution ?? entry.roundSolution,
         isCorrect: entry.attempt.isCorrect,
         roundIndex: i,
-        visualTheme: entry.attempt.visualTheme as VisualTheme | undefined,
       });
     } else {
       slides.push(null);
