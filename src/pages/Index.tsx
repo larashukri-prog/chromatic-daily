@@ -11,13 +11,9 @@ import { GameGrid } from '@/components/GameGrid';
 import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
-import { VisualThemeToggle } from '@/components/VisualThemeToggle';
-import { useAccessibility, useVisualTheme, getVisualThemeLabel, type VisualTheme } from '@/hooks/useAccessibility';
-import { PatternOverlay } from '@/components/PatternOverlay';
-import { ShapeOverlay, SHAPE_FOR_HEX } from '@/components/ShapeOverlay';
-import { MtaOverlay } from '@/components/MtaOverlay';
+import { MixedTile } from '@/components/MixedTile';
 import {
-  GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, MTA_COLORS, getColorsForTheme, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
+  GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
@@ -31,14 +27,14 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 /** Dynamic timer durations in ms based on color count */
-function getObservationDuration(colorCount: number, isA11y: boolean): number {
+function getObservationDuration(colorCount: number): number {
   let base: number;
   if (colorCount <= 2) base = 5000;
   else if (colorCount <= 3) base = 6000;
   else if (colorCount <= 4) base = 8000;
   else if (colorCount <= 6) base = 10000;
   else base = 15000;
-  return isA11y ? base * 2 : base;
+  return base;
 }
 
 type GameMode = 'daily' | 'freeplay';
