@@ -92,6 +92,13 @@ const Index = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasStartedPlaying = useRef(false);
 
+  // --- Game juice state ---
+  const [tileFx, setTileFx] = useState<Record<number, 'fill' | 'clear' | 'shake' | 'ripple'>>({});
+  const [flipping, setFlipping] = useState(false);
+  const [stagedCheck, setStagedCheck] = useState(false);
+  const [swatchPop, setSwatchPop] = useState<string | null>(null);
+  const fxTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
   // Speed Star state
   const [isSpeedRound, setIsSpeedRound] = useState(false);
   const [starsEarned, setStarsEarned] = useState(0);
@@ -387,9 +394,14 @@ const Index = () => {
       if (navigator.vibrate) navigator.vibrate(50);
     }
 
-    setPhase('recall');
+    // Flip the board face-down before revealing the empty receptacles.
+    setFlipping(true);
     setSelectedColor(null);
-    recallStartTime.current = Date.now();
+    setTimeout(() => {
+      setFlipping(false);
+      setPhase('recall');
+      recallStartTime.current = Date.now();
+    }, 420);
   }, [phase, activeColors.length, baseColorCount, a11y, isFreeplay, mode, roundIndex]);
 
   // --- Countdown helper (shared by daily & freeplay) ---
@@ -543,6 +555,29 @@ const Index = () => {
     }
   }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay, currentStageKey, isCorrect, totalAttemptsUsed]);
 
+  /** Fire a short-lived per-tile effect (bounce / wobble / shake / ripple). */
+  const playTileFx = useCallback(
+    (indices: number[], type: 'fill' | 'clear' | 'shake' | 'ripple', duration = 400) => {
+      if (indices.length === 0) return;
+      setTileFx((prev) => {
+        const next = { ...prev };
+        indices.forEach((i) => { next[i] = type; });
+        return next;
+      });
+      const t = setTimeout(() => {
+        setTileFx((prev) => {
+          const next = { ...prev };
+          indices.forEach((i) => { if (next[i] === type) delete next[i]; });
+          return next;
+        });
+      }, duration);
+      fxTimers.current.push(t);
+    },
+    [],
+  );
+
+  useEffect(() => () => { fxTimers.current.forEach(clearTimeout); }, []);
+
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
     const newGrid = [...playerGrid];
@@ -553,6 +588,7 @@ const Index = () => {
         newGrid[index] = null;
         setPlayerGrid(newGrid);
         setActiveSlot(null);
+        playTileFx([index], 'clear', 300);
         return;
       }
       // Color-then-Slot: place/overwrite immediately
@@ -562,6 +598,9 @@ const Index = () => {
       newGrid[index] = selectedColor;
       setPlayerGrid(newGrid);
       setActiveSlot(null);
+      playTileFx([index], 'fill', 320);
+      setSwatchPop(selectedColor);
+      fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
       return;
     }
 
@@ -571,6 +610,7 @@ const Index = () => {
       newGrid[index] = null;
       setPlayerGrid(newGrid);
       setActiveSlot(null);
+      playTileFx([index], 'clear', 300);
     } else {
       // Tapping the already-active slot → deselect it
       setActiveSlot(activeSlot === index ? null : index);
@@ -582,6 +622,7 @@ const Index = () => {
     setPlayerGrid(Array(GRID_SIZE).fill(null));
     setSelectedColor(null);
     setActiveSlot(null);
+    setStagedCheck(false);
   };
 
   const selectedCount = playerGrid.filter((c) => c !== null).length;
@@ -597,6 +638,18 @@ const Index = () => {
     setResult(res);
     setIsCorrect(correct);
     setVerifying(true);
+    setStagedCheck(false);
+
+    // Success: ripple sweeps top-left → bottom-right across correct tiles.
+    // Failure: only the incorrect tiles head-shake, then settle back.
+    const wrongIdx = res.map((ok, i) => ({ ok, i })).filter((x) => !x.ok).map((x) => x.i);
+    if (correct) {
+      const filled = playerGrid.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
+      playTileFx(filled, 'ripple', 900);
+    } else {
+      fxTimers.current.push(setTimeout(() => playTileFx(wrongIdx, 'shake', 240), 600));
+      fxTimers.current.push(setTimeout(() => playTileFx(wrongIdx, 'clear', 320), 880));
+    }
 
     const recallSeconds = recallStartTime.current ? (Date.now() - recallStartTime.current) / 1000 : 0;
     const correctTilesThisRound = solution.reduce((n, c, i) => n + (c !== null && res[i] ? 1 : 0), 0);
@@ -656,8 +709,6 @@ const Index = () => {
         // is visible at the same time the result modal appears (mobile-friendly).
         if (milestoneHit) triggerMilestone();
         if (!correct) {
-          setShake(true);
-          setTimeout(() => setShake(false), 600);
           setTimeout(() => setShowResult(true), 800);
         } else {
           setFreeplayRoundNum((n) => n + 1);
@@ -736,6 +787,13 @@ const Index = () => {
           mtaCelebrationKey.current = key;
           fireMtaCelebration();
         }
+      } else if (correct && isDailyDone) {
+        // Attempt 3 cleared in any other visual style — celebrate too.
+        const key = `final:win`;
+        if (mtaCelebrationKey.current !== key) {
+          mtaCelebrationKey.current = key;
+          triggerMilestone();
+        }
       }
 
       // Daily ends when: stage is terminal, OR we've used all 3 attempts (adaptive paths).
@@ -745,14 +803,31 @@ const Index = () => {
       }
 
       if (!correct) {
-        setShake(true);
-        setTimeout(() => setShake(false), 600);
         setTimeout(() => setShowResult(true), 800);
       } else {
         setShowResult(true);
       }
     }, 1500);
   };
+
+  // --- Staged auto-verification -------------------------------------------
+  // Placing the final tile arms an 800ms "Staged Check" buffer (ambient board
+  // pulse), then verification runs automatically. Clearing cancels it.
+  const verifyRef = useRef(verify);
+  verifyRef.current = verify;
+
+  useEffect(() => {
+    if (!canVerify || verifying) {
+      setStagedCheck(false);
+      return;
+    }
+    setStagedCheck(true);
+    const t = setTimeout(() => {
+      setStagedCheck(false);
+      verifyRef.current();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [canVerify, verifying]);
 
   const canContinue =
     phase === 'result' &&
@@ -1191,7 +1266,11 @@ const Index = () => {
         <>
           {/* Main Card */}
           <div
-            className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
+            className={cn(
+              'w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform',
+              shake && 'animate-shake',
+              stagedCheck && 'animate-board-pulse',
+            )}
           >
 
             {/* Grid with animated transitions */}
@@ -1213,6 +1292,8 @@ const Index = () => {
                     selectedColor={selectedColor}
                     verifying={verifying}
                     activeSlot={activeSlot}
+                    tileFx={tileFx}
+                    flipping={flipping}
                     onCircleClick={handleCircleClick}
                   />
                 </motion.div>
@@ -1289,7 +1370,7 @@ const Index = () => {
                       isWhite && !mtaMode ||
                       mtaMode;
                     return (
-                    <button
+                    <motion.button
                       key={c.hex}
                       onClick={() => {
                         if (activeSlot !== null) {
@@ -1299,6 +1380,9 @@ const Index = () => {
                           if (isOverwrite || currentCount < effectiveColorCount) {
                             newGrid[activeSlot] = c.hex;
                             setPlayerGrid(newGrid);
+                            playTileFx([activeSlot], 'fill', 320);
+                            setSwatchPop(c.hex);
+                            fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
                             trackEngagement('color_placed', { mode });
                           }
                           setActiveSlot(null);
@@ -1308,6 +1392,17 @@ const Index = () => {
                           trackEngagement('color_selected', { mode });
                         }
                       }}
+                      whileTap={{ scale: 0.92 }}
+                      animate={
+                        swatchPop === c.hex
+                          ? { scale: [1, 1.25, 1] }
+                          : { scale: selectedColor === c.hex ? 1.05 : 1 }
+                      }
+                      transition={
+                        swatchPop === c.hex
+                          ? { duration: 0.24, ease: 'easeOut' }
+                          : { type: 'spring', stiffness: 500, damping: 18 }
+                      }
                       className={cn(
                         "w-9 h-9 rounded-full transition-all duration-200 relative overflow-hidden",
                         "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -1316,18 +1411,16 @@ const Index = () => {
                       style={{
                         backgroundColor: bg,
                         border: showAsWhite ? '2px solid #D1D5DB' : undefined,
-                        outline: selectedColor === c.hex
-                          ? (showAsWhite ? '3px solid #000000' : '3px solid hsl(var(--primary))')
-                          : '2px solid transparent',
-                        outlineOffset: '2px',
-                        transform: selectedColor === c.hex ? 'scale(1.15)' : 'scale(1)',
+                        boxShadow: selectedColor === c.hex
+                          ? `0 0 0 3px hsl(var(--card)), 0 0 0 5px ${showAsWhite ? 'rgba(15,23,42,0.55)' : c.hex}, 0 0 14px 4px ${showAsWhite ? 'rgba(15,23,42,0.28)' : `${c.hex}80`}`
+                          : undefined,
                       }}
                       title={c.name}
                     >
                       {a11y && <PatternOverlay colorHex={c.hex} size="100%" />}
                       {shapesMode && <ShapeOverlay colorHex={c.hex} />}
                       {mtaMode && <MtaOverlay colorHex={c.hex} />}
-                    </button>
+                    </motion.button>
                     );
                   })}
                   </MtaPaletteProvider>
@@ -1370,23 +1463,10 @@ const Index = () => {
                 </Button>
               )}
               {phase === 'recall' && (
-                <>
-                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
-                    <RotateCcw className="w-4 h-4" /> Clear
-                  </Button>
-                  <Button
-                    onClick={verify}
-                    disabled={!canVerify}
-                    className={cn(
-                      'rounded-xl flex-1 gap-2 text-white',
-                      mtaMode
-                        ? 'bg-black hover:bg-black/90'
-                        : 'bg-black hover:bg-black/90'
-                    )}
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Verify
-                  </Button>
-                </>
+                <Button onClick={clearGrid} variant="outline" className="rounded-xl w-full gap-2">
+                  <RotateCcw className="w-4 h-4" />
+                  {stagedCheck ? 'Checking…' : 'Clear'}
+                </Button>
               )}
               {/* Daily result: view result button */}
               {phase === 'result' && !isFreeplay && !showResult && !alreadyFinished && (
