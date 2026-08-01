@@ -810,23 +810,9 @@ const Index = () => {
     }, 1500);
   };
 
-  // --- Staged auto-verification -------------------------------------------
-  // Placing the final tile arms an 800ms "Staged Check" buffer (ambient board
-  // pulse), then verification runs automatically. Clearing cancels it.
-  const verifyRef = useRef(verify);
-  verifyRef.current = verify;
-
+  // Board is armed (ambient pulse) once every tile is placed, awaiting Verify.
   useEffect(() => {
-    if (!canVerify || verifying) {
-      setStagedCheck(false);
-      return;
-    }
-    setStagedCheck(true);
-    const t = setTimeout(() => {
-      setStagedCheck(false);
-      verifyRef.current();
-    }, 800);
-    return () => clearTimeout(t);
+    setStagedCheck(canVerify && !verifying);
   }, [canVerify, verifying]);
 
   const canContinue =
