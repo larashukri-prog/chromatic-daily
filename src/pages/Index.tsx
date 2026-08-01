@@ -1266,14 +1266,18 @@ const Index = () => {
         <>
           {/* Main Card */}
           <div
-            className={`w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform ${shake ? 'animate-shake' : ''}`}
+            className={cn(
+              'w-full max-w-sm bg-card rounded-2xl border border-border shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden transition-transform',
+              shake && 'animate-shake',
+              stagedCheck && 'animate-board-pulse',
+            )}
           >
 
             {/* Grid with animated transitions */}
             <div className="relative">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={verifying ? 'verifying' : phase}
+                  key={verifying ? 'verifying' : flipping ? 'flipping' : phase}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
@@ -1288,6 +1292,8 @@ const Index = () => {
                     selectedColor={selectedColor}
                     verifying={verifying}
                     activeSlot={activeSlot}
+                    tileFx={tileFx}
+                    flipping={flipping}
                     onCircleClick={handleCircleClick}
                   />
                 </motion.div>
