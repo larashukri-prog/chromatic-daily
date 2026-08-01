@@ -221,95 +221,102 @@ function buildPalette(date: Date): DailyPaletteMeta {
 
   const out: Spec[] = [];
   let name = 'Chromatic';
+  // Hue-locked rules can only separate by hue, so they carry a lower floor.
+  let minSep = MIN_SEPARATION;
 
   switch (day) {
     case 1: {
-      // Monday — Pastels
+      // Monday — Pastels: 9 hues across 360°, fixed L/C.
       name = 'Monday Pastels';
+      minSep = 0.05;
       for (let i = 0; i < n; i++) {
-        // Gentle lightness wobble so the low-chroma pastels stay separable.
-        out.push({
-          L: 0.8 + (i % 3) * 0.055,
-          C: 0.075,
-          H: spin + (360 / n) * i + jitter(),
-        });
+        out.push({ L: 0.85, C: 0.08, H: spin + (360 / n) * i });
       }
       break;
     }
     case 2: {
-      // Tuesday — Brights
+      // Tuesday — Brights: 9 hues across 360°, fixed L/C.
       name = 'Tuesday Brights';
+      minSep = 0.1;
       for (let i = 0; i < n; i++) {
-        out.push({ L: 0.7, C: 0.22, H: spin + (360 / n) * i + jitter() });
+        out.push({ L: 0.7, C: 0.22, H: spin + (360 / n) * i });
       }
       break;
     }
     case 3: {
-      // Wednesday — Monochrome, fixed hue anchor
+      // Wednesday — Triadic tones: 3 hues 120° apart × 3 wide lightness steps.
       const anchor = Math.floor(rand() * 360);
-      name = `Wednesday ${hueLabel(anchor)} Mono`;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({
-          L: 0.25 + t * (0.93 - 0.25),
-          C: 0.02 + t * (0.18 - 0.02),
-          H: anchor,
-          lockHue: true,
-        });
+      const hues = [anchor, (anchor + 120) % 360, (anchor + 240) % 360];
+      name = `Wednesday ${hues.map(hueLabel).join('/')} Triad`;
+      const steps: { L: number; C: number }[] = [
+        { L: 0.35, C: 0.13 },
+        { L: 0.65, C: 0.19 },
+        { L: 0.88, C: 0.1 },
+      ];
+      for (const h of hues) {
+        for (const s of steps) {
+          out.push({ L: s.L, C: s.C, H: h, lockHue: true });
+        }
       }
       break;
     }
     case 4: {
-      // Thursday — Duotone interpolation between two hue anchors
+      // Thursday — Split-duotone: two opposing hues, 4 + 5 wide steps.
       const a = Math.floor(rand() * 360);
-      const b = (a + 100 + Math.floor(rand() * 140)) % 360;
+      const b = (a + 180) % 360;
       name = `Thursday ${hueLabel(a)}/${hueLabel(b)} Duotone`;
-      // Interpolate along the shorter hue arc.
-      let delta = ((b - a + 540) % 360) - 180;
-      for (let i = 0; i < n; i++) {
-        const t = i / (n - 1);
-        out.push({
-          L: 0.5 + t * 0.32,
-          C: 0.2 - Math.abs(t - 0.5) * 0.14,
-          H: a + delta * t,
-        });
-      }
+      const aSteps: { L: number; C: number }[] = [
+        { L: 0.3, C: 0.11 },
+        { L: 0.52, C: 0.19 },
+        { L: 0.72, C: 0.16 },
+        { L: 0.92, C: 0.07 },
+      ];
+      const bSteps: { L: number; C: number }[] = [
+        { L: 0.25, C: 0.1 },
+        { L: 0.43, C: 0.17 },
+        { L: 0.61, C: 0.2 },
+        { L: 0.79, C: 0.14 },
+        { L: 0.95, C: 0.06 },
+      ];
+      for (const s of aSteps) out.push({ L: s.L, C: s.C, H: a, lockHue: true });
+      for (const s of bSteps) out.push({ L: s.L, C: s.C, H: b, lockHue: true });
       break;
     }
     case 5: {
-      // Friday — Seasonal
+      // Friday — Seasonal curated set
       const band = seasonalBand(date.getMonth());
       name = `Friday ${band.name}`;
+      minSep = 0.12;
       for (let i = 0; i < n; i++) {
         out.push({
-          L: band.L + (i % 3) * 0.04 - 0.04,
-          C: band.C + ((i % 2) * 0.02),
-          H: band.hues[i % band.hues.length] + jitter(),
+          L: band.L + (i % 3) * 0.09 - 0.09,
+          C: band.C + (i % 2) * 0.03,
+          H: band.hues[i % band.hues.length],
         });
       }
       break;
     }
     case 6: {
-      // Saturday — Cool / cold (widened hue band + lightness ramp)
-      name = 'Saturday Cool';
+      // Saturday — Cool spectrum: hues 150°→290°, L 0.40→0.85.
+      name = 'Saturday Cool Spectrum';
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
-        out.push({ L: 0.45 + t * 0.37, C: 0.16, H: 160 + (120 / (n - 1)) * i });
+        out.push({ L: 0.4 + t * 0.45, C: 0.16, H: 150 + 140 * t });
       }
       break;
     }
     default: {
-      // Sunday — Warm sunset (widened hue band + lightness ramp)
-      name = 'Sunday Sunset';
+      // Sunday — Sunset warmth: hues 330°→70° (wrapping), L 0.45→0.90.
+      name = 'Sunday Sunset Warmth';
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
-        out.push({ L: 0.5 + t * 0.35, C: 0.2, H: 340 + (85 / (n - 1)) * i });
+        out.push({ L: 0.45 + t * 0.45, C: 0.2, H: 330 + 100 * t });
       }
       break;
     }
   }
 
-  const colors: DailyColor[] = enforceSeparation(out).map((c, i) => {
+  const colors: DailyColor[] = enforceSeparation(out, minSep).map((c, i) => {
     const H = ((c.H % 360) + 360) % 360;
     const L = Math.min(0.97, Math.max(0.18, c.L));
     const C = Math.max(0, c.C);
