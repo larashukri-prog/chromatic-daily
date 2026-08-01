@@ -297,6 +297,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
     }
     case 6: {
       name = 'Saturday Cool Spectrum';
+      minSep = 0.12;
       // Curated cool anchors across 150°–290° with zigzagging lightness so no
       // two neighbours read as steps of one gradient.
       out.push(
@@ -314,6 +315,7 @@ function buildPalette(date: Date): DailyPaletteMeta {
     }
     default: {
       name = 'Sunday Sunset Warmth';
+      minSep = 0.12;
       // Curated warm anchors across 330°–82°, zigzagging lightness, no dark
       // purple end — every tile reads as a sunset colour.
       out.push(
