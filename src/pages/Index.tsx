@@ -1682,7 +1682,6 @@ const Index = () => {
 
 // Wrap in ErrorBoundary
 import { GameErrorBoundary } from '@/components/GameErrorBoundary';
-import { MtaPaletteProvider, MTA_DEFAULT_PALETTE_HEXES } from '@/components/MtaPaletteContext';
 const IndexWithErrorBoundary = () => (
   <GameErrorBoundary>
     <Index />
