@@ -782,6 +782,13 @@ const Index = () => {
           mtaCelebrationKey.current = key;
           fireMtaCelebration();
         }
+      } else if (correct && isDailyDone) {
+        // Attempt 3 cleared in any other visual style — celebrate too.
+        const key = `final:win`;
+        if (mtaCelebrationKey.current !== key) {
+          mtaCelebrationKey.current = key;
+          triggerMilestone();
+        }
       }
 
       // Daily ends when: stage is terminal, OR we've used all 3 attempts (adaptive paths).
@@ -791,14 +798,31 @@ const Index = () => {
       }
 
       if (!correct) {
-        setShake(true);
-        setTimeout(() => setShake(false), 600);
         setTimeout(() => setShowResult(true), 800);
       } else {
         setShowResult(true);
       }
     }, 1500);
   };
+
+  // --- Staged auto-verification -------------------------------------------
+  // Placing the final tile arms an 800ms "Staged Check" buffer (ambient board
+  // pulse), then verification runs automatically. Clearing cancels it.
+  const verifyRef = useRef(verify);
+  verifyRef.current = verify;
+
+  useEffect(() => {
+    if (!canVerify || verifying) {
+      setStagedCheck(false);
+      return;
+    }
+    setStagedCheck(true);
+    const t = setTimeout(() => {
+      setStagedCheck(false);
+      verifyRef.current();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [canVerify, verifying]);
 
   const canContinue =
     phase === 'result' &&
