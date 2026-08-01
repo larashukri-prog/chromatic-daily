@@ -214,26 +214,9 @@ export function DailySummary({ rounds, totalAttempts, maxRounds, onShare, onShar
 }
 
 function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide; slideIndex: number; totalSlides: number }) {
-  const { enabled: a11y } = useAccessibility();
-  const { theme: globalTheme } = useVisualTheme();
-  const effectiveTheme = slide.visualTheme ?? globalTheme;
-  const shapesMode = effectiveTheme === 'shapes';
-  const mtaMode = effectiveTheme === 'mta';
-  const patternsMode = effectiveTheme === 'patterns';
-  const showPatterns = a11y || patternsMode;
   const [showSolution, setShowSolution] = useState(false);
   const playerGrid = slide.attemptGrid;
   const solution = slide.solution;
-
-  // Active hexes for this attempt (so MTA subway bullet mapping matches the puzzle
-  // that was actually played, not the current/global stage palette).
-  const slideActiveHexes = Array.from(
-    new Set(
-      [...solution, ...playerGrid].filter(
-        (h): h is string => typeof h === 'string',
-      ).map((h) => h.toUpperCase()),
-    ),
-  );
 
   const result = solution.map((c, i) => {
     if (c === null) return playerGrid[i] === null;
@@ -243,7 +226,6 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
   const neuralMatch = Math.round((correctTiles / GRID_SIZE) * 100);
 
   return (
-    <MtaPaletteProvider activeHexes={slideActiveHexes}>
     <div className="text-center">
       {/* Round header */}
       <div className="flex items-center justify-center gap-2 mb-1">
