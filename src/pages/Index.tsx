@@ -550,6 +550,29 @@ const Index = () => {
     }
   }, [showResult, phase, roundIndex, alreadyFinished, isFreeplay, currentStageKey, isCorrect, totalAttemptsUsed]);
 
+  /** Fire a short-lived per-tile effect (bounce / wobble / shake / ripple). */
+  const playTileFx = useCallback(
+    (indices: number[], type: 'fill' | 'clear' | 'shake' | 'ripple', duration = 400) => {
+      if (indices.length === 0) return;
+      setTileFx((prev) => {
+        const next = { ...prev };
+        indices.forEach((i) => { next[i] = type; });
+        return next;
+      });
+      const t = setTimeout(() => {
+        setTileFx((prev) => {
+          const next = { ...prev };
+          indices.forEach((i) => { if (next[i] === type) delete next[i]; });
+          return next;
+        });
+      }, duration);
+      fxTimers.current.push(t);
+    },
+    [],
+  );
+
+  useEffect(() => () => { fxTimers.current.forEach(clearTimeout); }, []);
+
   const handleCircleClick = (index: number) => {
     if (phase !== 'recall') return;
     const newGrid = [...playerGrid];
@@ -560,6 +583,7 @@ const Index = () => {
         newGrid[index] = null;
         setPlayerGrid(newGrid);
         setActiveSlot(null);
+        playTileFx([index], 'clear', 300);
         return;
       }
       // Color-then-Slot: place/overwrite immediately
@@ -569,6 +593,9 @@ const Index = () => {
       newGrid[index] = selectedColor;
       setPlayerGrid(newGrid);
       setActiveSlot(null);
+      playTileFx([index], 'fill', 320);
+      setSwatchPop(selectedColor);
+      fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
       return;
     }
 
@@ -578,6 +605,7 @@ const Index = () => {
       newGrid[index] = null;
       setPlayerGrid(newGrid);
       setActiveSlot(null);
+      playTileFx([index], 'clear', 300);
     } else {
       // Tapping the already-active slot → deselect it
       setActiveSlot(activeSlot === index ? null : index);
