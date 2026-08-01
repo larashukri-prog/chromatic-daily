@@ -169,7 +169,7 @@ function labDistance(a: [number, number, number], b: [number, number, number]): 
  * drift when allowed) until every pair clears MIN_SEPARATION, or the bounded
  * iteration budget runs out.
  */
-function enforceSeparation(specs: Spec[]): Spec[] {
+function enforceSeparation(specs: Spec[], minSep: number = MIN_SEPARATION): Spec[] {
   const out = specs.map((s) => ({ ...s }));
   const L_MIN = 0.2;
   const L_MAX = 0.95;
@@ -182,10 +182,10 @@ function enforceSeparation(specs: Spec[]): Spec[] {
     for (let i = 0; i < out.length; i++) {
       for (let j = i + 1; j < out.length; j++) {
         const d = labDistance(labs[i], labs[j]);
-        if (d >= MIN_SEPARATION) continue;
-        worst = Math.max(worst, MIN_SEPARATION - d);
+        if (d >= minSep) continue;
+        worst = Math.max(worst, minSep - d);
 
-        const deficit = MIN_SEPARATION - d;
+        const deficit = minSep - d;
         // Deterministic direction: lower index keeps the darker slot.
         const lowFirst = out[i].L < out[j].L || (out[i].L === out[j].L && i < j);
         const lo = lowFirst ? out[i] : out[j];
