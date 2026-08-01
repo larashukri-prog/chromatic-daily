@@ -6,7 +6,9 @@ Replace the four visual styles (Colors / Patterns / Shapes / MTA) with two: **Co
 
 ## 1. New palette engine — `src/lib/palette.ts`
 
-`getDailyPalette(date = new Date()): ColorDef[]` returns exactly 9 entries (`{ name, hex, hue }`, same shape as today's `ColorDef`) so every existing consumer keeps working. Hues are spread deterministically across 9 slots; a small seeded jitter derived from the date keeps days distinct within the same weekday rule.
+`getDailyPalette(date = new Date()): ColorDef[]` returns exactly 9 entries (`{ name, hex, hue }`, same shape as today's `ColorDef`) so every existing consumer keeps working. Hues are spread deterministically across the 9 slots; a small seeded jitter derived from the date keeps days distinct within the same weekday rule.
+
+Grid geometry is unchanged: 6 tiles in the 2x3 layout, attempts using 3 / 5 / 6 colors. The picker keeps showing the full 9-color daily palette every attempt, so unused colors act as decoys and the puzzle stays challenging.
 
 | Day | Rule |
 |---|---|
