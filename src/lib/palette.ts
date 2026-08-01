@@ -218,6 +218,8 @@ function buildPalette(date: Date): DailyPaletteMeta {
   const n = DAILY_PALETTE_SIZE;
   const spin = rand() * 360; // per-day rotation of the whole hue ring
 
+  const out: Spec[] = [];
+
   // Every day uses all nine hue slots, 40 apart, so no two tiles can ever be
   // shades of the same colour family.
   const RING_STEP = 360 / n;
