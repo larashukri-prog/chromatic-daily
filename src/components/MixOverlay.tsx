@@ -19,7 +19,7 @@ export const MIX_PATTERN_NAMES = [
   'Starburst',
 ] as const;
 
-const OPACITY = 0.18;
+const OPACITY = 0.5;
 
 /** The repeating cell for pattern indices that tile. */
 function PatternCell({ index, stroke }: { index: number; stroke: string }) {
