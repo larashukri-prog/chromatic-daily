@@ -1,4 +1,4 @@
-import { CHROMATIC_COLORS, COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
+import { activePalette, GRID_SIZE, type ColorDef } from '@/lib/game';
 
 /**
  * Compute color count for a given session round (1-based).
@@ -32,25 +32,22 @@ function getColorCountForRound(roundCount: number): number {
  * Generate a Practice Mode puzzle with progressive difficulty
  * based on the session's round count (1-based).
  *
- * Mirrors the daily flow: shuffles canonical CHROMATIC_COLORS indices
- * (palette-independent) and then projects those indices onto the caller's
- * palette 1:1. This keeps Colors / Patterns / Shapes / MTA aligned when the
- * visual style is toggled mid-round. Uses Math.random() — no seeding.
+ * Mirrors the daily flow: shuffles palette indices and projects them onto the
+ * caller's palette 1:1, so toggling the visual style mid-round stays aligned.
+ * Uses Math.random() — no seeding.
  */
 export function generateFreePlayPuzzle(
   roundCount: number = 1,
-  palette: ColorDef[] = COLORS,
+  palette: ColorDef[] = activePalette(),
 ): {
   solution: (string | null)[];
   activeColors: { name: string; hex: string }[];
   colorCount: number;
 } {
   const requested = getColorCountForRound(roundCount);
-  const colorCount = Math.min(requested, CHROMATIC_COLORS.length, palette.length, GRID_SIZE);
+  const colorCount = Math.min(requested, palette.length, GRID_SIZE);
 
-  // Shuffle canonical indices — palette-independent — then project onto the
-  // caller's palette so the same slot/index maps cleanly across every theme.
-  const canonicalIdx = CHROMATIC_COLORS.map((_, i) => i).sort(() => Math.random() - 0.5);
+  const canonicalIdx = palette.map((_, i) => i).sort(() => Math.random() - 0.5);
   const chosenIdx = canonicalIdx.slice(0, colorCount);
   const chosen = chosenIdx.map((i) => palette[i]);
 

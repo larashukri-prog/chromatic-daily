@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion';
 import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
 import { useVisualTheme } from '@/hooks/useAccessibility';
-import { PatternOverlay } from '@/components/PatternOverlay';
-import { ShapeOverlay } from '@/components/ShapeOverlay';
-import { MtaOverlay } from '@/components/MtaOverlay';
+import { MixOverlay } from '@/components/MixOverlay';
 
 interface GameGridProps {
   phase: GamePhase;
@@ -18,9 +16,7 @@ interface GameGridProps {
 
 export function GameGrid({ phase, solution, playerGrid, result, selectedColor, verifying, activeSlot, onCircleClick }: GameGridProps) {
   const { theme } = useVisualTheme();
-  const a11y = theme === 'patterns';
-  const shapes = theme === 'shapes';
-  const mta = theme === 'mta';
+  const mix = theme === 'mix';
 
   const getCircleColor = (index: number): string => {
     if (phase === 'observation') return solution[index] || NEUTRAL;
@@ -33,24 +29,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
     return NEUTRAL;
   };
 
-  // In shapes mode, the slot background is always white when the slot has a value;
-  // empty slots stay neutral so the player can still see what's filled in.
-  const getDisplayBackground = (index: number): string => {
-    const c = getCircleColor(index);
-    if (mta) {
-      if (c === NEUTRAL) return NEUTRAL;
-      if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-      // MTA tiles use the brand color as the full slot background so the bullet bleeds to the edge.
-      return c;
-    }
-    if (!shapes) return c;
-    if (c === NEUTRAL) return NEUTRAL;
-    if (phase === 'result' && result && !result[index] && solution[index]) return '#FCA5A5';
-    // Anchors render as their true fill so Black stays black and White stays white.
-    const up = c.toUpperCase();
-    if (up === '#000000' || up === '#FFFFFF') return up;
-    return '#FFFFFF';
-  };
+  // MIX keeps the true daily color underneath the glyph.
+  const getDisplayBackground = (index: number): string => getCircleColor(index);
 
   const getPatternColor = (index: number): string | null => {
     if (phase === 'observation') return solution[index];
@@ -64,9 +44,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
 
   const getCircleBorder = (index: number): string => {
     const color = getCircleColor(index).toUpperCase();
-    const displayWhite = shapes && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    const mtaLightFill = mta && color !== NEUTRAL && !(phase === 'result' && result && !result[index] && solution[index]);
-    if (color === '#FFFFFF' || color === '#FFF' || displayWhite || mtaLightFill) {
+    if (color === '#FFFFFF' || color === '#FFF') {
       if (phase === 'recall' && activeSlot === index) return '3px solid #000000';
       return '2px solid #D1D5DB';
     }
@@ -112,9 +90,7 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
             ...getGlowStyle(i),
           }}
         >
-          {a11y && <PatternOverlay colorHex={getPatternColor(i)} size="100%" />}
-          {shapes && <ShapeOverlay colorHex={getPatternColor(i)} />}
-          {mta && <MtaOverlay colorHex={getPatternColor(i)} />}
+          {mix && <MixOverlay colorHex={getPatternColor(i)} />}
         </motion.button>
       ))}
     </div>
