@@ -121,11 +121,9 @@ export function getDayInfo() {
 
 /** Fallback solution using the provided palette when generation fails. */
 function generateFallbackSolution(
-  palette: ColorDef[] = CHROMATIC_COLORS,
+  palette: ColorDef[] = activePalette(),
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
-  // Generate against the canonical chromatic palette, then project by index
-  // onto the requested palette so every theme lines up 1:1.
-  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, CHROMATIC_COLORS.length, palette.length);
+  const colorCount = Math.min(STAGE_COLOR_COUNTS.stage1, palette.length);
   const chosenIdx = Array.from({ length: colorCount }, (_, i) => i);
   const chosen = chosenIdx.map((i) => palette[i]);
   const positions = Array.from({ length: colorCount }, (_, i) => i);
@@ -143,26 +141,19 @@ function generateFallbackSolution(
 export function generateStageSolution(
   stage: StageKey,
   regenIndex: number = 0,
-  palette: ColorDef[] = CHROMATIC_COLORS,
+  palette: ColorDef[] = activePalette(),
 ): { solution: (string | null)[]; activeColors: { name: string; hex: string }[]; colorCount: number } {
   try {
-    // Always generate against the canonical CHROMATIC palette so positions
-    // and chosen slot indices are identical across every visual theme.
-    // Then translate each chosen index onto the active theme's palette.
-    const colorCount = Math.min(
-      STAGE_COLOR_COUNTS[stage],
-      CHROMATIC_COLORS.length,
-      palette.length,
-    );
+    // Generation is index-based so it stays identical across visual styles;
+    // the chosen indices are then projected onto the supplied palette.
+    const colorCount = Math.min(STAGE_COLOR_COUNTS[stage], palette.length);
     const baseSeed = getDateSeed();
     const seed = baseSeed + STAGE_SEED_OFFSETS[stage] + regenIndex * 7919;
     const rand = seededRandom(seed);
 
-    // Shuffle canonical indices, not palette entries, so the RNG stream is
-    // palette-independent.
-    const canonicalIdx = CHROMATIC_COLORS.map((_, i) => i).sort(() => rand() - 0.5);
+    const canonicalIdx = palette.map((_, i) => i).sort(() => rand() - 0.5);
     const chosenIdx = canonicalIdx.slice(0, colorCount);
-    const chosenCanonical = chosenIdx.map((i) => CHROMATIC_COLORS[i]);
+    const chosenCanonical = chosenIdx.map((i) => palette[i]);
 
     // Adjacency uses canonical hues so placements are also theme-independent.
     const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand);
