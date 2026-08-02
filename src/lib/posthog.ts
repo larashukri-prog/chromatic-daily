@@ -11,18 +11,9 @@ export function initPostHog() {
     },
   });
 
-  let initialTheme: 'colors' | 'patterns' | 'shapes' = 'colors';
-  try {
-    const stored = localStorage.getItem('chromatic-visual-theme');
-    if (stored === 'patterns' || stored === 'shapes' || stored === 'colors') {
-      initialTheme = stored;
-    }
-  } catch {}
-
   posthog.register({
     project_language: 'English',
     ui_direction: 'LTR',
-    visual_style: initialTheme,
   });
 }
 

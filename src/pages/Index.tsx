@@ -389,11 +389,11 @@ const Index = () => {
 
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
-    posthog.capture('Game Start', { round_number: roundIndex + 1, day_number: dayNum, difficulty: difficultyName, mode });
     posthog.capture('game_started', {
       round_number: roundIndex + 1,
       day_number: dayNum,
       difficulty: difficultyName,
+      mode,
     });
     trackVirtualPageview('/play', 'Chromatic Daily — Play');
 
@@ -448,10 +448,6 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
-    posthog.capture('practice_mode_started', {
-      difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
-      color_count: puzzle.colorCount,
-    });
     posthog.capture('practice_started', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
@@ -723,12 +719,17 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('Round Verified', {
+      posthog.capture('round_verified', {
         round_number: roundIndex + 1,
         stage: currentStageKey,
-        substage: substageForSave,
         is_correct: correct,
         speed_bonus: isSpeedRound,
+        recall_seconds: recallSeconds,
+      });
+
+      posthog.capture('daily_streak_updated', {
+        current_streak: savedData.currentStreak,
+        max_streak: savedData.maxStreak,
       });
 
       if (correct && isSpeedRound) {
@@ -803,7 +804,7 @@ const Index = () => {
     const nextRound = freeplayRoundNum + 1;
     const puzzle = generateFreePlayPuzzle(nextRound);
     setFreeplayRoundNum(nextRound);
-    posthog.capture('practice_mode_next_level', {
+    posthog.capture('practice_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
       round_number: freeplayRoundNum + 1,
@@ -967,6 +968,8 @@ const Index = () => {
         difficulty: difficultyName,
         result: solvedRounds > 0 ? 'won' : 'lost',
         stars_earned: starsEarned,
+        rounds_solved: solvedRounds,
+        attempts_used: savedRounds.length,
       });
       hasStartedPlaying.current = false;
     }
