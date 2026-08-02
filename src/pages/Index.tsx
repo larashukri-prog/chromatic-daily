@@ -968,6 +968,8 @@ const Index = () => {
         difficulty: difficultyName,
         result: solvedRounds > 0 ? 'won' : 'lost',
         stars_earned: starsEarned,
+        rounds_solved: solvedRounds,
+        attempts_used: savedRounds.length,
       });
       hasStartedPlaying.current = false;
     }
