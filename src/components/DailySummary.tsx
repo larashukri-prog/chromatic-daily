@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
 import { MixedTile } from '@/components/MixedTile';
+import { radialSlotStyle } from '@/components/RadialLayout';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -252,7 +253,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </div>
       )}
 
-      {/* 2x3 grid */}
+      {/* Radial board */}
       <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -261,7 +262,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[160px] mx-auto mb-4"
+            className="relative w-full aspect-square max-w-[210px] mx-auto mb-4"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
@@ -276,8 +277,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3, delay: i * 0.04 }}
-                    className="aspect-square rounded-full relative overflow-hidden"
+                    className="rounded-full overflow-hidden"
                     style={{
+                      ...radialSlotStyle(i),
                       backgroundColor: bg,
                       border: lightBorder ? '2px solid #D1D5DB' : '2px solid transparent',
                       boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
@@ -311,8 +313,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.3, delay: i * 0.04 }}
-                  className="aspect-square rounded-full relative overflow-hidden"
+                  className="rounded-full overflow-hidden"
                   style={{
+                    ...radialSlotStyle(i),
                     backgroundColor: pBg,
                     boxShadow: glow,
                     border: !result[i] && solution[i]
@@ -353,15 +356,15 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
-      <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[160px] mx-auto mb-4">
+      <div className="relative w-full aspect-square max-w-[210px] mx-auto mb-4">
         {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <motion.div
             key={i}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.3, delay: i * 0.04 }}
-            className="aspect-square rounded-full"
-            style={{ backgroundColor: NEUTRAL, border: '2px solid transparent' }}
+            className="rounded-full"
+            style={{ ...radialSlotStyle(i), backgroundColor: NEUTRAL, border: '2px solid transparent' }}
           />
         ))}
       </div>

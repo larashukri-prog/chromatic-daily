@@ -12,6 +12,7 @@ import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
 import { MixedTile } from '@/components/MixedTile';
+import { radialSlotStyle } from '@/components/RadialLayout';
 import {
   GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
@@ -1490,7 +1491,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 2x3 grid.</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 7 on Stage 3's full radial board.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
@@ -1503,7 +1504,7 @@ const Index = () => {
               <div className="space-y-3">
                 <div>
                   <p className="font-medium text-foreground mb-1">3-Stage Daily</p>
-                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements).&nbsp;</p>
+                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (7 elements, center included).&nbsp;</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">
@@ -1514,7 +1515,7 @@ const Index = () => {
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
                   <p>
-                    Unlocked any time. Same 2x3 grid, unlimited rounds — sharpen your eye and master the mix.
+                    Unlocked any time. Same radial board, unlimited rounds — sharpen your eye and master the mix.
                   </p>
                 </div>
                 <div className="pt-2" />
@@ -1567,23 +1568,26 @@ const Index = () => {
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 2, 4].map((row) => (
-                <div key={row}>
-                  {solution
-                    .slice(row, row + 2)
-                    .map((c, i) => {
-                      if (c === null) return '⚪';
-                      return playerGrid[row + i] === c ? '🟢' : '⚫';
-                    })
-                    .join('')}
-                </div>
-              ))}
+              {(() => {
+                const cell = (i: number) => {
+                  const c = solution[i];
+                  if (c === null || c === undefined) return '⚪';
+                  return playerGrid[i] === c ? '🟢' : '⚫';
+                };
+                return [
+                  `　${cell(0)}`,
+                  `${cell(5)}　${cell(1)}`,
+                  `　${cell(6)}`,
+                  `${cell(4)}　${cell(2)}`,
+                  `　${cell(3)}`,
+                ].map((line, idx) => <div key={idx}>{line}</div>);
+              })()}
             </div>
 
             {!isCorrect && (
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
-                <div className="grid grid-cols-2 gap-2 max-w-[90px] mx-auto">
+                <div className="relative w-full aspect-square max-w-[130px] mx-auto">
                   {solution.map((c, i) => {
                     const up = c?.toUpperCase();
                     const isWhite = up === '#FFFFFF';
@@ -1592,10 +1596,10 @@ const Index = () => {
                     return (
                       <div
                         key={i}
-                        className="aspect-square rounded-full relative overflow-hidden"
+                        className="rounded-full overflow-hidden"
                         style={{
+                          ...radialSlotStyle(i),
                           backgroundColor: bg,
-                          width: '100%',
                           border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
                         }}
                       >

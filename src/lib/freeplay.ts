@@ -1,8 +1,8 @@
-import { CHROMATIC_COLORS, COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
+import { CHROMATIC_COLORS, COLORS, GRID_SIZE, RING_INDICES, CENTER_INDEX, type ColorDef } from '@/lib/game';
 
 /**
  * Compute color count for a given session round (1-based).
- * The 2x3 grid holds 6 tiles, so the effective count is clamped to
+ * The radial board holds 7 tiles, so the effective count is clamped to
  * min(count, palette.length, GRID_SIZE) downstream. Higher tiers still
  * matter conceptually as long-session difficulty markers.
  *
@@ -54,7 +54,10 @@ export function generateFreePlayPuzzle(
   const chosenIdx = canonicalIdx.slice(0, colorCount);
   const chosen = chosenIdx.map((i) => palette[i]);
 
-  const positions = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => Math.random() - 0.5);
+  // Ring-only until the board is fully loaded; the center anchor lights up
+  // last, mirroring the daily flow.
+  const allowed = colorCount >= GRID_SIZE ? [...RING_INDICES, CENTER_INDEX] : [...RING_INDICES];
+  const positions = allowed.sort(() => Math.random() - 0.5);
   const coloredPositions = positions.slice(0, colorCount);
 
   const solution: (string | null)[] = Array(GRID_SIZE).fill(null);

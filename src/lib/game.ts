@@ -31,8 +31,17 @@ export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
 
-/** 2x3 grid — 2 columns x 3 rows = 6 slots total. */
-export const GRID_SIZE = 6;
+/**
+ * Radial board — 6 circles in an even orbit (indices 0-5, clockwise from top)
+ * around 1 center anchor (index 6). 7 slots total.
+ */
+export const GRID_SIZE = 7;
+
+/** Index of the center anchor node. */
+export const CENTER_INDEX = 6;
+
+/** Outer ring indices, clockwise starting at the top. */
+export const RING_INDICES = [0, 1, 2, 3, 4, 5];
 
 /**
  * Stage identifiers for the adaptive 3-attempt daily.
@@ -56,7 +65,7 @@ export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
   stage1c: 3,
   stage2: 5,
   stage2r: 5,
-  stage3: 6,
+  stage3: 7,
 };
 
 /** Seed offsets so every user worldwide gets the same puzzle per stage. */
@@ -173,7 +182,10 @@ export function generateStageSolution(
     const chosenCanonical = chosenIdx.map((i) => CHROMATIC_COLORS[i]);
 
     // Adjacency uses canonical hues so placements are also theme-independent.
-    const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand);
+    // Attempts 1 & 2 stay on the outer ring; the center only activates on the
+    // final 7-node stage.
+    const allowed = colorCount >= GRID_SIZE ? [...RING_INDICES, CENTER_INDEX] : RING_INDICES;
+    const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand, allowed);
 
     // Project chosen indices onto the active theme's palette (1:1 by index).
     const chosen = chosenIdx.map((i) => palette[i]);
@@ -214,24 +226,24 @@ function areHueNeighbors(a: ColorDef, b: ColorDef): boolean {
 }
 
 /**
- * Ensure placed colors on the 2x3 grid avoid hue-similar colors in
- * neighboring cells (including diagonals).
+ * Ensure placed colors on the radial board avoid hue-similar colors in
+ * neighboring nodes. Each ring node touches its two ring siblings plus the
+ * center; the center touches every ring node.
  */
 function getNonAdjacentPositions(
   chosen: ColorDef[],
   colorCount: number,
-  rand: () => number
+  rand: () => number,
+  allowedPositions: number[] = Array.from({ length: GRID_SIZE }, (_, i) => i),
 ): number[] {
-  // 2x3 adjacency (2 cols × 3 rows, including diagonals)
-  // layout indices:  0 1 2
-  //                  3 4 5
   const adjacent: Record<number, number[]> = {
-    0: [1, 3, 4],
-    1: [0, 2, 3, 4, 5],
-    2: [1, 4, 5],
-    3: [0, 1, 4],
-    4: [0, 1, 2, 3, 5],
-    5: [1, 2, 4],
+    0: [5, 1, 6],
+    1: [0, 2, 6],
+    2: [1, 3, 6],
+    3: [2, 4, 6],
+    4: [3, 5, 6],
+    5: [4, 0, 6],
+    6: [0, 1, 2, 3, 4, 5],
   };
 
   // Try up to 200 random arrangements and pick the best one
@@ -239,7 +251,7 @@ function getNonAdjacentPositions(
   let bestConflicts = Infinity;
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    const allPos = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => rand() - 0.5);
+    const allPos = [...allowedPositions].sort(() => rand() - 0.5);
     const positions = allPos.slice(0, colorCount);
 
     // Count neighbor conflicts
@@ -336,6 +348,24 @@ export function loadData(): StoredData | null {
         rounds: [],
         finished: true,
       };
+    }
+    // Migration: pre-radial saves stored 6-slot arrays. Pad to GRID_SIZE so
+    // the radial summary renders without holes.
+    const pad = (arr: unknown): (string | null)[] => {
+      const a = Array.isArray(arr) ? [...arr] : [];
+      while (a.length < GRID_SIZE) a.push(null);
+      return a.slice(0, GRID_SIZE) as (string | null)[];
+    };
+    if (Array.isArray(data.rounds)) {
+      data.rounds = data.rounds.map((r: RoundData) => ({
+        ...r,
+        solution: pad(r.solution),
+        attempts: (r.attempts ?? []).map((a: RoundAttempt) => ({
+          ...a,
+          grid: pad(a.grid),
+          solution: pad(a.solution),
+        })),
+      }));
     }
     return data;
   } catch { return null; }
@@ -472,7 +502,7 @@ export function getStageResultMessage(
 
   if (isCorrect) {
     if (nextCount === 5) return 'Nailed it. Next attempt brings 5 elements — keep the rhythm.';
-    if (nextCount === 6) return 'Locked in. Final attempt fills the grid with 6 elements.';
+    if (nextCount === 7) return 'Locked in. Final attempt fills the board with 7 elements.';
     return 'Got it!';
   }
 
@@ -501,6 +531,25 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
     return { label: 'So Close! 🤏', sublabel: 'Almost there — come back sharper tomorrow.' };
   }
   return { label: 'Resilient 💪', sublabel: 'Way to fight back. Try for flawless tomorrow.' };
+}
+
+/**
+ * Render the 7 radial cells as a hexagonal emoji flower:
+ *      0
+ *   5     1
+ *      6
+ *   4     2
+ *      3
+ */
+function radialEmojiLines(cells: string[]): string[] {
+  const c = (i: number) => cells[i] ?? '⚪';
+  return [
+    `　${c(0)}`,
+    `${c(5)}　${c(1)}`,
+    `　${c(6)}`,
+    `${c(4)}　${c(2)}`,
+    `　${c(3)}`,
+  ];
 }
 
 export function generateShareText(
@@ -555,14 +604,10 @@ export function generateShareText(
         const isMatch = s!.toLowerCase() === placed!.toLowerCase();
         return isMatch ? '🟢' : '🔴';
       });
-      lines.push(cells.slice(0, 2).join(''));
-      lines.push(cells.slice(2, 4).join(''));
-      lines.push(cells.slice(4, 6).join(''));
+      lines.push(...radialEmojiLines(cells));
     } else {
       lines.push(`Attempt ${i + 1} ⬜`);
-      lines.push('⚪⚪');
-      lines.push('⚪⚪');
-      lines.push('⚪⚪');
+      lines.push(...radialEmojiLines(Array(GRID_SIZE).fill('⚪')));
     }
     lines.push('');
   }
