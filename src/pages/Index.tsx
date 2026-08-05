@@ -12,6 +12,7 @@ import { SessionReport, type SessionStats } from '@/components/SessionReport';
 import confetti from 'canvas-confetti';
 
 import { MixedTile } from '@/components/MixedTile';
+import { radialSlotStyle } from '@/components/RadialLayout';
 import {
   GamePhase, NEUTRAL, COLORS, CHROMATIC_COLORS, generateSolution, generateSolutionDDA, getDayInfo, getDayNumber,
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,

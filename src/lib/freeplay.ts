@@ -2,7 +2,7 @@ import { CHROMATIC_COLORS, COLORS, GRID_SIZE, type ColorDef } from '@/lib/game';
 
 /**
  * Compute color count for a given session round (1-based).
- * The 2x3 grid holds 6 tiles, so the effective count is clamped to
+ * The radial board holds 7 tiles, so the effective count is clamped to
  * min(count, palette.length, GRID_SIZE) downstream. Higher tiers still
  * matter conceptually as long-session difficulty markers.
  *
