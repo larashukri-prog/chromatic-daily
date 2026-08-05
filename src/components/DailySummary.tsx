@@ -253,7 +253,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </div>
       )}
 
-      {/* 2x3 grid */}
+      {/* Radial board */}
       <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div

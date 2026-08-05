@@ -1491,7 +1491,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">👑 Peak Complexity</p>
-                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 6 on Stage 3's full 2x3 grid.</p>
+                  <p>Your mental "heavy lifting." Tracks the highest number of tiles decoded in a stage — peaks at 7 on Stage 3's full radial board.</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">🧩 Decoded Tiles</p>
@@ -1504,7 +1504,7 @@ const Index = () => {
               <div className="space-y-3">
                 <div>
                   <p className="font-medium text-foreground mb-1">3-Stage Daily</p>
-                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (6 elements).&nbsp;</p>
+                  <p>Each day runs a 3-stage progression: Stage 1 (3 elements) → Stage 2 (5 elements) → Stage 3 (7 elements, center included).&nbsp;</p>
                 </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">
@@ -1515,7 +1515,7 @@ const Index = () => {
                 <div>
                   <p className="font-medium text-foreground mb-1">Practice Mode</p>
                   <p>
-                    Unlocked any time. Same 2x3 grid, unlimited rounds — sharpen your eye and master the mix.
+                    Unlocked any time. Same radial board, unlimited rounds — sharpen your eye and master the mix.
                   </p>
                 </div>
                 <div className="pt-2" />
