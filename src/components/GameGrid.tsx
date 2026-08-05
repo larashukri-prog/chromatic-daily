@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
+import { GamePhase, NEUTRAL, GRID_SIZE, CENTER_INDEX } from '@/lib/game';
 import { MixedTile } from '@/components/MixedTile';
 import { radialSlotStyle } from '@/components/RadialLayout';
 
@@ -80,9 +80,11 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   const getTileAnimation = (i: number) => {
+    // Radial stagger: the center anchor leads, then the ring clockwise.
+    const order = i === CENTER_INDEX ? 0 : i + 1;
     if (reduceMotion) return { rotateY: 0, scale: 1, x: 0, opacity: 1 };
     if (flipping) {
-      return { rotateY: 180, transition: { duration: 0.4, delay: i * 0.04, ease: 'easeInOut' as const } };
+      return { rotateY: 180, transition: { duration: 0.4, delay: order * 0.04, ease: 'easeInOut' as const } };
     }
     const fx = tileFx?.[i];
     if (fx === 'fill') {
@@ -95,10 +97,10 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
       return { rotateY: 0, scale: 1, opacity: 1, x: [0, -4, 4, -4, 4, 0], transition: { duration: 0.2, ease: 'easeInOut' as const } };
     }
     if (fx === 'ripple') {
-      return { rotateY: 0, opacity: 1, x: 0, scale: [1, 1.14, 1], transition: { duration: 0.36, delay: i * 0.07, ease: 'easeOut' as const } };
+      return { rotateY: 0, opacity: 1, x: 0, scale: [1, 1.14, 1], transition: { duration: 0.36, delay: order * 0.07, ease: 'easeOut' as const } };
     }
     if (verifying && result) {
-      return { rotateY: 0, x: 0, opacity: 1, scale: [1, 1.08, 1], transition: { duration: 0.4, delay: i * 0.05 } };
+      return { rotateY: 0, x: 0, opacity: 1, scale: [1, 1.08, 1], transition: { duration: 0.4, delay: order * 0.05 } };
     }
     return { rotateY: 0, scale: 1, x: 0, opacity: 1 };
   };
