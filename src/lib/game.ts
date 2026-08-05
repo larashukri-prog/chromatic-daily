@@ -515,6 +515,25 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
   return { label: 'Resilient 💪', sublabel: 'Way to fight back. Try for flawless tomorrow.' };
 }
 
+/**
+ * Render the 7 radial cells as a hexagonal emoji flower:
+ *      0
+ *   5     1
+ *      6
+ *   4     2
+ *      3
+ */
+function radialEmojiLines(cells: string[]): string[] {
+  const c = (i: number) => cells[i] ?? '⚪';
+  return [
+    `　${c(0)}`,
+    `${c(5)}　${c(1)}`,
+    `　${c(6)}`,
+    `${c(4)}　${c(2)}`,
+    `　${c(3)}`,
+  ];
+}
+
 export function generateShareText(
   rounds: RoundData[],
   starsEarned: number = 0,
