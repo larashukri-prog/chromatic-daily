@@ -655,23 +655,15 @@ const Index = () => {
         return next;
       });
 
-      // Freeplay: no save, no DDA, no localStorage
+      // Freeplay: no save, no DDA, no localStorage, no modal.
+      // Auto-advance after the verify animation settles.
       setTimeout(() => {
         setVerifying(false);
-        setPhase('result');
-        setResultMessage(
-          correct
-            ? 'Great memory! Ready for the next one?'
-            : 'Not quite — give it another shot!'
-        );
-        // Fire milestone after the verify animation settles so the celebration
-        // is visible at the same time the result modal appears (mobile-friendly).
         if (milestoneHit) triggerMilestone();
-        if (!correct) {
-          setTimeout(() => setShowResult(true), 800);
+        if (correct) {
+          freeplayNext();
         } else {
-          setFreeplayRoundNum((n) => n + 1);
-          setShowResult(true);
+          freeplayRetry();
         }
       }, 1500);
       return;
@@ -1527,121 +1519,104 @@ const Index = () => {
       </Dialog>
 
       {/* Result Modal */}
-      <Dialog open={showResult} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader className="text-center sm:text-center items-center">
-            <DialogTitle
-              style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
-              className="text-2xl text-center"
-            >
-              {isFreeplay
-                ? isCorrect ? 'Nice One!' : 'Not Quite'
-                : isCorrect ? 'Perfect Recall' : canContinue ? 'Not Quite' : 'Game Over'
-              }
-            </DialogTitle>
-            <DialogDescription className="sr-only">Your game result</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {isCorrect && (
-              <div className="flex flex-col items-center mb-4">
-                {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
-                <Trophy className="w-12 h-12 text-yellow-500" />
-              </div>
-            )}
-
-            {!isCorrect && result && (
-              <div className="mb-4 px-4 max-w-[240px] mx-auto">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Neural Match
-                  </span>
-                  <span className="text-[10px] font-semibold text-foreground">
-                    {Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)}%
-                  </span>
+      {!isFreeplay && (
+        <Dialog open={showResult} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-sm rounded-2xl text-center [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader className="text-center sm:text-center items-center">
+              <DialogTitle
+                style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
+                className="text-2xl text-center"
+              >
+                {isCorrect ? 'Perfect Recall' : canContinue ? 'Not Quite' : 'Game Over'}
+              </DialogTitle>
+              <DialogDescription className="sr-only">Your game result</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {isCorrect && (
+                <div className="flex flex-col items-center mb-4">
+                  {isSpeedRound && <span className="text-2xl mb-1">⭐️</span>}
+                  <Trophy className="w-12 h-12 text-yellow-500" />
                 </div>
-                <Progress value={Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)} className="h-1.5" />
-              </div>
-            )}
-
-            {resultMessage && (
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
-            )}
-
-            <div className="relative w-full aspect-square max-w-[150px] mx-auto mb-4">
-              {Array.from({ length: GRID_SIZE }).map((_, i) => {
-                const c = solution[i] ?? null;
-                const placed = playerGrid[i] ?? null;
-                const active = c !== null || placed !== null;
-                const matched = c !== null && placed === c;
-                const bg = !active ? NEUTRAL : matched ? '#22C55E' : '#DC2626';
-                return (
-                  <div
-                    key={i}
-                    className="rounded-full"
-                    style={{ ...radialSlotStyle(i), backgroundColor: bg }}
-                  />
-                );
-              })}
-            </div>
-
-            {!isCorrect && (
-              <div className="mb-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
-                <div className="relative w-full aspect-square max-w-[130px] mx-auto">
-                  {solution.map((c, i) => {
-                    const up = c?.toUpperCase();
-                    const isWhite = up === '#FFFFFF';
-                    const bg: string = c || NEUTRAL;
-                    const lightBorder = isWhite;
-                    return (
-                      <div
-                        key={i}
-                        className="rounded-full overflow-hidden"
-                        style={{
-                          ...radialSlotStyle(i),
-                          backgroundColor: bg,
-                          border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
-                        }}
-                      >
-                        <MixedTile colorHex={c} shapeScale={0.5} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-center">
-              {isFreeplay ? (
-                <>
-                  {isCorrect ? (
-                    <Button onClick={freeplayNext} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
-                      <Sparkles className="w-4 h-4" /> Next Level
-                    </Button>
-                  ) : (
-                    <Button onClick={freeplayRetry} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
-                      <RotateCcw className="w-4 h-4" /> Try Again
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  {canContinue && (
-                    <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
-                      <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
-                    </Button>
-                  )}
-                  {!canContinue && alreadyFinished && (
-                    <p className="text-sm text-muted-foreground text-center mt-2">
-                      Nice try! See you tomorrow for a new challenge.
-                    </p>
-                  )}
-                </>
               )}
+
+              {!isCorrect && result && (
+                <div className="mb-4 px-4 max-w-[240px] mx-auto">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Neural Match
+                    </span>
+                    <span className="text-[10px] font-semibold text-foreground">
+                      {Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)}%
+                    </span>
+                  </div>
+                  <Progress value={Math.round((result.filter(Boolean).length / GRID_SIZE) * 100)} className="h-1.5" />
+                </div>
+              )}
+
+              {resultMessage && (
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
+              )}
+
+              <div className="relative w-full aspect-square max-w-[150px] mx-auto mb-4">
+                {Array.from({ length: GRID_SIZE }).map((_, i) => {
+                  const c = solution[i] ?? null;
+                  const placed = playerGrid[i] ?? null;
+                  const active = c !== null || placed !== null;
+                  const matched = c !== null && placed === c;
+                  const bg = !active ? NEUTRAL : matched ? '#22C55E' : '#DC2626';
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-full"
+                      style={{ ...radialSlotStyle(i), backgroundColor: bg }}
+                    />
+                  );
+                })}
+              </div>
+
+              {!isCorrect && (
+                <div className="mb-4">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
+                  <div className="relative w-full aspect-square max-w-[130px] mx-auto">
+                    {solution.map((c, i) => {
+                      const up = c?.toUpperCase();
+                      const isWhite = up === '#FFFFFF';
+                      const bg: string = c || NEUTRAL;
+                      const lightBorder = isWhite;
+                      return (
+                        <div
+                          key={i}
+                          className="rounded-full overflow-hidden"
+                          style={{
+                            ...radialSlotStyle(i),
+                            backgroundColor: bg,
+                            border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
+                          }}
+                        >
+                          <MixedTile colorHex={c} shapeScale={0.5} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-center">
+                {canContinue && (
+                  <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
+                    <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
+                  </Button>
+                )}
+                {!canContinue && alreadyFinished && (
+                  <p className="text-sm text-muted-foreground text-center mt-2">
+                    Nice try! See you tomorrow for a new challenge.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Practice Mode Session Report Overlay */}
       <AnimatePresence>
