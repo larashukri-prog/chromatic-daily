@@ -250,7 +250,7 @@ const Index = () => {
   useEffect(() => {
     if (mode === 'freeplay') return;
     if (window.location.search.includes('reset')) {
-      localStorage.removeItem('chromatic_daily');
+      clearStoredProgress();
       window.history.replaceState({}, '', window.location.pathname);
       setPhase('idle');
       setAlreadyFinished(false);
@@ -1415,7 +1415,7 @@ const Index = () => {
         {!isFreeplay && (
           <button
             onClick={() => {
-              localStorage.removeItem('chromatic_daily');
+              clearStoredProgress();
               window.location.href = window.location.pathname + '?reset';
             }}
             className="text-muted-foreground hover:text-foreground transition-colors"
