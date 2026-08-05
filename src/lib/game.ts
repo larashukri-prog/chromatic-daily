@@ -553,14 +553,13 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
  */
 function radialEmojiLines(cells: string[]): string[] {
   const c = (i: number) => cells[i] ?? '⚪';
-  // Emoji are far wider than any space character, so space-padded art never
-  // aligns in chat apps. Use an all-emoji 3x3 block (no spaces) with neutral
-  // filler corners, so every row is identical width and reads as a hex.
-  const F = '⬛';
+  // Staggered 2-3-2 diamond that echoes the radial board — no filler squares.
+  // Ring nodes orbit clockwise from the top (0 = top, 3 = bottom); 6 = center.
+  const PAD = ' ';
   return [
-    `${F}${c(0)}${F}`,
-    `${c(5)}${c(6)}${c(1)}`,
-    `${c(4)}${c(3)}${c(2)}`,
+    `${PAD}${c(0)}${c(1)}`,
+    `${c(5)}${c(6)}${c(2)}`,
+    `${PAD}${c(4)}${c(3)}`,
   ];
 }
 
