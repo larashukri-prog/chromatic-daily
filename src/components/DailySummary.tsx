@@ -254,7 +254,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
       )}
 
       {/* Radial board */}
-      <div className="relative pb-8 flex justify-center">
+      <div className="relative py-8 flex justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={showSolution ? 'solution' : 'player'}
