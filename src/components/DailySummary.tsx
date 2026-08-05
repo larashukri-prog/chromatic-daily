@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
 import { MixedTile } from '@/components/MixedTile';
+import { radialSlotStyle } from '@/components/RadialLayout';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {

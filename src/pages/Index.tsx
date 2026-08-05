@@ -1567,23 +1567,26 @@ const Index = () => {
             )}
 
             <div className="font-mono text-lg leading-relaxed mb-4">
-              {[0, 2, 4].map((row) => (
-                <div key={row}>
-                  {solution
-                    .slice(row, row + 2)
-                    .map((c, i) => {
-                      if (c === null) return '⚪';
-                      return playerGrid[row + i] === c ? '🟢' : '⚫';
-                    })
-                    .join('')}
-                </div>
-              ))}
+              {(() => {
+                const cell = (i: number) => {
+                  const c = solution[i];
+                  if (c === null || c === undefined) return '⚪';
+                  return playerGrid[i] === c ? '🟢' : '⚫';
+                };
+                return [
+                  `　${cell(0)}`,
+                  `${cell(5)}　${cell(1)}`,
+                  `　${cell(6)}`,
+                  `${cell(4)}　${cell(2)}`,
+                  `　${cell(3)}`,
+                ].map((line, idx) => <div key={idx}>{line}</div>);
+              })()}
             </div>
 
             {!isCorrect && (
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Correct Pattern</p>
-                <div className="grid grid-cols-2 gap-2 max-w-[90px] mx-auto">
+                <div className="relative w-full aspect-square max-w-[130px] mx-auto">
                   {solution.map((c, i) => {
                     const up = c?.toUpperCase();
                     const isWhite = up === '#FFFFFF';
@@ -1592,10 +1595,10 @@ const Index = () => {
                     return (
                       <div
                         key={i}
-                        className="aspect-square rounded-full relative overflow-hidden"
+                        className="rounded-full overflow-hidden"
                         style={{
+                          ...radialSlotStyle(i),
                           backgroundColor: bg,
-                          width: '100%',
                           border: lightBorder ? '2px solid rgb(209, 213, 219)' : undefined,
                         }}
                       >
