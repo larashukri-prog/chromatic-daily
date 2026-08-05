@@ -349,6 +349,24 @@ export function loadData(): StoredData | null {
         finished: true,
       };
     }
+    // Migration: pre-radial saves stored 6-slot arrays. Pad to GRID_SIZE so
+    // the radial summary renders without holes.
+    const pad = (arr: unknown): (string | null)[] => {
+      const a = Array.isArray(arr) ? [...arr] : [];
+      while (a.length < GRID_SIZE) a.push(null);
+      return a.slice(0, GRID_SIZE) as (string | null)[];
+    };
+    if (Array.isArray(data.rounds)) {
+      data.rounds = data.rounds.map((r: RoundData) => ({
+        ...r,
+        solution: pad(r.solution),
+        attempts: (r.attempts ?? []).map((a: RoundAttempt) => ({
+          ...a,
+          grid: pad(a.grid),
+          solution: pad(a.solution),
+        })),
+      }));
+    }
     return data;
   } catch { return null; }
 }
