@@ -356,17 +356,19 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
-      <div className="relative w-full aspect-square max-w-[190px] mx-auto mb-6">
-        {Array.from({ length: GRID_SIZE }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3, delay: i * 0.04 }}
-            className="rounded-full"
-            style={{ ...radialSlotStyle(i), backgroundColor: NEUTRAL, border: '2px solid transparent' }}
-          />
-        ))}
+      <div className="relative w-full flex justify-center mb-6">
+        <RadialLayout maxWidth="190px">
+          {(i) => (
+            <motion.div
+              key={i}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
+              className="w-full h-full rounded-full"
+              style={{ backgroundColor: NEUTRAL, border: '2px solid transparent' }}
+            />
+          )}
+        </RadialLayout>
       </div>
     </div>
   );
