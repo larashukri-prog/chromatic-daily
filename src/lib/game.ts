@@ -543,15 +543,14 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
  */
 function radialEmojiLines(cells: string[]): string[] {
   const c = (i: number) => cells[i] ?? '⚪';
-  // Emoji glyphs are roughly two spaces wide; pad with pairs of spaces so the
-  // five lines align into a symmetric flower in plain-text share targets.
-  const PAD = '  ';
+  // Emoji are far wider than any space character, so space-padded art never
+  // aligns in chat apps. Use an all-emoji 3x3 block (no spaces) with neutral
+  // filler corners, so every row is identical width and reads as a hex.
+  const F = '⬛';
   return [
-    `${PAD}${c(0)}`,
-    `${c(5)}${PAD}${PAD}${c(1)}`,
-    `${PAD}${c(6)}`,
-    `${c(4)}${PAD}${PAD}${c(2)}`,
-    `${PAD}${c(3)}`,
+    `${F}${c(0)}${F}`,
+    `${c(5)}${c(6)}${c(1)}`,
+    `${c(4)}${c(3)}${c(2)}`,
   ];
 }
 
