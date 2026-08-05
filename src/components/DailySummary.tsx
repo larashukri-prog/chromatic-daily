@@ -240,9 +240,9 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
         </h3>
       </div>
       {slide.isCorrect ? (
-        <p className="text-xs mb-5 text-emerald-500">Solved · 100% Neural Match</p>
+        <p className="text-xs mb-2 text-emerald-500">Solved · 100% Neural Match</p>
       ) : (
-        <div className="mb-5 px-4 max-w-[220px] mx-auto">
+        <div className="mb-2 px-4 max-w-[220px] mx-auto">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               Neural Match
@@ -262,7 +262,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full aspect-square max-w-[210px] mx-auto mb-4"
+            className="relative w-full aspect-square max-w-[190px] mx-auto mb-6"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
@@ -356,7 +356,7 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
-      <div className="relative w-full aspect-square max-w-[210px] mx-auto mb-4">
+      <div className="relative w-full aspect-square max-w-[190px] mx-auto mb-6">
         {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <motion.div
             key={i}

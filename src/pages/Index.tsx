@@ -1567,21 +1567,21 @@ const Index = () => {
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line px-2">{resultMessage}</p>
             )}
 
-            <div className="font-mono text-lg leading-relaxed mb-4">
-              {(() => {
-                const cell = (i: number) => {
-                  const c = solution[i];
-                  if (c === null || c === undefined) return '⚪';
-                  return playerGrid[i] === c ? '🟢' : '⚫';
-                };
-                return [
-                  `　${cell(0)}`,
-                  `${cell(5)}　${cell(1)}`,
-                  `　${cell(6)}`,
-                  `${cell(4)}　${cell(2)}`,
-                  `　${cell(3)}`,
-                ].map((line, idx) => <div key={idx}>{line}</div>);
-              })()}
+            <div className="relative w-full aspect-square max-w-[150px] mx-auto mb-4">
+              {Array.from({ length: GRID_SIZE }).map((_, i) => {
+                const c = solution[i] ?? null;
+                const placed = playerGrid[i] ?? null;
+                const active = c !== null || placed !== null;
+                const matched = c !== null && placed === c;
+                const bg = !active ? NEUTRAL : matched ? '#22C55E' : '#DC2626';
+                return (
+                  <div
+                    key={i}
+                    className="rounded-full"
+                    style={{ ...radialSlotStyle(i), backgroundColor: bg }}
+                  />
+                );
+              })}
             </div>
 
             {!isCorrect && (
