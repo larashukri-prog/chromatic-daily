@@ -254,7 +254,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
       )}
 
       {/* Radial board */}
-      <div className="relative">
+      <div className="relative pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={showSolution ? 'solution' : 'player'}
@@ -262,7 +262,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full aspect-square max-w-[190px] mx-auto mb-6"
+            className="relative w-full aspect-square max-w-[190px] mx-auto"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
@@ -337,7 +337,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
       {!slide.isCorrect && (
         <button
           onClick={() => setShowSolution((s) => !s)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-1"
+          className="block w-fit mx-auto text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 mt-2"
         >
           {showSolution ? 'View Your Attempt' : 'View Solution'}
         </button>
