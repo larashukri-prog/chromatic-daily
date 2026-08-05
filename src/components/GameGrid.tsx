@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { GamePhase, NEUTRAL, GRID_SIZE } from '@/lib/game';
 import { MixedTile } from '@/components/MixedTile';
+import { radialSlotStyle } from '@/components/RadialLayout';
 
 export type TileFxType = 'fill' | 'clear' | 'shake' | 'ripple';
 export type TileFxMap = Record<number, TileFxType>;
@@ -103,7 +104,10 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-[200px] mx-auto" style={{ perspective: 800 }}>
+    <div
+      className="relative w-full aspect-square mx-auto max-w-[280px]"
+      style={{ perspective: 800 }}
+    >
       {Array.from({ length: GRID_SIZE }).map((_, i) => (
         <motion.button
           key={i}
@@ -112,9 +116,10 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
           animate={getTileAnimation(i)}
           whileHover={phase === 'recall' && !reduceMotion ? { scale: 1.05 } : {}}
           whileTap={phase === 'recall' && !reduceMotion ? { scale: 0.92 } : {}}
-          className="aspect-square rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default relative overflow-hidden"
+          className="rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default overflow-hidden"
           style={{
-          backgroundColor: getDisplayBackground(i),
+            ...radialSlotStyle(i),
+            backgroundColor: getDisplayBackground(i),
             border: getCircleBorder(i),
             transformStyle: 'preserve-3d',
             ...getReceptacleStyle(i),
