@@ -543,12 +543,15 @@ export function getResultBadge(rounds: RoundData[]): { label: string; sublabel: 
  */
 function radialEmojiLines(cells: string[]): string[] {
   const c = (i: number) => cells[i] ?? '⚪';
+  // Emoji glyphs are roughly two spaces wide; pad with pairs of spaces so the
+  // five lines align into a symmetric flower in plain-text share targets.
+  const PAD = '  ';
   return [
-    `　${c(0)}`,
-    `${c(5)}　${c(1)}`,
-    `　${c(6)}`,
-    `${c(4)}　${c(2)}`,
-    `　${c(3)}`,
+    `${PAD}${c(0)}`,
+    `${c(5)}${PAD}${PAD}${c(1)}`,
+    `${PAD}${c(6)}`,
+    `${c(4)}${PAD}${PAD}${c(2)}`,
+    `${PAD}${c(3)}`,
   ];
 }
 
