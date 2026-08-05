@@ -375,6 +375,16 @@ function saveData(data: StoredData) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/** Wipe all persisted daily progress (used by the dev reset control / ?reset). */
+export function clearStoredProgress() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    // Legacy / mistyped keys from earlier builds
+    localStorage.removeItem('chromatic_daily');
+    localStorage.removeItem('chromatic-has-played');
+  } catch { /* ignore */ }
+}
+
 export function getTodayData(): StoredData | null {
   const data = loadData();
   if (!data || data.lastPlayed !== getTodayString()) return null;
