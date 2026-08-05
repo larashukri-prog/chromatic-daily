@@ -484,7 +484,7 @@ export function getStageResultMessage(
 
   if (isCorrect) {
     if (nextCount === 5) return 'Nailed it. Next attempt brings 5 elements — keep the rhythm.';
-    if (nextCount === 6) return 'Locked in. Final attempt fills the grid with 6 elements.';
+    if (nextCount === 7) return 'Locked in. Final attempt fills the board with 7 elements.';
     return 'Got it!';
   }
 
@@ -567,14 +567,10 @@ export function generateShareText(
         const isMatch = s!.toLowerCase() === placed!.toLowerCase();
         return isMatch ? '🟢' : '🔴';
       });
-      lines.push(cells.slice(0, 2).join(''));
-      lines.push(cells.slice(2, 4).join(''));
-      lines.push(cells.slice(4, 6).join(''));
+      lines.push(...radialEmojiLines(cells));
     } else {
       lines.push(`Attempt ${i + 1} ⬜`);
-      lines.push('⚪⚪');
-      lines.push('⚪⚪');
-      lines.push('⚪⚪');
+      lines.push(...radialEmojiLines(Array(GRID_SIZE).fill('⚪')));
     }
     lines.push('');
   }
