@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NEUTRAL, RoundData, generateSolution, GRID_SIZE, getResultBadge } from '@/lib/game';
 import { MixedTile } from '@/components/MixedTile';
-import { radialSlotStyle } from '@/components/RadialLayout';
+import { RadialLayout } from '@/components/RadialLayout';
 import type { SessionStats } from '@/components/SessionReport';
 
 interface DailySummaryProps {
@@ -262,73 +262,73 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full aspect-square max-w-[190px]"
+            className="w-full flex justify-center"
           >
-            {Array.from({ length: GRID_SIZE }).map((_, i) => {
-              if (showSolution) {
-                const color = solution[i] ?? NEUTRAL;
-                const up = solution[i]?.toUpperCase();
-                const isWhite = up === '#FFFFFF';
-                const bg: string = color;
-                const lightBorder = isWhite;
+            <RadialLayout maxWidth="190px">
+              {(i) => {
+                if (showSolution) {
+                  const color = solution[i] ?? NEUTRAL;
+                  const up = solution[i]?.toUpperCase();
+                  const isWhite = up === '#FFFFFF';
+                  const bg: string = color;
+                  const lightBorder = isWhite;
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3, delay: i * 0.04 }}
+                      className="w-full h-full rounded-full overflow-hidden"
+                      style={{
+                        backgroundColor: bg,
+                        border: lightBorder ? '2px solid #D1D5DB' : '2px solid transparent',
+                        boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
+                      }}
+                    >
+                      <MixedTile colorHex={solution[i]} shapeScale={0.5} />
+                    </motion.div>
+                  );
+                }
+
+                const cellColor = (() => {
+                  // Show the player's actual picked color (or neutral if empty)
+                  if (playerGrid[i]) return playerGrid[i]!;
+                  return NEUTRAL;
+                })();
+
+                const hasColor = solution[i] !== null || playerGrid[i] !== null;
+                const glow = hasColor
+                  ? result[i]
+                    ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
+                    : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
+                  : 'none';
+                const pUp = playerGrid[i]?.toUpperCase();
+                const pIsWhite = pUp === '#FFFFFF';
+                const pBg: string = cellColor;
+                const pLightBorder = pIsWhite;
+
                 return (
                   <motion.div
                     key={i}
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3, delay: i * 0.04 }}
-                    className="rounded-full overflow-hidden"
+                    className="w-full h-full rounded-full overflow-hidden"
                     style={{
-                      ...radialSlotStyle(i),
-                      backgroundColor: bg,
-                      border: lightBorder ? '2px solid #D1D5DB' : '2px solid transparent',
-                      boxShadow: solution[i] ? '0 0 12px 3px rgba(74, 222, 128, 0.3)' : 'none',
+                      backgroundColor: pBg,
+                      boxShadow: glow,
+                      border: !result[i] && solution[i]
+                        ? '2px solid #DC2626'
+                        : pLightBorder
+                        ? '2px solid #D1D5DB'
+                        : '2px solid transparent',
                     }}
                   >
-                    <MixedTile colorHex={solution[i]} shapeScale={0.5} />
+                    <MixedTile colorHex={playerGrid[i]} shapeScale={0.5} />
                   </motion.div>
                 );
-              }
-
-              const cellColor = (() => {
-                // Show the player's actual picked color (or neutral if empty)
-                if (playerGrid[i]) return playerGrid[i]!;
-                return NEUTRAL;
-              })();
-
-              const hasColor = solution[i] !== null || playerGrid[i] !== null;
-              const glow = hasColor
-                ? result[i]
-                  ? '0 0 16px 4px rgba(74, 222, 128, 0.45)'
-                  : '0 0 16px 4px rgba(248, 113, 113, 0.45)'
-                : 'none';
-              const pUp = playerGrid[i]?.toUpperCase();
-              const pIsWhite = pUp === '#FFFFFF';
-              const pBg: string = cellColor;
-              const pLightBorder = pIsWhite;
-
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.04 }}
-                  className="rounded-full overflow-hidden"
-                  style={{
-                    ...radialSlotStyle(i),
-                    backgroundColor: pBg,
-                    boxShadow: glow,
-                    border: !result[i] && solution[i]
-                      ? '2px solid #DC2626'
-                      : pLightBorder
-                      ? '2px solid #D1D5DB'
-                      : '2px solid transparent',
-                  }}
-                >
-                  <MixedTile colorHex={playerGrid[i]} shapeScale={0.5} />
-                </motion.div>
-              );
-            })}
+              }}
+            </RadialLayout>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -356,17 +356,19 @@ function UnplayedSlide({ slideIndex, totalSlides }: { slideIndex: number; totalS
         </h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Not Played</p>
-      <div className="relative w-full aspect-square max-w-[190px] mx-auto mb-6">
-        {Array.from({ length: GRID_SIZE }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3, delay: i * 0.04 }}
-            className="rounded-full"
-            style={{ ...radialSlotStyle(i), backgroundColor: NEUTRAL, border: '2px solid transparent' }}
-          />
-        ))}
+      <div className="relative w-full flex justify-center mb-6">
+        <RadialLayout maxWidth="190px">
+          {(i) => (
+            <motion.div
+              key={i}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
+              className="w-full h-full rounded-full"
+              style={{ backgroundColor: NEUTRAL, border: '2px solid transparent' }}
+            />
+          )}
+        </RadialLayout>
       </div>
     </div>
   );
