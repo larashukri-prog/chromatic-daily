@@ -109,25 +109,25 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
       style={{ perspective: 800 }}
     >
       {Array.from({ length: GRID_SIZE }).map((_, i) => (
-        <motion.button
-          key={i}
-          onClick={() => onCircleClick(i)}
-          disabled={phase !== 'recall'}
-          animate={getTileAnimation(i)}
-          whileHover={phase === 'recall' && !reduceMotion ? { scale: 1.05 } : {}}
-          whileTap={phase === 'recall' && !reduceMotion ? { scale: 0.92 } : {}}
-          className="rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default overflow-hidden"
-          style={{
-            ...radialSlotStyle(i),
-            backgroundColor: getDisplayBackground(i),
-            border: getCircleBorder(i),
-            transformStyle: 'preserve-3d',
-            ...getReceptacleStyle(i),
-            ...getGlowStyle(i),
-          }}
-        >
-          <MixedTile colorHex={getMixColor(i)} />
-        </motion.button>
+        <div key={i} style={radialSlotStyle(i)}>
+          <motion.button
+            onClick={() => onCircleClick(i)}
+            disabled={phase !== 'recall'}
+            animate={getTileAnimation(i)}
+            whileHover={phase === 'recall' && !reduceMotion ? { scale: 1.05 } : {}}
+            whileTap={phase === 'recall' && !reduceMotion ? { scale: 0.92 } : {}}
+            className="absolute inset-0 w-full h-full rounded-full transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-default overflow-hidden"
+            style={{
+              backgroundColor: getDisplayBackground(i),
+              border: getCircleBorder(i),
+              transformStyle: 'preserve-3d',
+              ...getReceptacleStyle(i),
+              ...getGlowStyle(i),
+            }}
+          >
+            <MixedTile colorHex={getMixColor(i)} />
+          </motion.button>
+        </div>
       ))}
     </div>
   );
