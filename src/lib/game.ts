@@ -182,7 +182,10 @@ export function generateStageSolution(
     const chosenCanonical = chosenIdx.map((i) => CHROMATIC_COLORS[i]);
 
     // Adjacency uses canonical hues so placements are also theme-independent.
-    const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand);
+    // Attempts 1 & 2 stay on the outer ring; the center only activates on the
+    // final 7-node stage.
+    const allowed = colorCount >= GRID_SIZE ? [...RING_INDICES, CENTER_INDEX] : RING_INDICES;
+    const coloredPositions = getNonAdjacentPositions(chosenCanonical, colorCount, rand, allowed);
 
     // Project chosen indices onto the active theme's palette (1:1 by index).
     const chosen = chosenIdx.map((i) => palette[i]);
@@ -223,24 +226,24 @@ function areHueNeighbors(a: ColorDef, b: ColorDef): boolean {
 }
 
 /**
- * Ensure placed colors on the 2x3 grid avoid hue-similar colors in
- * neighboring cells (including diagonals).
+ * Ensure placed colors on the radial board avoid hue-similar colors in
+ * neighboring nodes. Each ring node touches its two ring siblings plus the
+ * center; the center touches every ring node.
  */
 function getNonAdjacentPositions(
   chosen: ColorDef[],
   colorCount: number,
-  rand: () => number
+  rand: () => number,
+  allowedPositions: number[] = Array.from({ length: GRID_SIZE }, (_, i) => i),
 ): number[] {
-  // 2x3 adjacency (2 cols × 3 rows, including diagonals)
-  // layout indices:  0 1 2
-  //                  3 4 5
   const adjacent: Record<number, number[]> = {
-    0: [1, 3, 4],
-    1: [0, 2, 3, 4, 5],
-    2: [1, 4, 5],
-    3: [0, 1, 4],
-    4: [0, 1, 2, 3, 5],
-    5: [1, 2, 4],
+    0: [5, 1, 6],
+    1: [0, 2, 6],
+    2: [1, 3, 6],
+    3: [2, 4, 6],
+    4: [3, 5, 6],
+    5: [4, 0, 6],
+    6: [0, 1, 2, 3, 4, 5],
   };
 
   // Try up to 200 random arrangements and pick the best one
@@ -248,7 +251,7 @@ function getNonAdjacentPositions(
   let bestConflicts = Infinity;
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    const allPos = Array.from({ length: GRID_SIZE }, (_, i) => i).sort(() => rand() - 0.5);
+    const allPos = [...allowedPositions].sort(() => rand() - 0.5);
     const positions = allPos.slice(0, colorCount);
 
     // Count neighbor conflicts
