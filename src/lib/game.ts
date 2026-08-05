@@ -31,8 +31,17 @@ export type GamePhase = 'idle' | 'observation' | 'recall' | 'result';
 
 export const MAX_ROUNDS = 3;
 
-/** 2x3 grid — 2 columns x 3 rows = 6 slots total. */
-export const GRID_SIZE = 6;
+/**
+ * Radial board — 6 circles in an even orbit (indices 0-5, clockwise from top)
+ * around 1 center anchor (index 6). 7 slots total.
+ */
+export const GRID_SIZE = 7;
+
+/** Index of the center anchor node. */
+export const CENTER_INDEX = 6;
+
+/** Outer ring indices, clockwise starting at the top. */
+export const RING_INDICES = [0, 1, 2, 3, 4, 5];
 
 /**
  * Stage identifiers for the adaptive 3-attempt daily.
@@ -56,7 +65,7 @@ export const STAGE_COLOR_COUNTS: Record<StageKey, number> = {
   stage1c: 3,
   stage2: 5,
   stage2r: 5,
-  stage3: 6,
+  stage3: 7,
 };
 
 /** Seed offsets so every user worldwide gets the same puzzle per stage. */
