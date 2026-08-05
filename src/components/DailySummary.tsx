@@ -254,7 +254,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
       )}
 
       {/* Radial board */}
-      <div className="relative pb-8">
+      <div className="relative pb-8 flex justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={showSolution ? 'solution' : 'player'}
@@ -262,7 +262,7 @@ function SlideContent({ slide, slideIndex, totalSlides }: { slide: AttemptSlide;
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: -90 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full aspect-square max-w-[190px] mx-auto"
+            className="relative w-full aspect-square max-w-[190px]"
           >
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               if (showSolution) {
