@@ -1,74 +1,75 @@
-# Chromatic Daily
+# Chromatic Daily 
 
-Build a high-fidelity, minimalist web app memory game called "Chromatic Daily."
+![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Zod Schema](https://img.shields.io/badge/Validation-Zod-3E67B1?style=flat-square&logo=zod&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-Aesthetic & UI:
+> **A behavioral habit ritual app powered by a daily neuroplasticity memory mechanic.**
 
-Style: Management Consultant meets Apple. Minimalist, high white space, crisp borders.
+---
 
-Layout: A central white card with rounded corners and a subtle soft shadow. Inside the card is a 3x3 grid of 9 circles.
+##  Live Application
+ **Experience the Live App:** [chromatic-daily.lovable.app](https://chromatic-daily.lovable.app/)
 
-Color Palette:
+---
 
-Neutral State: Light gray circles (#D1D5DB).
+## Project Overview
 
-Active Palette: Red (#EF4444), Yellow (#FDE047), Teal (#6EE7B7), Orange (#F97316), Purple (#8B5CF6), Lime (#BEF264), Green (#3F6212), Pink (#EC4899), Blue (#2563EB).
+**Chromatic Daily** transforms daily cognitive habit tracking into an engaging, non-coercive ritual explicitly designed for daily neuroplasticity training. Built as an interactive, code-native prototype, it explores how to bridge behavioral retention loops with deterministic frontend engineering guardrails.
 
-Typography: Elegant Serif for headings, clean Sans-serif for instructions.
+---
 
-Game Logic & Mechanics:
+## Design System & Architecture
 
-Daily Progression: The game detects the current day of the week.
+Generative tools and dynamic client states can introduce unpredictability. Chromatic Daily enforces strict design-system contracts and software guardrails to ensure layout stability, high accessibility, and rock-solid state management:
 
-Monday: 3 random circles are colored.
+### 1. State Machine-Driven Habit Loops
+Rather than relying on happy-path static screens, the daily memory loop is modeled as an explicit state machine:
+`idle` → `cue_active` → `observation_phase` → `color_picker_active` → `verification` → `reward_unlocked`
+Every state transition is handled deterministically in React to eliminate broken navigation branches or race conditions.
 
-Progressive Difficulty: Add 1 color each day (Tuesday=4, Wednesday=5...), culminating in all 9 circles being colored by Sunday.
+### 2. Schema Validation Contracts (Zod)
+All game configuration payloads, active color palettes, and daily streak records pass through rigid **Zod schema contracts**:
+* Enforces strict color hex format standards and enum-restricted palette tokens.
+* Bounds daily progression states to prevent corrupted streak calculations or unexpected client crashes.
 
-Phase 1 (Observation): * On "Start," the grid shows the daily color pattern for 5 seconds.
+### 3. Design Token & Color Palette Governance
+The UI adheres to a disciplined "Management Consultant meets Apple" design system:
+* **Token Structure:** Centralized neutral baseline (`#F0D8D8`) paired with explicit active tokens (Red `#FF4444`, Yellow `#FFC047`, Teal `#66E7D7`, etc.).
+* **Typography & Layout:** Elegant serif headers combined with high-density sans-serif instructions and crisp visual boundaries.
 
-A minimalist countdown timer (linear bar at the top) shows the remaining time.
+### 4. Neuroinclusive Motion Budget & Accessibility
+Designed for daily use without triggering sensory overload:
+* Smooth visual transitions adhere to a strict **motion budget**.
+* Honors system `prefers-reduced-motion` flags and maintains WCAG AA/AAA contrast ratios across all daily color modes.
 
-Phase 2 (Neutral): * After 5 seconds, all circles turn to the Neutral Gray state.
+---
 
-A "Color Picker" (a row of the active colors used in that round) appears at the bottom.
+## Tech Stack & Tooling
 
-Phase 3 (Input): * The player clicks a color from the picker, then clicks a circle in the grid to "paint" it.
+* **Framework:** React 19, TypeScript
+* **Styling & Tokens:** Tailwind CSS v4, Lucide React Icons
+* **Validation & Types:** Zod, TypeScript Strict Interfaces
+* **Build Tooling:** Vite, Bun runtime
+* **Pipeline:** Lovable → GitHub Sync
 
-Once the grid is filled, the player hits a "Verify" button.
+---
 
-Phase 4 (Results): * Compare the player's grid to the original.
+## Local Development Setup
 
-Show a "Success" screen with a Wordle-style shareable grid (using emojis: 🟩 for correct, ⬛ for wrong).
+To run Chromatic Daily locally:
 
-Limit play to one attempt per day.
+```bash
+# 1. Clone the repository
+git clone [https://github.com/chromatikprog/chromatic-daily.git](https://github.com/chromatikprog/chromatic-daily.git)
 
-Additional Features:
+# 2. Navigate into the directory
+cd chromatic-daily
 
-Add a "How to Play" modal.
+# 3. Install dependencies
+bun install   # or npm install
 
-Save the user's "Streak" (number of consecutive correct days) to local storage.
-
-Ensure the layout is responsive for both mobile and desktop.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://chromatic-daily.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/a15626f9-32bd-4e21-8459-466989aad284).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+# 4. Start the development server
+bun run dev   # or npm run dev
