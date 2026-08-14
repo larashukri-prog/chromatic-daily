@@ -34,12 +34,6 @@ Every state transition is handled deterministically in React to eliminate broken
 All game configuration payloads, active color palettes, and daily streak records pass through rigid **Zod schema contracts**:
 * Enforces strict color hex format standards and enum-restricted palette tokens.
 * Bounds daily progression states to prevent corrupted streak calculations or unexpected client crashes.
-// Example System Contract in code:
-export const DailyGameSchema = z.object({
-  dayOfWeek: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']),
-  activeColors: z.array(z.string().regex(/^#[0-9A-F]{6}$/i)).max(9),
-  streakCount: z.number().min(0),
-});
 
 ### 3. Design Token & Color Palette Governance
 The UI adheres to a disciplined "Management Consultant meets Apple" design system:
