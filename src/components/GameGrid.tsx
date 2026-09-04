@@ -114,6 +114,8 @@ export function GameGrid({ phase, solution, playerGrid, result, selectedColor, v
         <div key={i} style={radialSlotStyle(i)}>
           <motion.button
             onClick={() => onCircleClick(i)}
+            data-ph-capture-attribute-element-type="grid-tile"
+            data-ph-capture-attribute-tile-index={i}
             disabled={phase !== 'recall'}
             animate={getTileAnimation(i)}
             whileHover={phase === 'recall' && !reduceMotion ? { scale: 1.05 } : {}}

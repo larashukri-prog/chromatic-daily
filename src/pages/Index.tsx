@@ -1106,6 +1106,8 @@ const Index = () => {
       {isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport && (
         <button
           onClick={openSessionReport}
+          data-ph-capture-attribute-element-type="cta"
+          data-ph-capture-attribute-action="open_session_report"
           className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors bg-primary text-destructive-foreground text-base"
           aria-label="View session results"
         >
@@ -1313,6 +1315,9 @@ const Index = () => {
                     return (
                     <motion.button
                       key={c.hex}
+                      data-ph-capture-attribute-element-type="color-swatch"
+                      data-ph-capture-attribute-color-name={c.name}
+                      data-ph-capture-attribute-color-hex={c.hex}
                       onClick={() => {
                         if (activeSlot !== null) {
                           const newGrid = [...playerGrid];
@@ -1384,6 +1389,8 @@ const Index = () => {
               {phase === 'idle' && !isFreeplay && !alreadyFinished && countdown === null && (
                 <Button
                   onClick={startGame}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="start_game"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
@@ -1393,6 +1400,8 @@ const Index = () => {
               {phase === 'idle' && isFreeplay && countdown === null && (
                 <Button
                   onClick={startFreePlay}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="start_practice"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
@@ -1402,6 +1411,8 @@ const Index = () => {
               {phase === 'observation' && (
                 <Button
                   onClick={handleReady}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="ready"
                   className="w-full rounded-xl h-12 text-sm tracking-wide text-white bg-black hover:bg-black/90"
                 >
                   I'm ready
@@ -1409,11 +1420,13 @@ const Index = () => {
               )}
               {phase === 'recall' && (
                 <>
-                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
+                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2" data-ph-capture-attribute-element-type="cta" data-ph-capture-attribute-action="clear_grid">
                     <RotateCcw className="w-4 h-4" /> Clear
                   </Button>
                   <Button
                     onClick={verify}
+                    data-ph-capture-attribute-element-type="cta"
+                    data-ph-capture-attribute-action="verify"
                     disabled={!canVerify}
                     className="rounded-xl flex-1 gap-2 text-white bg-black hover:bg-black/90"
                   >
@@ -1641,7 +1654,7 @@ const Index = () => {
 
               <div className="flex gap-3 justify-center">
                 {canContinue && (
-                  <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
+                  <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')} data-ph-capture-attribute-element-type="cta" data-ph-capture-attribute-action="next_attempt">
                     <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                   </Button>
                 )}
