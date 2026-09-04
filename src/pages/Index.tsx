@@ -22,7 +22,6 @@ import {
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
-import { posthog } from '@/lib/posthog';
 import { trackVirtualPageview, trackEngagement, track } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -595,6 +594,17 @@ const Index = () => {
       return playerGrid[i] === c;
     });
     const correct = res.every(Boolean);
+    const tilesTotal = solution.filter((c) => c !== null).length;
+    const matchedTiles = solution.reduce((n, c, i) => n + (c !== null && res[i] ? 1 : 0), 0);
+    track('guess_submitted', {
+      mode,
+      puzzle_id: isFreeplay ? null : getTodayString(),
+      round_number: isFreeplay ? freeplayRoundNum + 1 : roundIndex + 1,
+      attempt_number: isFreeplay ? freeplayRoundNum + 1 : totalAttemptsUsed + 1,
+      accuracy: tilesTotal ? Math.round((matchedTiles / tilesTotal) * 100) : 0,
+      tiles_total: tilesTotal,
+      is_correct: correct,
+    });
     setResult(res);
     setIsCorrect(correct);
     setVerifying(true);
@@ -912,6 +922,12 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] Share text preview:\n' + text);
+    track('results_shared', {
+      channel: 'clipboard',
+      puzzle_id: getTodayString(),
+      stars_earned: starsEarned,
+      rounds_solved: rounds.filter((r) => r.solved).length,
+    });
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -926,6 +942,12 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
+    track('results_shared', {
+      channel: 'whatsapp',
+      puzzle_id: getTodayString(),
+      stars_earned: starsEarned,
+      rounds_solved: rounds.filter((r) => r.solved).length,
+    });
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
@@ -1302,13 +1324,25 @@ const Index = () => {
                             playTileFx([activeSlot], 'fill', 320);
                             setSwatchPop(c.hex);
                             fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
-                            trackEngagement('color_placed', { mode });
+                            trackEngagement('color_selected', {
+                              mode,
+                              action: 'placed',
+                              color_hex: c.hex,
+                              color_name: c.name,
+                              slot_index: activeSlot,
+                            });
                           }
                           setActiveSlot(null);
                           setSelectedColor(null);
                         } else {
                           setSelectedColor(c.hex);
-                          trackEngagement('color_selected', { mode });
+                          trackEngagement('color_selected', {
+                            mode,
+                            action: 'selected',
+                            color_hex: c.hex,
+                            color_name: c.name,
+                            slot_index: null,
+                          });
                         }
                       }}
                       whileTap={{ scale: 0.92 }}
