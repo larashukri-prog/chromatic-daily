@@ -18,12 +18,12 @@ import {
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   clearStoredProgress, getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
-  getNextStage,
+  getNextStage, getTodayString,
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
 import { posthog } from '@/lib/posthog';
-import { trackVirtualPageview, trackEngagement } from '@/lib/analytics';
+import { trackVirtualPageview, trackEngagement, track } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -390,7 +390,8 @@ const Index = () => {
 
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
-    posthog.capture('game_started', {
+    track('game_started', {
+      puzzle_id: getTodayString(),
       round_number: roundIndex + 1,
       day_number: dayNum,
       difficulty: difficultyName,
@@ -449,7 +450,7 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
-    posthog.capture('practice_started', {
+    track('practice_started', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
@@ -712,7 +713,7 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('round_verified', {
+      track('round_verified', {
         round_number: roundIndex + 1,
         stage: currentStageKey,
         is_correct: correct,
@@ -720,7 +721,7 @@ const Index = () => {
         recall_seconds: recallSeconds,
       });
 
-      posthog.capture('daily_streak_updated', {
+      track('daily_streak_updated', {
         current_streak: savedData.currentStreak,
         max_streak: savedData.maxStreak,
       });
@@ -797,7 +798,7 @@ const Index = () => {
     const nextRound = freeplayRoundNum + 1;
     const puzzle = generateFreePlayPuzzle(nextRound);
     setFreeplayRoundNum(nextRound);
-    posthog.capture('practice_next_level', {
+    track('practice_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
       round_number: freeplayRoundNum + 1,
@@ -955,8 +956,12 @@ const Index = () => {
   const showDailySummary = !isFreeplay && alreadyFinished && (phase === 'idle' || phase === 'result');
 
   useEffect(() => {
-   if (showDailySummary && posthog.__loaded) {
-      posthog.capture('game_completed', {
+   if (showDailySummary) {
+      track('game_completed', {
+        puzzle_id: getTodayString(),
+        total_time_seconds: totalFocusSeconds,
+        current_streak: streaks.current,
+        max_streak: streaks.max,
         day: dayName,
         difficulty: difficultyName,
         result: solvedRounds > 0 ? 'won' : 'lost',
@@ -978,9 +983,9 @@ const Index = () => {
         isLeaving &&
         hasStartedPlaying.current &&
         !alreadyFinished &&
-        posthog.__loaded
+        true
       ) {
-        posthog.capture('game_abandoned', {
+        track('game_abandoned', {
           current_round: roundIndex + 1,
           attempts_remaining: MAX_ROUNDS - totalAttemptsUsed,
         }, { transport: 'sendBeacon' });
@@ -1008,9 +1013,7 @@ const Index = () => {
     const reflexAvg = sortedTimes.length
       ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
       : 0;
-
-    if (posthog.__loaded) {
-      posthog.capture('practice_results_viewed', {
+      track('practice_results_viewed', {
         rounds_played: sessionStats.roundsPlayed,
         reflex_avg_seconds: reflexAvg,
         consistency,
@@ -1044,12 +1047,11 @@ const Index = () => {
   }, [phase, activeColors.length]);
 
   const shareSession = useCallback(() => {
-    if (posthog.__loaded) {
       const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
       const reflexAvg = sortedTimes.length
         ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
         : 0;
-      posthog.capture('practice_card_shared', {
+      track('practice_card_shared', {
         rounds_played: sessionStats.roundsPlayed,
         reflex_avg_seconds: reflexAvg,
         tiles_decoded: sessionStats.tilesDecoded,
