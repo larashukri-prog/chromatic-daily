@@ -18,12 +18,11 @@ import {
   hasFinishedToday, getStreaks, generateShareText, getCurrentRoundInfo,
   saveRoundAttempt, getResultMessage, getStageResultMessage, MAX_ROUNDS, getTodayData, RoundData, DDALevel,
   clearStoredProgress, getDayDifficultyTier, GRID_SIZE, STAGE_COLOR_COUNTS, generateStageSolution,
-  getNextStage,
+  getNextStage, getTodayString,
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
-import { posthog } from '@/lib/posthog';
-import { trackVirtualPageview, trackEngagement } from '@/lib/analytics';
+import { trackVirtualPageview, trackEngagement, track } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -390,7 +389,8 @@ const Index = () => {
 
   const startGame = useCallback(() => {
     if (alreadyFinished && !isFreeplay) return;
-    posthog.capture('game_started', {
+    track('game_started', {
+      puzzle_id: getTodayString(),
       round_number: roundIndex + 1,
       day_number: dayNum,
       difficulty: difficultyName,
@@ -449,7 +449,7 @@ const Index = () => {
     setVerifying(false);
     setActiveSlot(null);
     setPhase('idle');
-    posthog.capture('practice_started', {
+    track('practice_started', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
     });
@@ -594,6 +594,17 @@ const Index = () => {
       return playerGrid[i] === c;
     });
     const correct = res.every(Boolean);
+    const tilesTotal = solution.filter((c) => c !== null).length;
+    const matchedTiles = solution.reduce((n, c, i) => n + (c !== null && res[i] ? 1 : 0), 0);
+    track('guess_submitted', {
+      mode,
+      puzzle_id: isFreeplay ? null : getTodayString(),
+      round_number: isFreeplay ? freeplayRoundNum + 1 : roundIndex + 1,
+      attempt_number: isFreeplay ? freeplayRoundNum + 1 : totalAttemptsUsed + 1,
+      accuracy: tilesTotal ? Math.round((matchedTiles / tilesTotal) * 100) : 0,
+      tiles_total: tilesTotal,
+      is_correct: correct,
+    });
     setResult(res);
     setIsCorrect(correct);
     setVerifying(true);
@@ -712,7 +723,7 @@ const Index = () => {
       setSavedRounds(savedData.rounds);
       setStreaks({ current: savedData.currentStreak, max: savedData.maxStreak });
 
-      posthog.capture('round_verified', {
+      track('round_verified', {
         round_number: roundIndex + 1,
         stage: currentStageKey,
         is_correct: correct,
@@ -720,7 +731,7 @@ const Index = () => {
         recall_seconds: recallSeconds,
       });
 
-      posthog.capture('daily_streak_updated', {
+      track('daily_streak_updated', {
         current_streak: savedData.currentStreak,
         max_streak: savedData.maxStreak,
       });
@@ -797,7 +808,7 @@ const Index = () => {
     const nextRound = freeplayRoundNum + 1;
     const puzzle = generateFreePlayPuzzle(nextRound);
     setFreeplayRoundNum(nextRound);
-    posthog.capture('practice_next_level', {
+    track('practice_next_level', {
       difficulty: puzzle.colorCount <= 3 ? 'easy' : puzzle.colorCount <= 5 ? 'medium' : 'hard',
       color_count: puzzle.colorCount,
       round_number: freeplayRoundNum + 1,
@@ -911,6 +922,12 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] Share text preview:\n' + text);
+    track('results_shared', {
+      channel: 'clipboard',
+      puzzle_id: getTodayString(),
+      stars_earned: starsEarned,
+      rounds_solved: rounds.filter((r) => r.solved).length,
+    });
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -925,6 +942,12 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
+    track('results_shared', {
+      channel: 'whatsapp',
+      puzzle_id: getTodayString(),
+      stars_earned: starsEarned,
+      rounds_solved: rounds.filter((r) => r.solved).length,
+    });
     const encoded = encodeURIComponent(text);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const url = isMobile ? `whatsapp://send?text=${encoded}` : `https://wa.me/?text=${encoded}`;
@@ -955,8 +978,12 @@ const Index = () => {
   const showDailySummary = !isFreeplay && alreadyFinished && (phase === 'idle' || phase === 'result');
 
   useEffect(() => {
-   if (showDailySummary && posthog.__loaded) {
-      posthog.capture('game_completed', {
+   if (showDailySummary) {
+      track('game_completed', {
+        puzzle_id: getTodayString(),
+        total_time_seconds: totalFocusSeconds,
+        current_streak: streaks.current,
+        max_streak: streaks.max,
         day: dayName,
         difficulty: difficultyName,
         result: solvedRounds > 0 ? 'won' : 'lost',
@@ -977,10 +1004,9 @@ const Index = () => {
       if (
         isLeaving &&
         hasStartedPlaying.current &&
-        !alreadyFinished &&
-        posthog.__loaded
+        !alreadyFinished
       ) {
-        posthog.capture('game_abandoned', {
+        track('game_abandoned', {
           current_round: roundIndex + 1,
           attempts_remaining: MAX_ROUNDS - totalAttemptsUsed,
         }, { transport: 'sendBeacon' });
@@ -1008,9 +1034,7 @@ const Index = () => {
     const reflexAvg = sortedTimes.length
       ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
       : 0;
-
-    if (posthog.__loaded) {
-      posthog.capture('practice_results_viewed', {
+      track('practice_results_viewed', {
         rounds_played: sessionStats.roundsPlayed,
         reflex_avg_seconds: reflexAvg,
         consistency,
@@ -1019,7 +1043,6 @@ const Index = () => {
         peak_complexity_seconds: sessionStats.peakComplexity?.seconds ?? 0,
         longest_streak: sessionStats.longestStreak,
       });
-    }
 
     setShowSessionReport(true);
     trackVirtualPageview('/practice/results', 'Chromatic Daily — Practice Results');
@@ -1044,18 +1067,21 @@ const Index = () => {
   }, [phase, activeColors.length]);
 
   const shareSession = useCallback(() => {
-    if (posthog.__loaded) {
       const sortedTimes = [...sessionStats.correctTimes].sort((a, b) => a - b).slice(0, 3);
       const reflexAvg = sortedTimes.length
         ? sortedTimes.reduce((s, n) => s + n, 0) / sortedTimes.length
         : 0;
-      posthog.capture('practice_card_shared', {
+      track('practice_card_shared', {
         rounds_played: sessionStats.roundsPlayed,
         reflex_avg_seconds: reflexAvg,
         tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
-    }
+      track('results_shared', {
+        channel: 'practice_card',
+        rounds_played: sessionStats.roundsPlayed,
+        longest_streak: sessionStats.longestStreak,
+      });
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {
@@ -1080,6 +1106,8 @@ const Index = () => {
       {isFreeplay && sessionStats.roundsPlayed >= 1 && !showSessionReport && (
         <button
           onClick={openSessionReport}
+          data-ph-capture-attribute-element-type="cta"
+          data-ph-capture-attribute-action="open_session_report"
           className="fixed top-4 right-4 z-40 inline-flex items-center gap-1.5 backdrop-blur border border-border rounded-full px-3 py-1.5 shadow-sm transition-colors bg-primary text-destructive-foreground text-base"
           aria-label="View session results"
         >
@@ -1287,6 +1315,9 @@ const Index = () => {
                     return (
                     <motion.button
                       key={c.hex}
+                      data-ph-capture-attribute-element-type="color-swatch"
+                      data-ph-capture-attribute-color-name={c.name}
+                      data-ph-capture-attribute-color-hex={c.hex}
                       onClick={() => {
                         if (activeSlot !== null) {
                           const newGrid = [...playerGrid];
@@ -1298,13 +1329,25 @@ const Index = () => {
                             playTileFx([activeSlot], 'fill', 320);
                             setSwatchPop(c.hex);
                             fxTimers.current.push(setTimeout(() => setSwatchPop(null), 260));
-                            trackEngagement('color_placed', { mode });
+                            trackEngagement('color_selected', {
+                              mode,
+                              action: 'placed',
+                              color_hex: c.hex,
+                              color_name: c.name,
+                              slot_index: activeSlot,
+                            });
                           }
                           setActiveSlot(null);
                           setSelectedColor(null);
                         } else {
                           setSelectedColor(c.hex);
-                          trackEngagement('color_selected', { mode });
+                          trackEngagement('color_selected', {
+                            mode,
+                            action: 'selected',
+                            color_hex: c.hex,
+                            color_name: c.name,
+                            slot_index: null,
+                          });
                         }
                       }}
                       whileTap={{ scale: 0.92 }}
@@ -1346,6 +1389,8 @@ const Index = () => {
               {phase === 'idle' && !isFreeplay && !alreadyFinished && countdown === null && (
                 <Button
                   onClick={startGame}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="start_game"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
@@ -1355,6 +1400,8 @@ const Index = () => {
               {phase === 'idle' && isFreeplay && countdown === null && (
                 <Button
                   onClick={startFreePlay}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="start_practice"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 text-sm tracking-wide"
                 >
                   Start
@@ -1364,6 +1411,8 @@ const Index = () => {
               {phase === 'observation' && (
                 <Button
                   onClick={handleReady}
+                  data-ph-capture-attribute-element-type="cta"
+                  data-ph-capture-attribute-action="ready"
                   className="w-full rounded-xl h-12 text-sm tracking-wide text-white bg-black hover:bg-black/90"
                 >
                   I'm ready
@@ -1371,11 +1420,13 @@ const Index = () => {
               )}
               {phase === 'recall' && (
                 <>
-                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2">
+                  <Button onClick={clearGrid} variant="outline" className="rounded-xl flex-1 gap-2" data-ph-capture-attribute-element-type="cta" data-ph-capture-attribute-action="clear_grid">
                     <RotateCcw className="w-4 h-4" /> Clear
                   </Button>
                   <Button
                     onClick={verify}
+                    data-ph-capture-attribute-element-type="cta"
+                    data-ph-capture-attribute-action="verify"
                     disabled={!canVerify}
                     className="rounded-xl flex-1 gap-2 text-white bg-black hover:bg-black/90"
                   >
@@ -1603,7 +1654,7 @@ const Index = () => {
 
               <div className="flex gap-3 justify-center">
                 {canContinue && (
-                  <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')}>
+                  <Button onClick={nextAttempt} className={cn('rounded-xl gap-2 text-white bg-black hover:bg-black/90')} data-ph-capture-attribute-element-type="cta" data-ph-capture-attribute-action="next_attempt">
                     <RotateCcw className="w-4 h-4" /> {isCorrect ? 'Next Round' : 'Try Again'}
                   </Button>
                 )}

@@ -1,5 +1,21 @@
 import { posthog } from './posthog';
 
+type Props = Record<string, unknown>;
+
+/**
+ * Single safe entry point for every analytics event.
+ * No-ops when PostHog never initialized; never throws.
+ */
+export function track(name: string, props?: Props, options?: Record<string, unknown>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!posthog?.__loaded) return;
+    posthog.capture(name, props, options as never);
+  } catch (err) {
+    console.warn('[analytics] capture failed', name, err);
+  }
+}
+
 /**
  * Push a virtual pageview so SPA-aware analytics scripts (Lovable Analytics,
  * Plausible/Umami, PostHog) record the navigation. Without this, every
@@ -18,12 +34,7 @@ export function trackVirtualPageview(path: string, title?: string): void {
     // Notify listeners (Lovable Analytics, Plausible, Umami all listen to these).
     window.dispatchEvent(new Event('popstate'));
     window.dispatchEvent(new Event('locationchange'));
-    try {
-      posthog.capture('$pageview', {
-        $current_url: url.toString(),
-        virtual: true,
-      });
-    } catch {}
+    track('$pageview', { $current_url: url.toString(), virtual: true });
   } catch (err) {
     // Never throw from analytics.
     console.warn('[analytics] virtual pageview failed', err);
@@ -32,12 +43,10 @@ export function trackVirtualPageview(path: string, title?: string): void {
 
 /** Lightweight engagement marker — also flips a sessionStorage flag so we
  * can tell engaged sessions from drive-by loads if needed later. */
-export function trackEngagement(name: string, props?: Record<string, unknown>): void {
+export function trackEngagement(name: string, props?: Props): void {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem('cd_engaged', '1');
   } catch {}
-  try {
-    posthog.capture(name, props);
-  } catch {}
+  track(name, props);
 }
