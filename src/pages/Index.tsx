@@ -982,8 +982,7 @@ const Index = () => {
       if (
         isLeaving &&
         hasStartedPlaying.current &&
-        !alreadyFinished &&
-        true
+        !alreadyFinished
       ) {
         track('game_abandoned', {
           current_round: roundIndex + 1,
@@ -1022,7 +1021,6 @@ const Index = () => {
         peak_complexity_seconds: sessionStats.peakComplexity?.seconds ?? 0,
         longest_streak: sessionStats.longestStreak,
       });
-    }
 
     setShowSessionReport(true);
     trackVirtualPageview('/practice/results', 'Chromatic Daily — Practice Results');
@@ -1057,7 +1055,11 @@ const Index = () => {
         tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
-    }
+      track('results_shared', {
+        channel: 'practice_card',
+        rounds_played: sessionStats.roundsPlayed,
+        longest_streak: sessionStats.longestStreak,
+      });
   }, [sessionStats]);
 
   const restartSession = useCallback(() => {
