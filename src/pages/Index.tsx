@@ -1100,6 +1100,7 @@ const Index = () => {
         tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
+      track('share_clicked', { game_mode: 'practice', share_method: 'practice_card' });
       track('results_shared', {
         channel: 'practice_card',
         rounds_played: sessionStats.roundsPlayed,
