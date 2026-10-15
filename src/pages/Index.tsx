@@ -22,7 +22,7 @@ import {
   type StageKey,
 } from '@/lib/game';
 import { generateFreePlayPuzzle } from '@/lib/freeplay';
-import { trackVirtualPageview, trackEngagement, track } from '@/lib/analytics';
+import { trackVirtualPageview, trackEngagement, track, trackOnce, trackOncePersistent } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -395,6 +395,13 @@ const Index = () => {
       day_number: dayNum,
       difficulty: difficultyName,
       mode,
+      game_mode: isFreeplay ? 'practice' : 'daily',
+      challenge_id: isFreeplay ? undefined : getTodayString(),
+    } as never);
+    trackOnce(`stage_start_${isFreeplay ? 'p' + freeplayRoundNum : getTodayString()}_${roundIndex + 1}`, 'game_stage_started', {
+      game_mode: isFreeplay ? 'practice' : 'daily',
+      challenge_id: isFreeplay ? undefined : getTodayString(),
+      stage_number: isFreeplay ? freeplayRoundNum + 1 : roundIndex + 1,
     });
     trackVirtualPageview('/play', 'Chromatic Daily — Play');
 
@@ -730,6 +737,13 @@ const Index = () => {
         speed_bonus: isSpeedRound,
         recall_seconds: recallSeconds,
       });
+      trackOnce(`stage_done_${getTodayString()}_${roundIndex + 1}`, 'game_stage_completed', {
+        game_mode: 'daily',
+        challenge_id: getTodayString(),
+        stage_number: roundIndex + 1,
+        is_correct: correct,
+        speed_star_earned: Boolean(correct && isSpeedRound),
+      });
 
       track('daily_streak_updated', {
         current_streak: savedData.currentStreak,
@@ -922,6 +936,7 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] Share text preview:\n' + text);
+    track('share_clicked', { game_mode: 'daily', challenge_id: getTodayString(), share_method: 'clipboard' });
     track('results_shared', {
       channel: 'clipboard',
       puzzle_id: getTodayString(),
@@ -942,6 +957,7 @@ const Index = () => {
     const rounds = data?.rounds ?? savedRounds;
     const text = generateShareText(rounds, starsEarned, totalFocusSeconds, buildShareMetrics());
     console.log('[Chromatic] WhatsApp share text preview:\n' + text);
+    track('share_clicked', { game_mode: 'daily', challenge_id: getTodayString(), share_method: 'whatsapp' });
     track('results_shared', {
       channel: 'whatsapp',
       puzzle_id: getTodayString(),
@@ -979,7 +995,14 @@ const Index = () => {
 
   useEffect(() => {
    if (showDailySummary) {
-      track('game_completed', {
+      trackOncePersistent(`daily_done_${getTodayString()}`, 'daily_challenge_completed', {
+        game_mode: 'daily',
+        challenge_id: getTodayString(),
+        stages_completed: solvedRounds,
+        completion_time_ms: Math.round(totalFocusSeconds * 1000),
+        speed_star_earned: starsEarned > 0,
+      });
+      trackOnce(`game_completed_${getTodayString()}`, 'game_completed', {
         puzzle_id: getTodayString(),
         total_time_seconds: totalFocusSeconds,
         current_streak: streaks.current,
@@ -1077,6 +1100,7 @@ const Index = () => {
         tiles_decoded: sessionStats.tilesDecoded,
         longest_streak: sessionStats.longestStreak,
       });
+      track('share_clicked', { game_mode: 'practice', share_method: 'practice_card' });
       track('results_shared', {
         channel: 'practice_card',
         rounds_played: sessionStats.roundsPlayed,

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, CheckCircle2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { posthog } from '@/lib/posthog';
+import { track } from '@/lib/analytics';
 
 const ONBOARDING_KEY = 'hueday_onboarded';
 
@@ -23,7 +23,7 @@ export function useOnboarding() {
 
   const dismiss = () => {
     localStorage.setItem(ONBOARDING_KEY, 'true');
-    try { posthog.capture('onboarding_completed'); } catch {}
+    track('onboarding_completed');
     setShow(false);
   };
 
