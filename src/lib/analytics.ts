@@ -39,11 +39,12 @@ export function cleanProps(props?: Props): Record<string, Primitive> | undefined
 export function track<E extends string>(
   name: E,
   props?: E extends keyof AnalyticsEvents ? AnalyticsEvents[E] : Props,
+  options?: Record<string, unknown>,
 ): void {
   if (typeof window === 'undefined') return;
   try {
     if (!posthog?.__loaded) return;
-    posthog.capture(name, cleanProps(props as Props));
+    posthog.capture(name, cleanProps(props as Props), options as never);
   } catch (err) {
     console.warn('[analytics] capture failed', name, err);
   }
