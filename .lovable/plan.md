@@ -1,40 +1,37 @@
-# PostHog Analytics Audit & Update
+# PostHog Integration Repair
 
-## Current state (verified)
+## Audit findings (verified in code)
 
-- `src/lib/posthog.ts` initializes posthog-js once from `src/main.tsx` with a **hardcoded** project key and `api_host: https://app.posthog.com`. There is no `.env` file and no React provider — the app uses the plain `posthog-js` singleton, not `posthog-js/react`.
-- Events already firing: `game_started`, `round_verified`, `daily_streak_updated`, `game_completed`, `game_abandoned`, `practice_started`, `practice_next_level`, `practice_results_viewed`, `practice_card_shared`, `onboarding_completed`, plus `color_selected` / `color_placed` / `ready_clicked` via `trackEngagement`.
-- Missing: no event at all on the daily share actions (`share`, `shareWhatsApp` in `src/pages/Index.tsx`).
-- Guarding is inconsistent: some calls are bare `posthog.capture(...)`, some check `posthog.__loaded`, some sit in `try/catch`.
-- Color swatches and grid tiles are already native `<button>` elements (`motion.button`), so autocapture can see them, but they carry no stable identifying attributes.
+- Single `posthog.init()` in `src/lib/posthog.ts`, called once from `src/main.tsx`. No provider, no StrictMode, but also no `__loaded` guard against HMR re-init.
+- `posthog-js ^1.393.4` (current). Config has no `defaults` preset; `capture_pageview: true` only fires on first load, not SPA route changes.
+- Host is legacy `https://app.posthog.com` (fallback + `.env`). Should be the regional ingest host (`us.i.posthog.com` or `eu.i.posthog.com`).
+- Session recording is not disabled; `recordCrossOriginIframes: true` is unnecessary.
+- `trackVirtualPageview` pushes history, dispatches synthetic `popstate`/`locationchange` events, and manually captures `$pageview` with an overridden `$current_url`. This drops UTM params from later pageviews, can make React Router re-render, and will double-count once history-based pageviews are on.
+- No `identify()` / `reset()` calls — identity persistence is fine.
+- No `environment` / `app_version` tagging; dev preview traffic goes to the production project.
+- Onboarding still calls `posthog.capture` directly.
+- Existing events: `game_started`, `guess_submitted`, `round_verified`, `daily_streak_updated`, `game_completed`, `game_abandoned`, `results_shared`, `practice_*`, `onboarding_completed`, `ready_clicked`, `color_selected`, `main_menu_clicked`.
+
+Most likely reason recordings and metrics look broken: SPA pageviews come from manual synthetic events, not PostHog's history tracking. That breaks attribution and page paths. The legacy host and missing defaults preset add to it. Recording replay itself also depends on a dashboard toggle, which can't be checked from code.
 
 ## Changes
 
-### 1. Env-driven initialization
-Read the key and host from `import.meta.env.VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST`, falling back to the current hardcoded values so nothing breaks before the vars are set. Skip init entirely when no key resolves. Add the two vars to `.env` and type them in `src/vite-env.d.ts`.
+1. **Init (`src/lib/posthog.ts`)**: guard with `posthog.__loaded`, add `defaults: '2025-05-24'` (gives `capture_pageview: 'history_change'`), keep autocapture/pageleave, drop the iframe option, use `persistence: 'localStorage+cookie'`. Default the host to `https://us.i.posthog.com` (I will confirm the region with you). Register super-properties `environment` (from `import.meta.env.MODE`/hostname) and `app_version`. In development, keep events flowing but tagged `environment: 'development'` so they can be filtered out.
+2. **Pageviews (`src/lib/analytics.ts`)**: `trackVirtualPageview` becomes a plain `history.pushState` that keeps the existing query string. No synthetic events and no manual `$pageview`, so PostHog's history tracking records one pageview per route with the UTMs intact.
+3. **Typed taxonomy**: add an `AnalyticsEvents` map with typed props, plus `track<E>()` that strips `undefined` values. Keep the historical names and add the canonical ones the brief asks for:
+   - `game_started` (kept) — once per genuine session, deduped by a session key
+   - `game_stage_started` — new, when an attempt begins (on reveal)
+   - `game_stage_completed` — new, fired with `round_verified` after a verify
+   - `daily_challenge_completed` — new, once per `challenge_id` (localStorage guard), only when the day finishes
+   - `share_clicked` — new, alongside `results_shared`
+   - `practice_started` (kept)
+   - Shared props: `game_mode`, `challenge_id`, `stage_number`, `stages_completed`, `completion_time_ms`, `speed_star_earned`, `share_method`. `app_version` and `environment` come in as super-properties.
+4. **Dedup guards**: per-challenge "completed" flag, and stage events keyed by `challenge_id`+`stage_number` so re-renders or repeat callbacks can't refire. Completion never fires on abandon or reset.
+5. **Onboarding**: route through `track`.
+6. **Docs**: add an `ANALYTICS.md` event schema and an AGENTS.md rule ("all captures go through typed `track`").
 
-No `PostHogProvider` wrapper is added — the app uses the posthog-js singleton everywhere and a provider would add a second init path. If you specifically want the React provider API (`usePostHog()`), say so and it will be swapped in `src/App.tsx` instead.
-
-### 2. Safe capture helper
-Add `track(event, props?, options?)` to `src/lib/analytics.ts`: no-ops when `posthog` is unloaded, wrapped in try/catch. Route every capture in `Index.tsx`, `OnboardingOverlay.tsx`, and `analytics.ts` through it, so no analytics call can ever throw or fire pre-init.
-
-### 3. Explicit event coverage
-- `game_started` — add `puzzle_id` (today's date seed) alongside existing `mode`, `round_number`, `day_number`, `difficulty`.
-- `guess_submitted` — new, fired on Verify for both daily and practice: `attempt_number`, `round_number`, `accuracy` (matched tiles / active tiles, 0-100), `tiles_total`, `is_correct`, `mode`. `round_verified` stays as-is for the daily flow.
-- `color_selected` — enrich with `color_hex`, `color_name`, `slot_index`, `action` (`selected` | `placed`); keeps the existing `color_placed` distinction inside one payload shape.
-- `game_completed` — add `puzzle_id`, `total_time_seconds` (total focus seconds), `current_streak`, `max_streak` to the existing day/difficulty/result/stars/rounds fields.
-- `results_shared` — new, fired from both daily share paths with `channel` (`clipboard` | `whatsapp`), `puzzle_id`, `stars_earned`, `rounds_solved`. Practice keeps `practice_card_shared` and also emits `results_shared` with `channel: 'practice_card'` for one unified funnel.
-
-### 4. Autocapture attributes
-Add `data-ph-capture-attribute-*` to interactive elements so heatmaps and autocapture read cleanly without relying on DOM text:
-- color swatches: `element-type="color-swatch"`, `color-name`, `color-hex`
-- grid tiles (`GameGrid.tsx`): `element-type="grid-tile"`, `tile-index`
-- primary actions (Start, I'm Ready, Verify, Share, WhatsApp, Practice, Results): `element-type="cta"`, `action="<name>"`
-
-All elements are already native buttons; no tag changes needed.
+## Deliverable report after building
+Root cause, files changed, final schema, the dashboard checks (Session Replay enabled, authorized domains include `chromatic-daily.lovable.app`, filter on `environment`), and how to test recordings locally vs in production.
 
 ## Technical notes
-
-Files touched: `src/lib/posthog.ts`, `src/lib/analytics.ts`, `src/pages/Index.tsx`, `src/components/GameGrid.tsx`, `src/components/OnboardingOverlay.tsx`, `src/vite-env.d.ts`, `.env`.
-
-New event names (`guess_submitted`, `results_shared`) start fresh series in PostHog; existing names keep their history.
+Files: `src/lib/posthog.ts`, `src/lib/analytics.ts`, `src/pages/Index.tsx`, `src/components/OnboardingOverlay.tsx`, `.env`, new `ANALYTICS.md`, `AGENTS.md`. Plus a small vitest for `track` stripping undefined values and the once-per-challenge completion guard.
